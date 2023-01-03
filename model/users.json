@@ -1,1 +1,20 @@
-[{"username":"classen","email":"scott.classen@gmail.com"},{"username":"sclassen","email":"sclassen@lbl.gov","refreshToken":""}]
+[
+  {
+    "username": "sclassen",
+    "roles": { "User": 2001 },
+    "email": "sclassen@lbl.gov",
+    "refreshToken": ""
+  },
+  {
+    "username": "jdoe",
+    "roles": { "User": 2001, "Editor": 1984 },
+    "email": "john.doe@gmail.com",
+    "refreshToken": ""
+  },
+  {
+    "username": "admin",
+    "roles": { "User": 2001, "Editor": 1984, "Admin": 5150 },
+    "email": "god@gmail.com",
+    "refreshToken": ""
+  }
+]
