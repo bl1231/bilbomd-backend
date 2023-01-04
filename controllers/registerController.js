@@ -1,18 +1,11 @@
-const usersDB = {
-    users: require('../model/users.json'),
-    setUsers: function (data) { this.users = data }
-}
-const fsPromises = require('fs').promises;
-const path = require('path');
-// const bcrypt = require('bcrypt');
+const User = require('../model/User');
 
 const handleNewUser = async (req, res) => {
     const { user, email } = req.body;
     if (!user || !email) return res.status(400).json({ 'message': 'Username and email are required.' });
     // check for duplicate usernames or email in the "DB"
-    // How to connect to MariaDB?
-    const duplicateEmail = usersDB.users.find(person => person.email === email);
-    const duplicateUsername = usersDB.users.find(person => person.username === user);
+    const duplicateEmail = await User.findOne({email: email}).exec();
+    const duplicateUsername = await User.findOne({username: user}).exec();
     if (duplicateEmail || duplicateUsername) return res.sendStatus(409); //Conflict 
     try {
         //encrypt the password
@@ -20,17 +13,21 @@ const handleNewUser = async (req, res) => {
         //store the new user
         // set user_validated to false
         // send email
-        const newUser = {
+
+        //create and store the new user
+        const result = await User.create({
             "username": user,
-            "roles": { "User": 2001 },
             "email": email,
-        };
-        usersDB.setUsers([...usersDB.users, newUser]);
-        await fsPromises.writeFile(
-            path.join(__dirname, '..', 'model', 'users.json'),
-            JSON.stringify(usersDB.users)
-        );
-        console.log(usersDB.users);
+        });
+
+        // could do this too
+        //const newUser = new User();
+        //newUser.email = email;
+        //const result2 = await newUser.save();
+
+        console.log(result)
+
+
         res.status(201).json({ 'success': `New user ${user} created!` });
     } catch (err) {
         res.status(500).json({ 'message': err.message }); //Server Error
