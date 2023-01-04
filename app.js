@@ -17,7 +17,8 @@ const connectDB = require('./config/dbConn')
 // Connect to MongoDB Database
 connectDB();
 
-// view engine setup
+// view engine setup - probaby delete this since this app will not likely have 
+// web pages. ??
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
