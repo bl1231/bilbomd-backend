@@ -2,16 +2,10 @@ const usersDB = {
     users: require('../model/users.json'),
     setUsers: function (data) { this.users = data }
 }
-const { setMaxIdleHTTPParsers } = require('http');
-// const bcrypt = require('bcrypt');
+
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 const fsPromises = require('fs').promises;
 const path = require('path');
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 const handleLogin = async (req, res) => {
   const { email } = req.body;
@@ -23,14 +17,21 @@ const handleLogin = async (req, res) => {
   // evaluate password 
   //const match = await bcrypt.compare(pwd, foundUser.password);
 
-
+  console.log(process.env)
   if (foundUser) {
+    const roles = Object.values(foundUser.roles);
     // create JWTs
     // access token - short lived - only store in memory 
     // refresh token - long lived - send as httpOnly cookie - not accessible via JS. expire after N months.
     // only store access token in memory - for security 
     const accessToken = jwt.sign(
-      { "email": foundUser.email },
+      {
+        "UserInfo": {
+          "username": foundUser.username,
+          "email": foundUser.email,
+          "roles": roles
+        }
+      },
       process.env.ACCESS_TOKEN_SECRET,
       {expiresIn: '30s'}
     );
@@ -47,8 +48,8 @@ const handleLogin = async (req, res) => {
         path.join(__dirname, '..', 'model', 'users.json'),
         JSON.stringify(usersDB.users)
     );
-    await sleep(1001);
-    res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: "", maxAge: 24 * 60 * 60 * 1000 });
+
+    res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: "", secure: true, maxAge: 24 * 60 * 60 * 1000 });
     res.json({ accessToken });
     console.log('accessToken\t', accessToken)
     console.log('refreshToken\t', refreshToken)

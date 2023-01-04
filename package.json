@@ -17,6 +17,8 @@
     "http-errors": "~1.6.3",
     "jade": "~1.11.0",
     "jsonwebtoken": "^9.0.0",
+    "mongodb": "^4.13.0",
+    "mongoose": "^6.8.2",
     "morgan": "~1.9.1",
     "uuid": "^9.0.0"
   },

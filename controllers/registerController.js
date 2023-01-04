@@ -20,7 +20,11 @@ const handleNewUser = async (req, res) => {
         //store the new user
         // set user_validated to false
         // send email
-        const newUser = { "username": user, "email": email };
+        const newUser = {
+            "username": user,
+            "roles": { "User": 2001 },
+            "email": email,
+        };
         usersDB.setUsers([...usersDB.users, newUser]);
         await fsPromises.writeFile(
             path.join(__dirname, '..', 'model', 'users.json'),

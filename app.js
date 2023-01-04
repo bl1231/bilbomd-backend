@@ -1,3 +1,4 @@
+require('dotenv').config();
 const createError = require('http-errors');
 const express = require('express');
 const app = express();
@@ -5,11 +6,16 @@ const path = require('path');
 const cors = require('cors');
 const corsOptions = require('./config/corsOptions');
 const cookieParser = require('cookie-parser');
-
+const credentials = require('./middleware/credentials');
 const { logger } = require('./middleware/logEvents');
 const verifyJWT = require('./middleware/verifyJWT'); // for protecting routes
+const mongoose = require('mongoose');
+const connectDB = require('./config/dbConn')
 //const indexRouter = require('./routes/index');
 //const usersRouter = require('./routes/users');
+
+// Connect to MongoDB Database
+connectDB();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -17,6 +23,10 @@ app.set('view engine', 'jade');
 
 // logger from YouTube tutorials
 app.use(logger);
+
+// Handle options credentials check - before CORS!
+// and fetch cookies credentials requirement
+app.use(credentials);
 
 // Cross Origin Resource Sharing
 app.use(cors(corsOptions));
@@ -60,4 +70,8 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+mongoose.connection.once('open', () => {
+  console.log('connected to mongoDB')
+})
+// How to prevent app listening when not connected to DB?
 module.exports = app;

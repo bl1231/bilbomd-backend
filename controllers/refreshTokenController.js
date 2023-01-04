@@ -3,7 +3,6 @@ const usersDB = {
     setUsers: function (data) { this.users = data }
 }
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 
 const handleRefreshToken = (req, res) => {
     const cookies = req.cookies;
@@ -21,8 +20,14 @@ const handleRefreshToken = (req, res) => {
         (err, decoded) => {
             console.log('refreshToken for: ',decoded.email);
             if (err || foundUser.email !== decoded.email) return res.sendStatus(403);
+            const roles = Object.values(foundUser.roles)
             const accessToken = jwt.sign(
-                { "email": decoded.email },
+                {
+                    "UserInfo": {
+                        "email": decoded.email,
+                        "roles": roles
+                    }
+                },
                 process.env.ACCESS_TOKEN_SECRET,
                 { expiresIn: '60s' } //30s for testing 30d for production
             );
