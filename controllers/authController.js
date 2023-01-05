@@ -10,6 +10,10 @@ const handleLogin = async (req, res) => {
   const foundUser = await User.findOne({email: email}).exec();
   if (!foundUser) return res.sendStatus(401); //Unauthorized ...please register
 
+  // Check if User is Verified - here? probably not
+  //if (foundUser.status != "Active") {
+  //  return res.status(401).json({'message': 'Pending Account. Please Verify Your Email'});
+  //}
   if (foundUser) {
     const roles = Object.values(foundUser.roles);
     // create JWTs
