@@ -1,46 +1,44 @@
 const User = require("../model/User");
-const jwt = require("jsonwebtoken");
-const sendConfirmationEmail = require("../config/nodemailerConfig");
+const bcrypt = require("bcrypt");
+const characters =
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 const handleNewUser = async (req, res) => {
-  const { user, email } = req.body;
-  if (!user || !email)
-    return res
-      .status(400)
-      .json({ message: "Username and email are required." });
-  // check for duplicate usernames or email in the "DB"
-  const duplicateEmail = await User.findOne({ email: email }).exec();
-  const duplicateUsername = await User.findOne({ username: user }).exec();
-  if (duplicateEmail || duplicateUsername) return res.sendStatus(409); //Conflict
-  try {
-    //create a confirmation code that lasts for 1 hour
-    const confirmationToken = jwt.sign(
-      {
-        UserInfo: {
-          email: email,
-        },
-      },
-      process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "1h" }
-    );
+    const { user, pwd, email } = req.body;
+    if (!user || !pwd || !email)
+        return res.status(400).json({
+            message: "Username, email, and password are all required.",
+        });
 
-    //create and store the new user
-    //status is set to "Pending" by default
-    const result = await User.create({
-      username: user,
-      email: email,
-      confirmationCode: confirmationToken,
-    });
+    // check for duplicate usernames in the db
+    const duplicate = await User.findOne({ username: user }).exec();
+    if (duplicate) return res.sendStatus(409); //Conflict
 
-    console.log(result);
+    try {
+        //encrypt the password
+        const hashedPwd = await bcrypt.hash(pwd, 10);
 
-    //send email
-    sendConfirmationEmail(email, confirmationToken);
+        //create a unique confirmation code
+        let confirmationCode = "";
+        for (let i = 0; i < 30; i++) {
+            confirmationCode +=
+                characters[Math.floor(Math.random() * characters.length)];
+        }
 
-    res.status(201).json({ success: `New user ${user} created!` });
-  } catch (err) {
-    res.status(500).json({ message: err.message }); //Server Error
-  }
+        //create and store the new user
+        const result = await User.create({
+            username: user,
+            password: hashedPwd,
+            email: email,
+            confirmationCode: confirmationCode,
+        });
+
+        console.log(result);
+
+        res.status(201).json({ success: `New user ${user} created!` });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 };
 
 module.exports = { handleNewUser };

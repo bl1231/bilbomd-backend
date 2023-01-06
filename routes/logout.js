@@ -4,6 +4,4 @@ const logoutController = require('../controllers/logoutController');
 
 router.get('/', logoutController.handleLogout);
 
-console.log('logout\t\trouter loaded');
-
 module.exports = router;
