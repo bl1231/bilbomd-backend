@@ -14,10 +14,6 @@ const userSchema = new Schema({
         Editor: Number,
         Admin: Number,
     },
-    password: {
-        type: String,
-        required: true,
-    },
     refreshToken: [String],
     email: {
         type: String,
