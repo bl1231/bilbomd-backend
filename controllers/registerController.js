@@ -1,6 +1,8 @@
 const User = require("../model/User");
-//const bcrypt = require("bcrypt");
+const sendConfirmationEmail = require("../config/nodemailerConfig");
 const characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+const conformationURL = "http://localhost:3001";
 
 const handleNewUser = async (req, res) => {
     console.log("handleNewUser", req.body);
@@ -12,12 +14,10 @@ const handleNewUser = async (req, res) => {
 
     // check for duplicate usernames in the db
     const duplicate = await User.findOne({ username: user }).exec();
+    console.log("DUP FOUND", duplicate);
     if (duplicate) return res.sendStatus(409); //Conflict
 
     try {
-        //encrypt the password
-        //const hashedPwd = await bcrypt.hash(pwd, 10);
-
         //create a unique confirmation code
         let confirmationCode = "";
         for (let i = 0; i < 30; i++) {
@@ -31,6 +31,8 @@ const handleNewUser = async (req, res) => {
             confirmationCode: confirmationCode,
         });
 
+        //send Confirmation email
+        sendConfirmationEmail(email, conformationURL, confirmationCode);
         console.log(result);
 
         res.status(201).json({ success: `New user ${user} created!` });

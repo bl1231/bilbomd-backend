@@ -1,20 +1,23 @@
 const User = require("../model/User");
-const bcrypt = require("bcrypt");
+//const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const handleLogin = async (req, res) => {
     const cookies = req.cookies;
     console.log(`cookie available at login: ${JSON.stringify(cookies)}`);
-    const { user, pwd } = req.body;
-    if (!user || !pwd)
-        return res
-            .status(400)
-            .json({ message: "Username and password are required." });
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "email required." });
 
-    const foundUser = await User.findOne({ username: user }).exec();
+    const foundUser = await User.findOne({ email: email }).exec();
     if (!foundUser) return res.sendStatus(401); //Unauthorized
     // evaluate password
-    const match = await bcrypt.compare(pwd, foundUser.password);
+    // const match = await bcrypt.compare(pwd, foundUser.password);
+
+    //check if user is confirmationCode,
+    //let code = req.query.itsmagic;
+
+    // check if emails match
+    const match = email === foundUser.email;
     if (match) {
         const roles = Object.values(foundUser.roles).filter(Boolean);
         // create JWTs
@@ -80,7 +83,7 @@ const handleLogin = async (req, res) => {
         // Send authorization roles and access token to user
         res.json({ roles, accessToken });
     } else {
-        res.sendStatus(401);
+        res.sendStatus(401); //Unauthorized
     }
 };
 
