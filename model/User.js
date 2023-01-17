@@ -28,6 +28,7 @@ const userSchema = new Schema({
     confirmationCode: {
         type: String
     },
+    otp: { type: String },
     UUID: {
         type: String
     },

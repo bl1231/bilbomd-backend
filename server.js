@@ -43,6 +43,8 @@ app.use('/', express.static(path.join(__dirname, '/public')));
 app.use('/', require('./routes/root'));
 app.use('/register', require('./routes/register'));
 app.use('/verify', require('./routes/verify'));
+app.use('/magicklink', require('./routes/magicklink'));
+//app.use('/auth/otp', require('./routes/auth'));
 app.use('/auth', require('./routes/auth'));
 app.use('/refresh', require('./routes/refresh'));
 app.use('/logout', require('./routes/logout'));

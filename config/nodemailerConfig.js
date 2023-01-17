@@ -42,7 +42,7 @@ const sendVerificationEmail = (email, url, code) => {
     transporter.sendMail(mailOptions).catch((err) => console.log(err));
 };
 
-const sendMagickLinkEmail = (email, url, code) => {
+const sendMagickLinkEmail = (email, url, otp) => {
     console.log('send email');
     transporter.use(
         'compile',
@@ -64,7 +64,7 @@ const sendMagickLinkEmail = (email, url, code) => {
         subject: 'BilboMD MagickLink',
         template: 'magicklink',
         context: {
-            confirmationcode: code,
+            onetimepasscode: otp,
             url: url
         }
     };
