@@ -1,6 +1,7 @@
 const User = require('../model/User');
 const { v4: uuid } = require('uuid');
-const sendConfirmationEmail = require('../config/nodemailerConfig');
+//const sendConfirmationEmail = require('../config/nodemailerConfig');
+const { sendVerificationEmail } = require('../config/nodemailerConfig');
 const characters =
     '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -39,8 +40,8 @@ const handleNewUser = async (req, res) => {
             createdAt: Date()
         });
 
-        //send Confirmation email
-        sendConfirmationEmail(email, conformationURL, confirmationCode);
+        //send Verification email
+        sendVerificationEmail(email, conformationURL, confirmationCode);
         console.log(result);
 
         res.status(201).json({ success: `New user ${user} created!` });

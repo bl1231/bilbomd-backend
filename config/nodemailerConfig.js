@@ -1,45 +1,75 @@
-const nodemailer = require("nodemailer");
-const hbs = require("nodemailer-express-handlebars");
+const nodemailer = require('nodemailer');
+const hbs = require('nodemailer-express-handlebars');
 const user = process.env.SENDMAIL_USER;
 //const pass = process.env.SENDMAIL_PASS;
-const path = require("path");
-const viewPath = path.resolve(__dirname, "../templates/views/");
-const partialsPath = path.resolve(__dirname, "../templates/partials");
+const path = require('path');
+const viewPath = path.resolve(__dirname, '../templates/views/');
+const partialsPath = path.resolve(__dirname, '../templates/partials');
 
 const transporter = nodemailer.createTransport({
-    host: "smtp-relay.gmail.com",
+    host: 'smtp-relay.gmail.com',
     port: 25,
-    secure: false,
+    secure: false
 });
 
-const sendConfirmationEmail = (email, url, code) => {
-    console.log("send email");
+const sendVerificationEmail = (email, url, code) => {
+    console.log('send email');
     transporter.use(
-        "compile",
+        'compile',
         hbs({
             viewEngine: {
-                extName: ".handlebars",
+                extName: '.handlebars',
                 defaultLayout: false,
                 layoutsDir: viewPath,
-                partialsDir: partialsPath,
+                partialsDir: partialsPath
             },
             viewPath: viewPath,
-            extName: ".handlebars",
+            extName: '.handlebars'
         })
     );
 
     const mailOptions = {
         from: user,
         to: email,
-        subject: "Sign into BilboMD",
-        template: "signup",
+        subject: 'Verify BilboMD email',
+        template: 'signup',
         context: {
             confirmationcode: code,
-            url: url,
-        },
+            url: url
+        }
     };
 
     transporter.sendMail(mailOptions).catch((err) => console.log(err));
 };
 
-module.exports = sendConfirmationEmail;
+const sendMagickLinkEmail = (email, url, code) => {
+    console.log('send email');
+    transporter.use(
+        'compile',
+        hbs({
+            viewEngine: {
+                extName: '.handlebars',
+                defaultLayout: false,
+                layoutsDir: viewPath,
+                partialsDir: partialsPath
+            },
+            viewPath: viewPath,
+            extName: '.handlebars'
+        })
+    );
+
+    const mailOptions = {
+        from: user,
+        to: email,
+        subject: 'BilboMD MagickLink',
+        template: 'magicklink',
+        context: {
+            confirmationcode: code,
+            url: url
+        }
+    };
+
+    transporter.sendMail(mailOptions).catch((err) => console.log(err));
+};
+
+module.exports = { sendVerificationEmail, sendMagickLinkEmail };
