@@ -10,17 +10,26 @@ const handleLogout = async (req, res) => {
     // Is refreshToken in db?
     const foundUser = await User.findOne({ refreshToken }).exec();
     if (!foundUser) {
-        res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
-        return res.sendStatus(204);
+        // deletes refreshToken in the request
+        res.clearCookie('jwt', {
+            httpOnly: true,
+            SameSite: 'none',
+            secure: true
+        }); //secure: true
+        return res.sendStatus(204); //No content
     }
 
-    // Delete refreshToken in db
-    foundUser.refreshToken = foundUser.refreshToken.filter(rt => rt !== refreshToken);;
+    // Delete refreshToken in DB
+    foundUser.refreshToken = foundUser.refreshToken.filter(
+        (rt) => rt !== refreshToken
+    );
     const result = await foundUser.save();
-    console.log(result);
+    console.log('-------------------------');
+    console.log('logoutController:', result);
+    console.log('-------------------------');
 
-    res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
-    res.sendStatus(204);
-}
+    res.clearCookie('jwt', { httpOnly: true, SameSite: 'none', secure: true }); //secure: true
+    res.sendStatus(204); //All is well, but No content
+};
 
-module.exports = { handleLogout }
+module.exports = { handleLogout };

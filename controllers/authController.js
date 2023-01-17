@@ -1,40 +1,46 @@
-const User = require("../model/User");
-//const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const User = require('../model/User');
+const jwt = require('jsonwebtoken');
 
 const handleLogin = async (req, res) => {
     const cookies = req.cookies;
+    console.log('----------------------------------------------');
     console.log(`cookie available at login: ${JSON.stringify(cookies)}`);
     const { email } = req.body;
-    if (!email) return res.status(400).json({ message: "email required." });
+    if (!email) return res.status(400).json({ message: 'email required.' });
 
+    // query MongoDB on email
     const foundUser = await User.findOne({ email: email }).exec();
     if (!foundUser) return res.sendStatus(401); //Unauthorized
-    // evaluate password
-    // const match = await bcrypt.compare(pwd, foundUser.password);
 
-    //check if user is confirmationCode,
-    //let code = req.query.itsmagic;
+    // Check if user has confirmationCode,
 
-    // check if emails match
+    // Check if we found an entry in MongoDB with this email
     const match = email === foundUser.email;
     if (match) {
+        // Grab values from the MongoDB Document we retrieved.
         const roles = Object.values(foundUser.roles).filter(Boolean);
+        const user = foundUser.username;
+        const email = foundUser.email;
+
         // create JWTs
+        console.log(user, email, roles);
+        // accessToken - memory only, short lived, allows access to protected routes
         const accessToken = jwt.sign(
             {
                 UserInfo: {
-                    username: foundUser.username,
+                    username: user,
                     roles: roles,
-                },
+                    email: email
+                }
             },
             process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: "30s" }
+            { expiresIn: '60s' }
         );
+        // refreshToken - http only, secure, allows for refresh of expired accessTokens
         const newRefreshToken = jwt.sign(
             { username: foundUser.username },
             process.env.REFRESH_TOKEN_SECRET,
-            { expiresIn: "1d" }
+            { expiresIn: '60min' }
         );
 
         // Changed to let keyword
@@ -49,39 +55,40 @@ const handleLogin = async (req, res) => {
                 2) RT is stolen
                 3) If 1 & 2, reuse detection is needed to clear all RTs when user logs in
             */
-            const refreshToken = cookies.jwt;
-            const foundToken = await User.findOne({ refreshToken }).exec();
+            // const refreshToken = cookies.jwt;
+            // const foundToken = await User.findOne({ refreshToken }).exec();
 
-            // Detected refresh token reuse!
-            if (!foundToken) {
-                console.log("attempted refresh token reuse at login!");
-                // clear out ALL previous refresh tokens
-                newRefreshTokenArray = [];
-            }
+            // // Detected refresh token reuse!
+            // if (!foundToken) {
+            //     console.log('attempted refresh token reuse at login!');
+            //     // clear out ALL previous refresh tokens
+            //     newRefreshTokenArray = [];
+            // }
 
-            res.clearCookie("jwt", {
+            res.clearCookie('jwt', {
                 httpOnly: true,
-                sameSite: "",
-                secure: true,
-            });
+                SameSite: 'none',
+                secure: true
+            }); //secure: true
         }
 
         // Saving refreshToken with current user
         foundUser.refreshToken = [...newRefreshTokenArray, newRefreshToken];
         const result = await foundUser.save();
-        console.log(result);
-        console.log(roles);
+        console.log('----------------------------------------------');
+        console.log('authController', result);
+        //console.log(roles);
 
-        // Creates Secure Cookie with refresh token
-        res.cookie("jwt", newRefreshToken, {
+        // Creates Secure Cookie with our refreshToken
+        res.cookie('jwt', newRefreshToken, {
             httpOnly: true,
+            SameSite: 'none',
             secure: true,
-            sameSite: "",
-            maxAge: 24 * 60 * 60 * 1000,
-        });
+            maxAge: 24 * 60 * 60 * 1000
+        }); // secure: true,
 
         // Send authorization roles and access token to user
-        res.json({ roles, accessToken });
+        res.json({ user, email, roles, accessToken });
     } else {
         res.sendStatus(401); //Unauthorized
     }

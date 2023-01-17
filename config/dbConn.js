@@ -7,10 +7,9 @@ const connectDB = async () => {
             useUnifiedTopology: true,
             useNewUrlParser: true
         });
-        
     } catch (err) {
         console.error(err);
     }
-}
+};
 
-module.exports = connectDB
+module.exports = connectDB;
