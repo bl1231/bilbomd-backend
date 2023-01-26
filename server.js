@@ -47,6 +47,8 @@ app.use('/magicklink', require('./routes/magicklink'));
 app.use('/auth', require('./routes/auth'));
 app.use('/refresh', require('./routes/refresh'));
 app.use('/logout', require('./routes/logout'));
+
+// testing
 app.use('/upload', require('./routes/upload'));
 
 app.use(verifyJWT);
