@@ -6,6 +6,7 @@ const jobSchema = new Schema({
     type: String,
     required: true
   },
+  uuid: { type: String, required: true },
   const_inp_file: { type: String },
   data_file: { type: String, required: true },
   conformational_sampling: {
@@ -13,8 +14,8 @@ const jobSchema = new Schema({
     enum: [200, 400, 600, 800],
     default: 200
   },
-  rg_min: { type: Number, reqired: true, minimum: 10, maximum: 100 },
-  rg_max: { type: Number, reqired: true, minimum: 10, maximum: 100 },
+  rg_min: { type: Number, required: true, minimum: 10, maximum: 100 },
+  rg_max: { type: Number, required: true, minimum: 10, maximum: 100 },
   status: {
     type: String,
     enum: ['Submitted', 'Pending', 'Running', 'Completed', 'Error'],
@@ -25,7 +26,8 @@ const jobSchema = new Schema({
   time_completed: Date,
   owner: {
     type: Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    required: true
   }
 });
 

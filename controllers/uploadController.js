@@ -2,6 +2,8 @@ const formidable = require('formidable');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuid } = require('uuid');
+const Job = require('../model/Job');
+const User = require('../model/User');
 
 const uploadFolder = path.join(__dirname, '../uploads');
 
@@ -19,6 +21,15 @@ const handlePdbFileUpload = async (req, res) => {
 };
 
 const handleBilbomdFormUpload = async (req, res) => {
+  console.log(req);
+  if (res.locals.user && res.locals.email) {
+    user = res.locals.user;
+    email = res.locals.email;
+    console.log(user, email);
+  } else {
+    console.log('No user of email found');
+  }
+
   const form = new formidable.IncomingForm();
   const files = [];
   const fields = [];
@@ -28,13 +39,13 @@ const handleBilbomdFormUpload = async (req, res) => {
   form.uploadDir = uploadFolder;
 
   // create a unique folder for each job submission
-  const jobFolder = uuid();
+  const UUID = uuid();
 
-  fs.mkdir(path.join(form.uploadDir, jobFolder), (err) => {
+  fs.mkdir(path.join(form.uploadDir, UUID), (err) => {
     if (err) {
       return console.error(err);
     }
-    console.log(`${jobFolder} directory created successfully!`);
+    console.log(`${UUID} directory created successfully!`);
   });
 
   form
@@ -50,13 +61,13 @@ const handleBilbomdFormUpload = async (req, res) => {
       // file.newFilename generated hexoid or what options.filename returned
       // file.filepath default pathnme as per options.uploadDir and options.filename
       // file.filepath = CUSTOM_PATH // to change the final path
-      file.filepath = path.join(form.uploadDir, jobFolder, file.originalFilename);
+      file.filepath = path.join(form.uploadDir, UUID, file.originalFilename);
     })
     .on('file', (fieldName, file) => {
       // same as fileBegin, except
       // it is too late to change file.filepath
       // file.hash is available if options.hash was used
-      console.log(fieldName, file);
+      //console.log(fieldName, file);
       files.push({ fieldName, file });
     })
     .on('end', () => {
@@ -76,6 +87,7 @@ const handleBilbomdFormUpload = async (req, res) => {
         error: err
       });
     }
+
     try {
       console.log(fields);
       //initialize object to write comm1.txt
@@ -93,13 +105,36 @@ const handleBilbomdFormUpload = async (req, res) => {
       // comm.status = 'Running';
       // comm.zipfile; //name of results zipfile once run has completed
       // comm.startDate;
-      //
 
-      fields.uuid = jobFolder;
+      //const email = 'scott.classen@gmail.com';
+      const foundUser = await User.findOne({ email: email }).exec();
+      if (!foundUser) return res.sendStatus(401); //Unauthorized
+
+      // Create new job
+      const newJob = await Job.create({
+        title: fields.title,
+        uuid: UUID,
+        const_inp_file: files.constinp.originalFilename,
+        data_file: files.expdata.originalFilename,
+        conformational_sampling: fields.num_conf,
+        rg_min: fields.rg_min,
+        rg_max: fields.rg_max,
+        status: 'Submitted',
+        time_submitted: Date(),
+        owner: foundUser
+      });
+      console.log(newJob);
+
+      // Also add this new job to the user's jobs array
+      foundUser.jobs.push(newJob);
+      const userResult = await foundUser.save();
+
+      // add UUID to fields obj before we turn it into JSON
+      fields.uuid = UUID;
 
       const json = JSON.stringify(fields);
 
-      const bilbomdFile = path.join(form.uploadDir, jobFolder, 'bilbomd.json');
+      const bilbomdFile = path.join(form.uploadDir, UUID, 'bilbomd.json');
 
       fs.writeFile(bilbomdFile, json, (err) => {
         if (err) throw err;

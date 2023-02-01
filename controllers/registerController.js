@@ -30,14 +30,14 @@ const handleNewUser = async (req, res) => {
     const UUID = uuid();
 
     //create and store the new user
-    const result = await User.create({
+    const newUser = await User.create({
       username: user,
       email: email,
       confirmationCode: confirmationCode,
       UUID: UUID,
       createdAt: Date()
     });
-    console.log(result);
+    console.log(newUser);
 
     //send Verification email
     sendVerificationEmail(email, conformationURL, confirmationCode);

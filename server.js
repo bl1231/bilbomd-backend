@@ -49,11 +49,12 @@ app.use('/refresh', require('./routes/refresh'));
 app.use('/logout', require('./routes/logout'));
 
 // testing
-app.use('/upload', require('./routes/upload'));
+//app.use('/upload', require('./routes/upload'));
 
 app.use(verifyJWT);
 app.use('/employees', require('./routes/api/employees'));
 app.use('/users', require('./routes/api/users'));
+app.use('/upload', require('./routes/upload'));
 
 app.all('*', (req, res) => {
   res.status(404);
