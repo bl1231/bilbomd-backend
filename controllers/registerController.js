@@ -9,15 +9,16 @@ const conformationURL = 'http://localhost:3001';
 const handleNewUser = async (req, res) => {
   console.log('handleNewUser', req.body);
   const { user, email } = req.body;
+
+  // confirm we have required data
   if (!user || !email)
     return res.status(400).json({
       message: 'Username and email are required.'
     });
 
   // check for duplicate usernames in the db
-  const duplicate = await User.findOne({ email: email }).exec();
-  console.log('DUP FOUND', duplicate);
-  if (duplicate) return res.sendStatus(409); //Conflict
+  const duplicate = await User.findOne({ email: email }).lean().exec();
+  if (duplicate) return res.status(409).json({ message: 'Duplicate email' }); //Conflict
 
   try {
     //create a unique confirmation code
@@ -44,7 +45,7 @@ const handleNewUser = async (req, res) => {
 
     res.status(201).json({ success: `New user ${user} created!` });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(400).json({ message: 'Invalid user data received' });
   }
 };
 
