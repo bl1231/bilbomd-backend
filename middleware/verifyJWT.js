@@ -1,25 +1,23 @@
-const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken')
 
 const verifyJWT = (req, res, next) => {
-  console.log(req.headers);
+  console.log('verifyJWT:', req.headers?.authorization)
   // apparently the authorization header can arrive with either an UPPER or lowercase Aa
-  const authHeader = req.headers.authorization || req.headers.Authorization;
-  if (!authHeader?.startsWith('Bearer ')) return res.sendStatus(401);
-  console.log('AUTH-HEADER: ', authHeader); // Bearer token
-  const token = authHeader.split(' ')[1]; // grab just the token from above string
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      return res.sendStatus(403);
-      console.log('error in verifyJWT', decoded);
-    }
-    req.user = decoded.UserInfo.username;
-    req.email = decoded.UserInfo.email;
-    req.roles = decoded.UserInfo.roles;
-    console.log('verifyJWT:', req.user, req.email, req.roles);
-    res.locals.user = req.user;
-    res.locals.email = req.email;
-    next();
-  });
-};
+  const authHeader = req.headers.authorization || req.headers.Authorization
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Unauthorized' })
+    // return res.sendStatus(401)
+  }
+  // console.log('AUTH-HEADER: ', authHeader) // Bearer token
 
-module.exports = verifyJWT;
+  const token = authHeader.split(' ')[1]
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ message: 'Forbidden --' })
+    req.user = decoded.UserInfo.username
+    req.roles = decoded.UserInfo.roles
+    next()
+  })
+}
+
+module.exports = verifyJWT
