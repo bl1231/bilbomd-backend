@@ -21,7 +21,17 @@ const getAllJobs = async (req, res) => {
   if (!jobs?.length) {
     return res.status(400).json({ message: 'No jobs found' })
   }
-  res.json(jobs)
+
+  // Add username to each job before sending the response
+  // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
+  // You could also do this with a for...of loop
+  const jobsWithUser = await Promise.all(
+    jobs.map(async (job) => {
+      const user = await User.findById(job.user).lean().exec()
+      return { ...job, username: user.username }
+    })
+  )
+  res.json(jobsWithUser)
 }
 
 // @desc Create new job
