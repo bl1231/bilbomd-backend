@@ -21,11 +21,18 @@ const getAllUsers = async (req, res) => {
 // @access Private
 const updateUser = async (req, res) => {
   console.log(req.body)
-  const { id, username, roles, active, password } = req.body
+  const { id, username, roles, active, email } = req.body
 
   // Confirm data
-  if (!id || !username || !Array.isArray(roles) || !roles.length || !active) {
-    return res.status(400).json({ message: 'All fields except password are required' })
+  if (
+    !id ||
+    !username ||
+    !Array.isArray(roles) ||
+    !roles.length ||
+    typeof active !== 'boolean' ||
+    !email
+  ) {
+    return res.status(400).json({ message: 'All fields are required' })
   }
 
   // Does the user exist to update?
@@ -50,11 +57,12 @@ const updateUser = async (req, res) => {
   user.username = username
   user.roles = roles
   user.active = active
+  user.email = email
 
-  if (password) {
-    // Hash password
-    user.password = await bcrypt.hash(password, 10) // salt rounds
-  }
+  // if (password) {
+  //   // Hash password
+  //   user.password = await bcrypt.hash(password, 10) // salt rounds
+  // }
 
   const updatedUser = await user.save()
 
