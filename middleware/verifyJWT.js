@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken')
 
 const verifyJWT = (req, res, next) => {
-  console.log('verifyJWT:', req.headers?.authorization)
+  //console.log('verifyJWT:', req.headers?.authorization)
   // apparently the authorization header can arrive with either an UPPER or lowercase Aa
   const authHeader = req.headers.authorization || req.headers.Authorization
   if (!authHeader?.startsWith('Bearer ')) {

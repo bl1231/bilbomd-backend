@@ -23,6 +23,10 @@ const userSchema = new Schema({
     enum: ['Pending', 'Active'],
     default: 'Pending'
   },
+  active: {
+    type: Boolean,
+    default: true
+  },
   confirmationCode: {
     type: String
   },

@@ -28,7 +28,8 @@ const getAllJobs = async (req, res) => {
   const jobsWithUser = await Promise.all(
     jobs.map(async (job) => {
       const user = await User.findById(job.user).lean().exec()
-      return { ...job, username: user.username }
+      console.log('getAllJobs: ', user)
+      return { ...job, username: user?.username }
     })
   )
   res.json(jobsWithUser)
