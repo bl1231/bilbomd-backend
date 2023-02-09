@@ -1,11 +1,10 @@
 const User = require('../model/User')
 const jwt = require('jsonwebtoken')
-const asyncHandler = require('express-async-handler')
 
 // @desc OTP
 // @route POST /auth/otp
 // @access Public
-const otp = asyncHandler(async (req, res) => {
+const otp = async (req, res) => {
   const { otp } = req.body
 
   if (!otp) return res.status(400).json({ message: 'OTP required.' })
@@ -58,7 +57,7 @@ const otp = asyncHandler(async (req, res) => {
   console.log('----------------------------------------------')
 
   res.json({ accessToken })
-})
+}
 
 // @desc Refresh
 // @route GET /auth/refresh

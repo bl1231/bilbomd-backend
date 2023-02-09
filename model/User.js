@@ -6,12 +6,10 @@ const userSchema = new Schema({
     type: String,
     required: true
   },
-  roles: [
-    {
-      type: String,
-      default: 'User'
-    }
-  ],
+  roles: {
+    type: [String],
+    default: ['User']
+  },
   refreshToken: [String],
   email: {
     type: String,

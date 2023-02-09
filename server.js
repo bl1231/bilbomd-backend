@@ -1,4 +1,5 @@
 require('dotenv').config()
+require('express-async-errors')
 const express = require('express')
 const emoji = require('node-emoji')
 const app = express()
@@ -70,7 +71,10 @@ app.use(errorHandler)
 mongoose.connection.once('connected', () => {
   console.log(emoji.get('rocket'), 'Connected to MongoDB', emoji.get('rocket'))
   app.listen(PORT, () =>
-    console.log(emoji.get('white_check_mark'), `BilboMD Backend Server running on port ${PORT}`)
+    console.log(
+      emoji.get('white_check_mark'),
+      `BilboMD Backend Server running on port ${PORT}`
+    )
   )
 })
 

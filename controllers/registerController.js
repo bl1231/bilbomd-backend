@@ -16,14 +16,24 @@ const handleNewUser = async (req, res) => {
       message: 'Username and email are required.'
     })
 
-  // check for duplicate usernames in the db
-  const duplicate = await User.findOne({ email: email }).lean().exec()
+  // check for duplicate username in the db
+  const duplicateUser = await User.findOne({ username: user })
+    .collation({ locale: 'en', strength: 2 })
+    .lean()
+    .exec()
+  if (duplicateUser) return res.status(409).json({ message: 'Duplicate username' }) //Conflict
+
+  // check for duplicate emails in the db
+  const duplicate = await User.findOne({ email: email })
+    .collation({ locale: 'en', strength: 2 })
+    .lean()
+    .exec()
   if (duplicate) return res.status(409).json({ message: 'Duplicate email' }) //Conflict
 
   try {
     //create a unique confirmation code
     let confirmationCode = ''
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 36; i++) {
       confirmationCode += characters[Math.floor(Math.random() * characters.length)]
     }
 
