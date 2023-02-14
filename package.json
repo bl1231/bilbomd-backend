@@ -1,12 +1,12 @@
 {
   "name": "bilbomd-backend",
   "description": "backend server for BilboMD webapp",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "server.js",
   "private": true,
   "scripts": {
-    "start": "PORT=3500 node server",
-    "dev": "PORT=3500 nodemon server"
+    "start": "node server",
+    "dev": "nodemon server"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
@@ -25,7 +25,7 @@
     "mongoose": "^6.8.2",
     "mongoose-sequence": "^5.3.1",
     "node-emoji": "^1.11.0",
-    "nodemailer": "^6.8.0",
+    "nodemailer": "^6.9.1",
     "nodemailer-express-handlebars": "^6.0.0",
     "uuid": "^9.0.0"
   },
