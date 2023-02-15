@@ -1,9 +1,15 @@
 const mongoose = require('mongoose')
 
-const { MONGO_USERNAME, MONGO_PASSWORD, MONGO_HOSTNAME, MONGO_PORT, MONGO_DB } =
-  process.env
+const {
+  MONGO_USERNAME,
+  MONGO_PASSWORD,
+  MONGO_HOSTNAME,
+  MONGO_PORT,
+  MONGO_DB,
+  MONGO_AUTH_SRC
+} = process.env
 
-const url = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOSTNAME}:${MONGO_PORT}/${MONGO_DB}?authSource=admin`
+const url = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOSTNAME}:${MONGO_PORT}/${MONGO_DB}?authSource=${MONGO_AUTH_SRC}`
 
 const options = {
   useNewUrlParser: true,
@@ -12,11 +18,12 @@ const options = {
 }
 
 const connectDB = async () => {
+  console.log(url)
   try {
     await mongoose.set('strictQuery', false)
     await mongoose.connect(url, options)
   } catch (err) {
-    console.error('here--> ', err)
+    console.error(err)
   }
 }
 
