@@ -51,7 +51,7 @@ app.use('/magicklink', require('./routes/magicklink'))
 app.use('/auth', require('./routes/auth'))
 app.use('/jobs', require('./routes/api/jobs'))
 app.use('/users', require('./routes/api/users'))
-//app.use('/upload', require('./routes/upload'))
+app.use('/admin', require('./routes/admin'))
 
 app.all('*', (req, res) => {
   res.status(404)
