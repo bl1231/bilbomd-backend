@@ -4,25 +4,31 @@ services:
 
   redis:
     image: redis
-    container_name: tutorial_redis
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
+    container_name: redis
+    restart: always
     ports:
-      - 6379:6379
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - cache:/data
+    networks:
+      - app-network
 
   redis-commander:
-    container_name: tutorial_redis-commander
+    container_name: redis-commander
     image: rediscommander/redis-commander
     restart: always
     environment:
       - REDIS_HOSTS=local:redis:6379
     ports:
       - "8081:8081"
+    networks:
+      - app-network
 
   bilbomd-backend:
     container_name: bilbomd-backend
     build:
-      context: .
+      context: ./
       dockerfile: Dockerfile
     image: nodejs
     restart: unless-stopped
@@ -30,21 +36,25 @@ services:
     environment:
       - MONGO_USERNAME=$MONGO_USERNAME
       - MONGO_PASSWORD=$MONGO_PASSWORD
-      - MONGO_HOSTNAME=db
+      - MONGO_HOSTNAME=mongodb
       - MONGO_PORT=$MONGO_PORT
-      - MONGO_DB=$MONGO_DB 
+      - MONGO_DB=$MONGO_DB
+      - REDIS_URL=$REDIS_URL
+      - REDIS_HOST=$REDIS_HOST
+      - REDIS_PORT=$REDIS_PORT
+      - REDIS_PASSWORD=$REDIS_PASSWORD
     ports:
       - "3500:3500"
     volumes:
-      - .:/home/node/app
-      - node_modules:/home/node/app/node_modules
+      - ./:/home/node/app
+      # - node_modules:/home/node/app/node_modules
     networks:
       - app-network
-    command: ./wait-for.sh db:27017 -- /home/node/app/node_modules/.bin/nodemon server
+    command: ./wait-for.sh mongodb:27017 -- /home/node/app/node_modules/.bin/nodemon server
 
-  db:
+  mongodb:
     image: mongo:6.0.4
-    container_name: db
+    container_name: mongodb
     restart: unless-stopped
     env_file: .env
     environment:
@@ -52,10 +62,12 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD
     ports:
       - "27018:27017"
-    volumes:  
-      - dbdata:/data/db   
+    volumes:
+      - dbdata:/data/mongodb
     networks:
       - app-network
+    depends_on:
+      - redis
 
 networks:
   app-network:
@@ -63,4 +75,4 @@ networks:
 
 volumes:
   dbdata:
-  node_modules:
+  cache:

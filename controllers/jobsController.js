@@ -3,10 +3,9 @@ const fs = require('fs')
 const path = require('path')
 const { v4: uuid } = require('uuid')
 const emoji = require('node-emoji')
-
+const Q = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
-const { clearScreenDown } = require('readline')
 
 const uploadFolder = path.join(__dirname, '../uploads')
 
@@ -128,7 +127,7 @@ const createNewJob = async (req, res) => {
 
     const json = JSON.stringify(files)
     const blurch = JSON.parse(json)
-    console.log(blurch)
+    //console.log(blurch)
     const string = '^pdb_'
     const regexp = new RegExp(string)
 
@@ -144,11 +143,10 @@ const createNewJob = async (req, res) => {
     }
 
     const addPdbResult = await newJob.save()
-
+    const bullMQResult = await Q.addThing({ title: 'hello', var: 'world' })
+    console.log(bullMQResult)
     res.status(200).json({ message: 'new BilboMD Job successfully created' })
   })
-
-  // maybe do DB insertion here?
 }
 
 // @desc Update existing job
@@ -171,7 +169,9 @@ const updateJobStatus = async (req, res) => {
 
   // Check current status
   if (job.status == status) {
-    return res.status(400).json({ message: `nothing to do - status already ${job.status}` })
+    return res
+      .status(400)
+      .json({ message: `nothing to do - status already ${job.status}` })
   }
 
   if (job.status == status) {
