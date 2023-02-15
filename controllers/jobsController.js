@@ -145,7 +145,9 @@ const createNewJob = async (req, res) => {
 
     const addPdbResult = await newJob.save()
 
-    res.status(200).json({ message: 'new BilboMD Job successfully created' })
+    res
+      .status(200)
+      .json({ message: 'new BilboMD Job successfully created', jobid: newJob.id })
   })
 
   // maybe do DB insertion here?
@@ -171,7 +173,9 @@ const updateJobStatus = async (req, res) => {
 
   // Check current status
   if (job.status == status) {
-    return res.status(400).json({ message: `nothing to do - status already ${job.status}` })
+    return res
+      .status(400)
+      .json({ message: `nothing to do - status already ${job.status}` })
   }
 
   if (job.status == status) {
