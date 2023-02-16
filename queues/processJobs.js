@@ -1,5 +1,6 @@
 const Job = require('../model/Job')
 const User = require('../model/User')
+const { sendJobCompleteEmail } = require('../config/nodemailerConfig')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const processBilboMDJobs = async (job) => {
@@ -17,6 +18,7 @@ const processBilboMDJobs = async (job) => {
   console.log(resultRunning)
 
   // Run Perl script
+  // sleep for a few seconds so I can see the status update in ui
   await sleep(10000)
 
   // Set job status to Completed
@@ -26,7 +28,9 @@ const processBilboMDJobs = async (job) => {
   console.log(resultCompleted)
 
   // send mail to user
-  console.log('send email to user')
+  const foundUser = await User.findById(foundJob.user).lean().exec()
+  console.log('send email to user', foundUser?.username)
+  sendJobCompleteEmail(foundUser?.email, process.env.BILBOMD_URL, foundJob.id)
 
   return
 }
