@@ -145,7 +145,9 @@ const createNewJob = async (req, res) => {
     const addPdbResult = await newJob.save()
     const bullMQResult = await Q.addThing({ title: 'hello', var: 'world' })
     console.log(bullMQResult)
-    res.status(200).json({ message: 'new BilboMD Job successfully created' })
+    res
+      .status(200)
+      .json({ message: 'new BilboMD Job successfully created', jobid: newJob.id })
   })
 }
 
