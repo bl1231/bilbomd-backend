@@ -15,7 +15,7 @@ Provides backend support for bilbomd-ui
 * [![ExpressJS][ExpressJS]][ExpressJS-url]
 * [![Docker][Docker]][Docker-url]
 * [![Redis][Redis]][Redis-url]
-* BullMQ
+* [BullMQ][BullMQ-url]
 
 
 
@@ -100,3 +100,4 @@ Inspiration, code snippets, etc.
 [Redis-url]: https://redis.io/
 [Docker]: https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com/
+[BullMQ-url]: https://docs.bullmq.io/
