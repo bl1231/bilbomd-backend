@@ -7,7 +7,7 @@ const jobQueue = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
 
-const uploadFolder = path.join(__dirname, '../uploads')
+const uploadFolder = path.join(process.env.DATA_VOL)
 
 const check = emoji.get('white_check_mark')
 
