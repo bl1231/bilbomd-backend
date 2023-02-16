@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const { v4: uuid } = require('uuid')
 const emoji = require('node-emoji')
-const Q = require('../queues/jobQueue')
+const jobQueue = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
 
@@ -27,7 +27,7 @@ const getAllJobs = async (req, res) => {
   const jobsWithUser = await Promise.all(
     jobs.map(async (job) => {
       const user = await User.findById(job.user).lean().exec()
-      console.log('getAllJobs: ', user)
+      // console.log('getAllJobs: ', user)
       return { ...job, username: user?.username }
     })
   )
@@ -142,9 +142,10 @@ const createNewJob = async (req, res) => {
       }
     }
 
-    const addPdbResult = await newJob.save()
-    const bullMQResult = await Q.addThing({ title: 'hello', var: 'world' })
-    console.log(bullMQResult)
+    await newJob.save()
+    // const bullMQResult = await jobQueue.queueJob({ uuid: newJob.uuid, jobid: newJob.id })
+    await jobQueue.queueJob({ title: newJob.title, uuid: newJob.uuid, jobid: newJob.id })
+    // console.log(bullMQResult)
     res
       .status(200)
       .json({ message: 'new BilboMD Job successfully created', jobid: newJob.id })

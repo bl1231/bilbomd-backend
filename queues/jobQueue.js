@@ -1,15 +1,15 @@
 const { Queue } = require('bullmq')
 
-const myQueue = new Queue('myQueue', {
+const bilbomdQueue = new Queue('bilbomd', {
   connection: {
     host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT
   }
 })
 
-const addThing = async (data) => {
-  await myQueue.add('jobname', data)
-  return 'yo'
+const queueJob = async (job) => {
+  await bilbomdQueue.add(job.title, job)
+  return
 }
 
-module.exports = { addThing }
+module.exports = { queueJob }
