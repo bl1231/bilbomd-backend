@@ -13,10 +13,14 @@ const cookieParser = require('cookie-parser')
 const credentials = require('./middleware/credentials')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
+const bullmqWorker = require('./config/bullmqWorker')
 const PORT = process.env.PORT || 3500
 
 // Connect to MongoDB
 connectDB()
+
+// Connect to BullMQ
+bullmqWorker()
 
 // custom middleware logger
 app.use(logger)
@@ -51,7 +55,7 @@ app.use('/magicklink', require('./routes/magicklink'))
 app.use('/auth', require('./routes/auth'))
 app.use('/jobs', require('./routes/api/jobs'))
 app.use('/users', require('./routes/api/users'))
-//app.use('/upload', require('./routes/upload'))
+app.use('/admin', require('./routes/admin'))
 
 app.all('*', (req, res) => {
   res.status(404)

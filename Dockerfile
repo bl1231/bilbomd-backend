@@ -7,6 +7,7 @@ WORKDIR /home/node/app
 COPY package*.json ./
 
 RUN npm install
+RUN npm i bullmq
 
 COPY --chown=node:node . .
 
