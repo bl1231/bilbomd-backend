@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
-const AutoIncrement = require('mongoose-sequence')(mongoose);
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose')
+const AutoIncrement = require('mongoose-sequence')(mongoose)
+const Schema = mongoose.Schema
 
 const pdbSchema = new Schema({
   name: { type: String, required: true },
   size: { type: Number }
-});
+})
 
 const jobSchema = new Schema(
   {
@@ -19,8 +19,8 @@ const jobSchema = new Schema(
     pdbs: [pdbSchema],
     conformational_sampling: {
       type: Number,
-      enum: [200, 400, 600, 800],
-      default: 200
+      enum: [1, 2, 3, 4],
+      default: 1
     },
     rg_min: { type: Number, required: true, minimum: 10, maximum: 100 },
     rg_max: { type: Number, required: true, minimum: 10, maximum: 100 },
@@ -41,12 +41,12 @@ const jobSchema = new Schema(
   {
     timestamps: true
   }
-);
+)
 
 jobSchema.plugin(AutoIncrement, {
   inc_field: 'ticket',
   id: 'ticketNums',
   start_seq: 1
-});
+})
 
-module.exports = mongoose.model('Job', jobSchema);
+module.exports = mongoose.model('Job', jobSchema)

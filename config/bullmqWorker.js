@@ -1,5 +1,5 @@
 const { Worker } = require('bullmq')
-const processBilboMDJobs = require('../queues/processJobs')
+const { processBilboMDJob } = require('../queues/processJobs')
 
 const { REDIS_HOST, REDIS_PORT } = process.env
 
@@ -12,7 +12,7 @@ const workerOptions = {
 
 const workerHandler = async (job) => {
   console.log('Starting job', job.data.uuid)
-  await processBilboMDJobs.processBilboMDJobs(job.data)
+  await processBilboMDJob(job.data)
   console.log('Finished job', job.data.uuid)
   return
 }
