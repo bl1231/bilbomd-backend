@@ -10,12 +10,14 @@ Provides backend support for bilbomd-ui
 
 ### Dependencies
 
-node.js
-express
-mongodb
-redis
-bullmq
-docker
+* [![NodeJS][NodeJS]][NodeJS-url]
+* [![MongoDB][MongoDB]][MongoDB-url]
+* [![ExpressJS][ExpressJS]][ExpressJS-url]
+* [![Docker][Docker]][Docker-url]
+* [![Redis][Redis]][Redis-url]
+* BullMQ
+
+
 
 
 ### Installing
@@ -81,3 +83,20 @@ Inspiration, code snippets, etc.
 * [Dave Gray's MERN Stack Tutorial](https://youtube.com/playlist?list=PL0Zuz27SZ-6P4dQUsoDatjEGpmBpcOW8V)
 * [Dave Gray's React Tutorial](https://youtube.com/playlist?list=PL0Zuz27SZ-6PrE9srvEn8nbhOOyxnWXfp)
 * [bull-board](https://github.com/felixmosh/bull-board)
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
+[React-url]: https://reactjs.org/
+[MongoDB]: https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white
+[MongoDB-url]: https://www.mongodb.com/
+[NodeJS]: https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white
+[NodeJS-url]: https://nodejs.org/
+[ExpressJS]: https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB
+[ExpressJS-url]: https://expressjs.com/
+[Redis]: https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white
+[Redis-url]: https://redis.io/
+[Docker]: https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white
+[Docker-url]: https://www.docker.com/
