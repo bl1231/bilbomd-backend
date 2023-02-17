@@ -2,9 +2,11 @@ const Job = require('../model/Job')
 const User = require('../model/User')
 const { sendJobCompleteEmail } = require('../config/nodemailerConfig')
 const path = require('path')
-const { spawn } = require('node:child_process')
+const { spawn, exec } = require('node:child_process')
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+const bilbomd = path.join(__basedir, 'scripts/bilbomd2.pl')
 
 const processBilboMDJob = async (job) => {
   // Make sure job exists in DB
@@ -56,6 +58,15 @@ const processBilboMDJob = async (job) => {
   //params.push(foundJob.rg_max)
 
   console.log(params)
+
+  exec(bilbomd, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`)
+      return
+    }
+    console.log(`stdout: ${stdout}`)
+    console.error(`stderr: ${stderr}`)
+  })
 
   await sleep(10000)
 
