@@ -2,7 +2,8 @@
 use Cwd;
 use Scalar::Util qw(looks_like_number);
 use Sys::Hostname;
-use MIME::Lite;
+
+# use MIME::Lite;
 
 print " ********************************************************* \n";
 print " ****************** BILBOMD version 2.0 ****************** \n";
