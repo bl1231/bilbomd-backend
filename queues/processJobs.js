@@ -28,23 +28,10 @@ const processBilboMDJob = async (job) => {
   foundJob.time_started = Date()
   const resultRunning = await foundJob.save()
   console.log('job status set to - Running')
-  //console.log(resultRunning)
 
   // Run Perl script
-  // sleep for a few seconds so I can see the status update in ui
-  const jobDir = path.join(process.env.DATA_VOL, foundJob.uuid)
 
-  // &setup;
-  // &clean_segment;
-  // &input_for_dynamics_and_foxs;
-  // &minimization;
-  // &heating;
-  // &dynamics;
-  // &foxs_from_new_dcd;
-  // &multifoxs;
-  // &MES_conformers_analysis_dcd2gapdb;
-  // &bilbomd_done;
-  // &cleaning;
+  const jobDir = path.join(process.env.DATA_VOL, foundJob.uuid)
 
   const params = []
   params.push(foundJob.title.replace(/ /g, '_'))
@@ -59,7 +46,57 @@ const processBilboMDJob = async (job) => {
 
   console.log(params)
 
-  exec(bilbomd, (error, stdout, stderr) => {
+  // setup
+  // validates variables
+  // checks for runtime dependences
+
+  // input_for_dynamics_and_foxs
+  // clean/reformat experimental *.dat file
+  // checks Rg_min and Rg_max
+  // sets: $Rgstep = (Rg_mx - Rg_min) / 5
+  // sets: $step = 0.001
+  // sets a bunch of rando variables
+
+  // minimization
+  // creates: minimize.inp
+  // requires: TOPOLOGY, PSF, and CRD
+  // runs: charmm < minimize.inp > minimize.out
+  // outputs: $file_min.crd
+  // outputs: $file_min.psf
+
+  // heating
+  // creates: heat.inp
+  // requires: TOPOLOGY, PSF, and $file_min.crd
+  // STREAM const.inp
+  // runs: charmm < heat.inp > heat.out
+  // outputs: $file_heat.rst
+  // outputs: $file_heat.crd
+  // outputs: $file_heat.psf
+
+  // dynamics
+  // creates ##  *.dyna##.inp files spaced $Rgstep apart
+  // requires: TOPOLOGY and PSF
+  // requires: $file_heat.crd
+  // requires: $file_heat.rst
+  // STREAM const.inp
+  //
+  // runs all ## jobs: charmm < $file.dyna$y.inp > $file.dyna$y.out
+  // output: *.start
+  // output: *.rst
+  // output: *.dcd
+  // output: *.end
+
+  // foxs_from_new_dcd
+
+  // multifoxs
+
+  // extracting_pdbs
+
+  // bilbomd_done
+
+  // cleaning
+
+  exec(`${bilbomd} ${foundJob.title.replace(/ /g, '_')}`, (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`)
       return

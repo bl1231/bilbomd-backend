@@ -1,13 +1,10 @@
 #!/usr/bin/perl 
 use Cwd;
 use Scalar::Util qw(looks_like_number);
-use Sys::Hostname;
-
-# use MIME::Lite;
 
 print " ********************************************************* \n";
-print " ****************** BILBOMD version 2.0 ****************** \n";
-print " ********************** 6/08/2016 ************************ \n";
+print " ****************** BILBOMD version 3.0 ****************** \n";
+print " ********************** 6/08/2023 ************************ \n";
 print " ********************************************************* \n";
 print " ******************** by Michal Hammel ******************* \n";
 print " ********************************************************* \n";
@@ -52,15 +49,12 @@ unless ( -e $dir . '/' . $file . $StartNumrg . '_1.dcd' ) {
 #######################################################
 
 sub setup {
+    $Charmmdir = "/usr/local/bin/charmm";
+    $Toppardir = "/home/node/app/scripts/topparmichal.str";
+    $multifoxs = "/usr/local/bin/multi_foxs ";
+    $foxs      = "/usr/local/bin/foxs ";
+    $const     = "const.inp";
 
-    ##################change me##################
-    $Charmmdir = "/usr/local/bin/charmm";    # CHARMM executable command
-    $Toppardir = "topparmichal.str";         # CHARMM tompology  files
-    $multifoxs = "/usr/bin/multi_foxs ";     #multifoxs
-    $foxs      = "/usr/bin/foxs ";           # foxs
-    $claros    = "claros";                   #hostname
-    $const     = "const.inp";                # need constrain file
-    #############################################
     #
     # get total arg passed to this script
     my $total   = $#ARGV + 1;
@@ -114,19 +108,9 @@ sub setup {
     # check for and remove trailing slash from $dir
     $cmd1 = "mkdir -p $dir/fit/";
     system $cmd1;
-    $email    = $ARGV[5];
-    $hostname = hostname;
-    if ( $hostname !~ /$claros/ ) {
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-        print " Please LOG IN TO THE CALROS and start aggain  {ssh claros}\n";
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-        &cleaning;
-    }
 
     print "Done. \n";
-    print "</code> \n";
 
-    print " <code class=\"gold\"> \n";
     print " ********************************************************* \n";
     print " ********************* clean_segments ******************** \n";
     print " ********************************************************* \n";
@@ -168,7 +152,6 @@ sub setup {
 
 ############################## input for DYNAMICS  and FOXS set up making define.inp ########################################
 sub input_for_dynamics_and_foxs {
-    print " <code class=\"gold\"> \n";
     print " ********************************************************* \n";
     print " ************* input_for_dynamics_and_fox **************** \n";
     print " ********************************************************* \n";
@@ -226,30 +209,32 @@ sub input_for_dynamics_and_foxs {
     print "Conformational Sampling =  $run \n";
 
     # Rg min #########################################
-    $StartNumrg = $ARGV[3];
+    # $StartNumrg = $ARGV[3];
 
-    if ($StartNumrg) {
-        unless ( $StartNumrg !~ /\D/
-            && $StartNumrg =~ /^[1-9]/
-            && $StartNumrg < 100 )
-        {
-            print "Rg min  need to be in the range 10 - 100 \n";
-            &cleaning;
-        }
-    }
-    print " Rg min = $StartNumrg \n";
+    # if ($StartNumrg) {
+    #     unless ( $StartNumrg !~ /\D/
+    #         && $StartNumrg =~ /^[1-9]/
+    #         && $StartNumrg < 100 )
+    #     {
+    #         print "Rg min  need to be in the range 10 - 100 \n";
+    #         &cleaning;
+    #     }
+    # }
+    # print " Rg min = $StartNumrg \n";
 
     # Rg max #########################################
-    $EndNumrg = $ARGV[4];
+    # $EndNumrg = $ARGV[4];
 
-    if ($EndNumrg) {
-        unless ( $EndNumrg !~ /\D/ && $EndNumrg =~ /^[1-9]/ && $EndNumrg < 200 )
-        {
-            print "Rg max  need to be in the range 10 - 100 \n";
-            &cleaning;
-        }
-    }
-    print " Rg max = $EndNumrg \n";
+  # if ($EndNumrg) {
+  #     unless ( $EndNumrg !~ /\D/ && $EndNumrg =~ /^[1-9]/ && $EndNumrg < 200 )
+  #     {
+  #         print "Rg max  need to be in the range 10 - 100 \n";
+  #         &cleaning;
+  #     }
+  # }
+  # print " Rg max = $EndNumrg \n";
+
+    # flips Rgmin and max is they were entered wrong?
     if ( $EndNumrg < $StartNumrg ) {
         $tmp        = $StartNumrg;
         $StartNumrg = $EndNumrg;
@@ -280,13 +265,11 @@ sub input_for_dynamics_and_foxs {
     $pdbdat    = ".pdb.dat";
 
     print "Done. \n";
-    print "</code> \n";
 
 }
 
 ################################# starting minimized  #####################################
 sub minimization {
-    print " <code class=\"gold\"> \n";
     print " ********************************************************* \n";
     print " ******************** minimization *********************** \n";
     print " ********************************************************* \n";
@@ -295,44 +278,44 @@ sub minimization {
 
     open( MINIMIZEINP, "> $dir/minimize.inp" );
     print MINIMIZEINP "* minimize
-* Energy minimization
-* Michal Hammel
-*
+      * Energy minimization
+      * Michal Hammel
+      *
 
-		bomlev -2
+      bomlev -2
 
-		! Read Topology-Files
-		STREAM $Toppardir
-	
-		open read  unit 12 card name $psf
-		read psf card unit 12
-		close unit 12
+      ! Read Topology-Files
+      STREAM $Toppardir
 
-		open read  unit 12 card name $crd
-		read coor card unit 12
-		close unit 12
+      open read  unit 12 card name $psf
+      read psf card unit 12
+      close unit 12
 
-		coor stat
-		coor copy comp
-		energy atom vatom cutnb 14.0 ctofnb 12. cdie eps 80. -
-      		 ctonnb 11. vfswitch switch
+      open read  unit 12 card name $crd
+      read coor card unit 12
+      close unit 12
 
-		!stream const.inp
+      coor stat
+      coor copy comp
+      energy atom vatom cutnb 14.0 ctofnb 12. cdie eps 80. -
+              ctonnb 11. vfswitch switch
 
-		mini sd nstep 500 nprint 50     ! nstep needs to be 500
-		mini abnr nstep 500 nprint 50 tolgrd 0.0001  ! 500 needs to be
-		coor stat
-		coor orie  rms mass sele .not. type H* end
-		coor orie  rms mass sele type H* end
-		open write card unit 23 name $file_min.crd
-		write coor card unit 23
-		*
-		close unit 23
-		open write unit 24 card name $file_min.pdb
-		write coor pdb unit 24
+      !stream const.inp
 
-		stop
-		";
+      mini sd nstep 500 nprint 50     ! nstep needs to be 500
+      mini abnr nstep 500 nprint 50 tolgrd 0.0001  ! 500 needs to be
+      coor stat
+      coor orie  rms mass sele .not. type H* end
+      coor orie  rms mass sele type H* end
+      open write card unit 23 name $file_min.crd
+      write coor card unit 23
+      *
+      close unit 23
+      open write unit 24 card name $file_min.pdb
+      write coor pdb unit 24
+
+      stop
+      ";
 
     close(MINIMIZEINP);
 
@@ -354,7 +337,6 @@ sub minimization {
 
 ################################# startting heating  #####################################
 sub heating {
-    print " <code class=\"gold\"> \n";
     print " ********************************************************* \n";
     print " *********************** heating ************************* \n";
     print " ********************************************************* \n";
@@ -363,42 +345,42 @@ sub heating {
 
     open( HEATINP, "> $dir/heat.inp" );
     print HEATINP "* heat
-* linker heat 
-* Michal Hammel
-*
+      * linker heat 
+      * Michal Hammel
+      *
 
-		bomlev -2
+        bomlev -2
 
-		! Read Topology-Files
-		STREAM $Toppardir
-	
-		open read  unit 12 card name $psf
-		read psf card unit 12
-		close unit 12
+        ! Read Topology-Files
+        STREAM $Toppardir
 
-		open read  unit 12 card name $file_min.crd
-		read coor card unit 12
-		close unit 12
+        open read  unit 12 card name $psf
+        read psf card unit 12
+        close unit 12
 
-		NBONDS    bygr  noelec cdie e14fac 0.0 eps 0.0 vdw  vswitch CUTNB 8.0 -
-		inbfrq 100 wmin 1.0
+        open read  unit 12 card name $file_min.crd
+        read coor card unit 12
+        close unit 12
 
-		open write unit 1 card name $file_heat.rst
-		STREAM  $const
-		dyna verlet start nstep 15000 timestep 0.001 eche 50.0 -
-		    iprfrq 500 ihtfrq 100 teminc 10.0  -
-  		    nprint 500 iunwri 1 iunrea -1 iuncrd -1  nsavc 0  -
-		    firstt 0.0 finalt 1500.0 -
-		    iasors 1 iasvel 1 iscvel 0 ichecw 0
+        NBONDS    bygr  noelec cdie e14fac 0.0 eps 0.0 vdw  vswitch CUTNB 8.0 -
+        inbfrq 100 wmin 1.0
 
-		open write unit 1 card name $file_heat.crd
-		write coor card unit 1
+        open write unit 1 card name $file_heat.rst
+        STREAM  $const
+        dyna verlet start nstep 15000 timestep 0.001 eche 50.0 -
+            iprfrq 500 ihtfrq 100 teminc 10.0  -
+              nprint 500 iunwri 1 iunrea -1 iuncrd -1  nsavc 0  -
+            firstt 0.0 finalt 1500.0 -
+            iasors 1 iasvel 1 iscvel 0 ichecw 0
 
-		open write unit 1 card name $file_heat.pdb
-		write coor pdb unit 1
+        open write unit 1 card name $file_heat.crd
+        write coor card unit 1
 
-		stop
-		";
+        open write unit 1 card name $file_heat.pdb
+        write coor pdb unit 1
+
+        stop
+        ";
 
     close(HEATINP);
 
@@ -414,12 +396,11 @@ sub heating {
     print "Heating is complete and the $file" . "_heat.pdb was written.\n";
 
     print "Done. \n";
-    print "</code> \n";
+
 }
 
 ################################# starting dynamics  #####################################
 sub dynamics {
-    print " <code class=\"gold\"> \n";
     print " ********************************************************* \n";
     print " ********************** dynamics ************************* \n";
     print " ********************************************************* \n";
@@ -434,60 +415,60 @@ sub dynamics {
     for ( $y = $StartNumrg ; $y <= $EndNumrg ; $y = $y + $Rgstep ) {
         open( DYNAINP, "> $dir/$file.dyna$y.inp" );
         print DYNAINP "*  dynamics by  1500K  with the rigid bodies in blocks
-* Michal Hammel
-*
+          * Michal Hammel
+          *
 
 
-			bomlev -4
+              bomlev -4
 
-			! Read Topology-Files
-			STREAM $Toppardir
-	
-			open read  unit 12 card name $psf
-			read psf card unit 12
-			close unit 12
+              ! Read Topology-Files
+              STREAM $Toppardir
 
-			open read  unit 12 card name  $file_heat.crd
-			read coor card unit 12
-			close unit 12
+              open read  unit 12 card name $psf
+              read psf card unit 12
+              close unit 12
 
-			DEFINE ACTIVE sele type CA  end
-			NBACtive SELE ACTIVE  end
+              open read  unit 12 card name  $file_heat.crd
+              read coor card unit 12
+              close unit 12
 
-			NBONDS    bygr  noelec cdie e14fac 0.000 eps 0.0 vdw  vswitch CUTNB 8.0 -
-			inbfrq 100 wmin 1.0
-			open read unit 30 card name $file_heat.rst
+              DEFINE ACTIVE sele type CA  end
+              NBACtive SELE ACTIVE  end
 
-			STREAM  $const
-			RGYRestrain Force 20 Reference $y  select ALL   end
-			
+              NBONDS    bygr  noelec cdie e14fac 0.000 eps 0.0 vdw  vswitch CUTNB 8.0 -
+              inbfrq 100 wmin 1.0
+              open read unit 30 card name $file_heat.rst
+
+              STREAM  $const
+              RGYRestrain Force 20 Reference $y  select ALL   end
+              
 
 
-			set ii $startrun
-			label loop
-			open write unit 34  file name $file$y$ii.start
-			close unit 34
+              set ii $startrun
+              label loop
+              open write unit 34  file name $file$y$ii.start
+              close unit 34
 
-			open write unit 31 card name $file$y$_ii.rst
-			open write unit 32 file name $file$y$_ii.dcd
- 
-			dyna verlet restart nstep 100000 timestep $step -
-			    iprfrq 1000 ihtfrq 0 ieqfrq 100 -
- 			    iuncrd 32 iunwri 31 iunrea 30 -
-			    nprint 1000 nsavc 500 -
-			    firstt 1500.0 finalt 1500.0 tstruc 1500.0 -
-			    iasors 0 iasvel 1 iscvel 0 ichecw 1 TWINDH 100.0 TWINDL 500.0 -
-			    echeck 1.0E+30
+              open write unit 31 card name $file$y$_ii.rst
+              open write unit 32 file name $file$y$_ii.dcd
 
-			close unit 31
-			close unit 32
-			open read unit 30 card name $file$y$_ii.rst
-			open write unit 35  file name $file$y$ii.end
-			close unit 35
-			incr ii by 1
-			if ii lt $run.5 goto loop
-			stop
-			";
+              dyna verlet restart nstep 100000 timestep $step -
+                  iprfrq 1000 ihtfrq 0 ieqfrq 100 -
+                  iuncrd 32 iunwri 31 iunrea 30 -
+                  nprint 1000 nsavc 500 -
+                  firstt 1500.0 finalt 1500.0 tstruc 1500.0 -
+                  iasors 0 iasvel 1 iscvel 0 ichecw 1 TWINDH 100.0 TWINDL 500.0 -
+                  echeck 1.0E+30
+
+              close unit 31
+              close unit 32
+              open read unit 30 card name $file$y$_ii.rst
+              open write unit 35  file name $file$y$ii.end
+              close unit 35
+              incr ii by 1
+              if ii lt $run.5 goto loop
+              stop
+              ";
         close(DYNAINP);
 
         $cmd1 = "cd $dir";
@@ -499,12 +480,11 @@ sub dynamics {
     }
 
     print "Done. \n";
-    print "</code> \n";
+
 }
 
 ###################################### FoXS  from new DCD files #####################################
 sub foxs_from_new_dcd {
-    print " <code class=\"gold\"> \n";
     print " ********************************************************* \n";
     print " ***************** foxs_from_new_dcd ********************* \n";
     print " ********************************************************* \n";
@@ -550,59 +530,58 @@ sub foxs_from_new_dcd {
 
                     open( DCD2PDB, "> $dir/$file$RG$r.inp" );
                     print DCD2PDB "*DCD2PDB
-*PURPOSE:  Convert cor trajectory to pdb format
-*AUTHOR:   Michal Hammel
-*
-						bomlev -2
-						! Read Topology-Files
-						STREAM $Toppardir
-	
-						open read  unit 12 card name $psf
-						read psf card unit 12
-						close unit 12
+                      *PURPOSE:  Convert cor trajectory to pdb format
+                      *AUTHOR:   Michal Hammel
+                      *
+                        bomlev -2
+                        ! Read Topology-Files
+                        STREAM $Toppardir
 
-						open read formatted unit 27 name $file_heat.pdb
-						read coor pdb unit 27
-						
+                        open read  unit 12 card name $psf
+                        read psf card unit 12
+                        close unit 12
 
-						set  nframe = 0						
-						open unit 50 read unform name $dcd2
-						 trajectory query unit 50
-						calc nframe  = $atnframe + ?nfile
-						calc begin = ?start
-						calc step = ?skip
-						calc stop = ?start + ?nstep - ?skip
+                        open read formatted unit 27 name $file_heat.pdb
+                        read coor pdb unit 27
 
-						traj iread 50 nrea 1 begin $atbegin  stop $atstop  skip $atstep
-				
+                        set  nframe = 0
+                        open unit 50 read unform name $dcd2
+                          trajectory query unit 50
+                        calc nframe  = $atnframe + ?nfile
+                        calc begin = ?start
+                        calc step = ?skip
+                        calc stop = ?start + ?nstep - ?skip
 
-				                set tr $atbegin
-                                		LABEL ILP
-		                                traj read
-       			                        write  coor pdb name fit/$file$RG$under$r$under$at$tr.pdb
-               			                define heavy sele type CA  end
-  		                                coor rgyr
-               			                COOR MAXD  SELE heavy  END SELE heavy  END
-                		                open write unit 1 card name $file.foxs_rg.out append
-                          	        	write title unit 1
-                        		        *$file$RG$under$r$under$at$tr ?rgyr ?maxd
-      			                        *
+                        traj iread 50 nrea 1 begin $atbegin  stop $atstop  skip $atstep
 
-   		                                close unit 1 
 
-               					SYSTEM  \" $foxs -p \$PWD/fit/$file$RG$under$r$under$p$at$tr$p.pdb \"
- 	       		                       ! SYSTEM  \" rm \$PWD/$file$RG$under$r$under$p$at$tr$p.pdb \"
-       		        	               ! SYSTEM  \" rm \$PWD/$file$RG$under$r$under$p$at$tr$p$pdbdat \"
-						! SYSTEM  \" rm \$PWD/*.plt \"
-	                                        ! SYSTEM  \" \$PWD/chi.pl $file$RG$under$r$under$p$at$tr$p$underdat \" 
-       						
-      		                  	       
-						incr tr by $atstep
-                                                if tr .le. $atstop  goto ILP
-						open write unit 34  file name $file$RG$r.end2
-						close unit 34
-                            	  		stop
-                              			";
+                                    set tr $atbegin
+                                                LABEL ILP
+                                                traj read
+                                                write  coor pdb name fit/$file$RG$under$r$under$at$tr.pdb
+                                                define heavy sele type CA  end
+                                                  coor rgyr
+                                                COOR MAXD  SELE heavy  END SELE heavy  END
+                                                open write unit 1 card name $file.foxs_rg.out append
+                                                  write title unit 1
+                                                *$file$RG$under$r$under$at$tr ?rgyr ?maxd
+                                                *
+
+                                                  close unit 1 
+
+                                    SYSTEM  \" $foxs -p \$PWD/fit/$file$RG$under$r$under$p$at$tr$p.pdb \"
+                                                ! SYSTEM  \" rm \$PWD/$file$RG$under$r$under$p$at$tr$p.pdb \"
+                                                ! SYSTEM  \" rm \$PWD/$file$RG$under$r$under$p$at$tr$p$pdbdat \"
+                        ! SYSTEM  \" rm \$PWD/*.plt \"
+                                                      ! SYSTEM  \" \$PWD/chi.pl $file$RG$under$r$under$p$at$tr$p$underdat \" 
+                              
+                                                  
+                        incr tr by $atstep
+                                                            if tr .le. $atstop  goto ILP
+                        open write unit 34  file name $file$RG$r.end2
+                        close unit 34
+                                                stop
+                                                ";
                     close(DCD2PDB);
 
                     $cmd = "cd $dir; $Charmmdir < $file$RG$r.inp &";
@@ -628,7 +607,7 @@ sub foxs_from_new_dcd {
     }
 
     print "Done.\n";
-    print "</code> \n";
+
 }
 
 ###########################  MULTIFOXS  ###############################################
@@ -653,7 +632,6 @@ sub multifoxs {
 
 ################################ extracting PDBS #################################i
 sub extracting_pdbs {
-    print " <code class=\"gold\"> \n";
     print " ********************************************************* \n";
     print " **************** extracting PDBS  **************** \n";
     print " ********************************************************* \n";
@@ -702,18 +680,18 @@ sub bilbomd_done {
     print " ********************************************************* \n";
     $cmd = "rm -f  $dir/fit/*.pdb ";
     system $cmd;
-    $cmd =
-"rm -f  $dir/*.end* $dir/*.start $dir/*0.inp $dir/*1.inp $dir/*2.inp $dir/*3.inp $dir/*4.inp $dir/*5.inp $dir/*6.inp $dir/*7.inp $dir/*8.inp $dir/*9.inp ";
+    $cmd = "rm -f  $dir/*.end* $dir/*.start $dir/*0.inp $dir/*1.inp $dir/*2.inp
+            $dir/*3.inp $dir/*4.inp $dir/*5.inp $dir/*6.inp $dir/*7.inp $dir/*8.inp $dir/*9.inp ";
     system $cmd;
-    $cmd =
-"rm -f  $dir/*1.out $dir/*2.out $dir/*3.out $dir/*4.out $dir/*5.out $dir/*6.out $dir/*7.out $dir/*8.out $dir/*9.out  ";
+    $cmd = "rm -f  $dir/*1.out $dir/*2.out $dir/*3.out $dir/*4.out $dir/*5.out
+            $dir/*6.out $dir/*7.out $dir/*8.out $dir/*9.out  ";
     system $cmd;
 
     # zipping results
     #print "zipping results... \n";
 
-    $cmd =
-" cd $dir; zip $file.zip $dat cluster_representatives.txt  multi_state_model* ensembles_size*  const.inp *.pdb ";
+    $cmd = " cd $dir; zip $file.zip $dat cluster_representatives.txt
+             multi_state_model* ensembles_size*  const.inp *.pdb ";
     system $cmd;
 
     $from    = $email;
