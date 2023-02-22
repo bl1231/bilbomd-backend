@@ -1,6 +1,11 @@
 const Job = require('../model/Job')
 const User = require('../model/User')
 const { sendJobCompleteEmail } = require('../config/nodemailerConfig')
+const {
+  generateMinimizeInp,
+  generateHeatInp,
+  generateDynamicsInpFiles
+} = require('../controllers/bilbomdController')
 const path = require('path')
 const { spawn, exec } = require('node:child_process')
 
@@ -44,7 +49,7 @@ const processBilboMDJob = async (job) => {
   params.push(foundJob.rg_max)
   //params.push(foundJob.rg_max)
 
-  console.log(params)
+  console.log(foundJob)
 
   // setup
   // validates variables
@@ -63,6 +68,15 @@ const processBilboMDJob = async (job) => {
   // runs: charmm < minimize.inp > minimize.out
   // outputs: $file_min.crd
   // outputs: $file_min.psf
+  const minimizationData = {
+    out_dir: jobDir,
+    topology_dir: process.env.BILBOMD_TOPPARDIR,
+    psf: 'input.psf',
+    crd: 'input.crd',
+    out_min_crd: 'minimization_output.crd',
+    out_min_pdb: 'minimization_output.pdb'
+  }
+  await generateMinimizeInp('minimize.inp', minimizationData)
 
   // heating
   // creates: heat.inp
@@ -71,7 +85,17 @@ const processBilboMDJob = async (job) => {
   // runs: charmm < heat.inp > heat.out
   // outputs: $file_heat.rst
   // outputs: $file_heat.crd
-  // outputs: $file_heat.psf
+  // outputs: $file_heat.pdb
+  const heatData = {
+    out_dir: jobDir,
+    topology_dir: process.env.BILBOMD_TOPPARDIR,
+    in_psf: 'input.psf',
+    in_crd: 'minimization_output.crd',
+    out_heat_rst: 'heat_output.rst',
+    out_heat_crd: 'heat_output.crd',
+    out_heat_pdb: 'heat_output.pdb'
+  }
+  await generateHeatInp('heat.inp', heatData)
 
   // dynamics
   // creates ##  *.dyna##.inp files spaced $Rgstep apart
@@ -85,6 +109,13 @@ const processBilboMDJob = async (job) => {
   // output: *.rst
   // output: *.dcd
   // output: *.end
+  const dynamicsData = {
+    out_dir: jobDir,
+    topology_dir: process.env.BILBOMD_TOPPARDIR,
+    rg_min: foundJob.rg_min,
+    rg_max: foundJob.rg_max
+  }
+  await generateDynamicsInpFiles('basefn', dynamicsData)
 
   // foxs_from_new_dcd
 
@@ -96,14 +127,14 @@ const processBilboMDJob = async (job) => {
 
   // cleaning
 
-  exec(`${bilbomd} ${foundJob.title.replace(/ /g, '_')}`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`)
-      return
-    }
-    console.log(`stdout: ${stdout}`)
-    console.error(`stderr: ${stderr}`)
-  })
+  // exec(`${bilbomd} ${foundJob.title.replace(/ /g, '_')}`, (error, stdout, stderr) => {
+  //   if (error) {
+  //     console.error(`exec error: ${error}`)
+  //     return
+  //   }
+  //   console.log(`stdout: ${stdout}`)
+  //   console.error(`stderr: ${stderr}`)
+  // })
 
   await sleep(10000)
 

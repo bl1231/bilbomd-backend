@@ -667,13 +667,12 @@ sub extracting_pdbs {
     $cmd = "cp $dir/fit/ensembles_size_* $dir/.";
     system $cmd;
     print "Done. \n";
-    print "</code> \n";
 }
 
 #################################sending emails and finishing ####################
 
 sub bilbomd_done {
-    print " <code class=\"gold\"> \n";
+
     print " ********************************************************* \n";
     print " ********************** BILBOMD DONE ********************* \n";
     print " ********************************************************* \n";
