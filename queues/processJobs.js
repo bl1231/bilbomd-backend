@@ -2,16 +2,20 @@ const Job = require('../model/Job')
 const User = require('../model/User')
 const { sendJobCompleteEmail } = require('../config/nodemailerConfig')
 const {
-  generateMinimizeInp,
-  generateHeatInp,
-  generateDynamicsInpFiles
+  generateInputFile,
+  generateDynamicsInpFiles,
+  runCHARMM,
+  countDownTimer
 } = require('../controllers/bilbomdController')
 const path = require('path')
 const { spawn, exec } = require('node:child_process')
+const emoji = require('node-emoji')
+// emoji.get('rocket')
+// emoji.get('white_check_mark')
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-const bilbomd = path.join(__basedir, 'scripts/bilbomd2.pl')
+//const bilbomd = path.join(__basedir, 'scripts/bilbomd2.pl')
 
 const processBilboMDJob = async (job) => {
   // Make sure job exists in DB
@@ -20,6 +24,7 @@ const processBilboMDJob = async (job) => {
     console.log('no job found', job.jobid)
     return 'no job found'
   }
+  //console.log(foundJob)
 
   // Make sure the user exists
   const foundUser = await User.findById(foundJob.user).lean().exec()
@@ -32,24 +37,11 @@ const processBilboMDJob = async (job) => {
   foundJob.status = 'Running'
   foundJob.time_started = Date()
   const resultRunning = await foundJob.save()
-  console.log('job status set to - Running')
+  console.log(`Job status set to: ${resultRunning.status}`)
 
-  // Run Perl script
+  // BilboMD Magic Here
 
   const jobDir = path.join(process.env.DATA_VOL, foundJob.uuid)
-
-  const params = []
-  params.push(foundJob.title.replace(/ /g, '_'))
-  params.push(jobDir)
-  params.push(foundUser.email)
-  params.push(foundJob.data_file)
-  params.push(0.5) //maxQ
-  params.push(foundJob.conformational_sampling)
-  params.push(foundJob.rg_min)
-  params.push(foundJob.rg_max)
-  //params.push(foundJob.rg_max)
-
-  console.log(foundJob)
 
   // setup
   // validates variables
@@ -70,13 +62,18 @@ const processBilboMDJob = async (job) => {
   // outputs: $file_min.psf
   const minimizationData = {
     out_dir: jobDir,
+    template: 'minimize',
     topology_dir: process.env.BILBOMD_TOPPARDIR,
-    psf: 'input.psf',
-    crd: 'input.crd',
+    in_psf: 'input.psf',
+    in_crd: 'input.crd',
     out_min_crd: 'minimization_output.crd',
     out_min_pdb: 'minimization_output.pdb'
   }
-  await generateMinimizeInp('minimize.inp', minimizationData)
+
+  await generateInputFile(minimizationData)
+  //console.log(emoji.get('white_check_mark'), resultGenMinimize, 'written!')
+  //await charmmMinimize(minimizationData)
+  await countDownTimer(3)
 
   // heating
   // creates: heat.inp
@@ -88,6 +85,7 @@ const processBilboMDJob = async (job) => {
   // outputs: $file_heat.pdb
   const heatData = {
     out_dir: jobDir,
+    template: 'heat',
     topology_dir: process.env.BILBOMD_TOPPARDIR,
     in_psf: 'input.psf',
     in_crd: 'minimization_output.crd',
@@ -95,11 +93,13 @@ const processBilboMDJob = async (job) => {
     out_heat_crd: 'heat_output.crd',
     out_heat_pdb: 'heat_output.pdb'
   }
-  await generateHeatInp('heat.inp', heatData)
+  const resultGenHeat = await generateInputFile(heatData)
+  await countDownTimer(3)
 
   // dynamics
   // creates ##  *.dyna##.inp files spaced $Rgstep apart
-  // requires: TOPOLOGY and PSF
+  // requires: $Toppardir
+  // requires: PSF
   // requires: $file_heat.crd
   // requires: $file_heat.rst
   // STREAM const.inp
@@ -111,11 +111,17 @@ const processBilboMDJob = async (job) => {
   // output: *.end
   const dynamicsData = {
     out_dir: jobDir,
+    template: 'dynamics',
     topology_dir: process.env.BILBOMD_TOPPARDIR,
+    in_psf: 'input.psf',
+    in_crd: 'heat_output.crd',
+    in_rst: 'heat_output.rst',
     rg_min: foundJob.rg_min,
-    rg_max: foundJob.rg_max
+    rg_max: foundJob.rg_max,
+    timestep: 0.001
   }
-  await generateDynamicsInpFiles('basefn', dynamicsData)
+
+  await generateDynamicsInpFiles(dynamicsData)
 
   // foxs_from_new_dcd
 
@@ -136,14 +142,13 @@ const processBilboMDJob = async (job) => {
   //   console.error(`stderr: ${stderr}`)
   // })
 
-  await sleep(10000)
+  //await sleep(10000)
 
   // Set job status to Completed
   foundJob.status = 'Completed'
   foundJob.time_completed = Date()
   const resultCompleted = await foundJob.save()
-  console.log('job status set to - Completed')
-  //console.log(resultCompleted)
+  console.log(`Job status set to: ${resultCompleted.status}`)
 
   // send mail to user
 
