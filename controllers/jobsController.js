@@ -93,7 +93,7 @@ const createNewJob = async (req, res) => {
       console.log(check, 'upload done')
     })
 
-  // parse the form?
+  // parse the form
   form.parse(req, async (err, fields, files) => {
     // catch the errors
     if (err) {
@@ -127,27 +127,8 @@ const createNewJob = async (req, res) => {
       user: user
     })
 
-    const json = JSON.stringify(files)
-    const blurch = JSON.parse(json)
-    //console.log(blurch)
-    const string = '^pdb_'
-    const regexp = new RegExp(string)
-
-    for (var key in blurch) {
-      if (blurch.hasOwnProperty(key)) {
-        if (regexp.test(key)) {
-          //console.log('found:', blurch[key]);
-          newJob.pdbs.push({ name: blurch[key].originalFilename, size: blurch[key].size })
-        } else {
-          //console.log('got', blurch[key]);
-        }
-      }
-    }
-
     await newJob.save()
-    // const bullMQResult = await jobQueue.queueJob({ uuid: newJob.uuid, jobid: newJob.id })
     await jobQueue.queueJob({ title: newJob.title, uuid: newJob.uuid, jobid: newJob.id })
-    // console.log(bullMQResult)
     res
       .status(200)
       .json({ message: 'new BilboMD Job successfully created', jobid: newJob.id })
