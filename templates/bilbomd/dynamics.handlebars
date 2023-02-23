@@ -22,20 +22,20 @@ NBONDS bygr noelec cdie e14fac 0.000 eps 0.0 vdw vswitch CUTNB 8.0 -
 inbfrq 100 wmin 1.0
 open read unit 30 card name {{in_rst}}
 
-STREAM $const
-RGYRestrain Force 20 Reference $y select ALL end
+STREAM {{constinp}}
+RGYRestrain Force 20 Reference {{rg}} select ALL end
 
 
 
-set ii $startrun
+set ii 1
 label loop
-open write unit 34 file name $file$y$ii.start
+open write unit 34 file name {{inp_basename}}_@ii.start
 close unit 34
 
-open write unit 31 card name $file$y$_ii.rst
-open write unit 32 file name $file$y$_ii.dcd
+open write unit 31 card name {{inp_basename}}_@ii.rst
+open write unit 32 file name {{inp_basename}}_@ii.dcd
 
-dyna verlet restart nstep 100000 timestep $step -
+dyna verlet restart nstep 100000 timestep {{timestep}} -
 iprfrq 1000 ihtfrq 0 ieqfrq 100 -
 iuncrd 32 iunwri 31 iunrea 30 -
 nprint 1000 nsavc 500 -
@@ -45,9 +45,9 @@ echeck 1.0E+30
 
 close unit 31
 close unit 32
-open read unit 30 card name $file$y$_ii.rst
-open write unit 35 file name $file$y$ii.end
+open read unit 30 card name {{inp_basename}}_@ii.rst
+open write unit 35 file name {{inp_basename}}_@ii.end
 close unit 35
 incr ii by 1
-if ii lt $run.5 goto loop
+if ii lt {{conf_sample}}.5 goto loop
 stop

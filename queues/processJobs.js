@@ -5,6 +5,7 @@ const {
   generateInputFile,
   generateDynamicsInpFiles,
   runCHARMM,
+  runMD,
   countDownTimer
 } = require('../controllers/bilbomdController')
 const path = require('path')
@@ -12,16 +13,24 @@ const { spawn, exec } = require('node:child_process')
 const emoji = require('node-emoji')
 // emoji.get('rocket')
 // emoji.get('white_check_mark')
+const check = emoji.get('white_check_mark')
+const rocket = emoji.get('rocket')
+const skull = emoji.get('skull_and_crossbones')
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-//const bilbomd = path.join(__basedir, 'scripts/bilbomd2.pl')
+const topoFiles = process.env.CHARM_TOPOLOGY
+
+const bilbomdMinimize = async () => {
+  //
+}
 
 const processBilboMDJob = async (job) => {
+  // console.log('job:', job)
   // Make sure job exists in DB
   const foundJob = await Job.findOne({ _id: job.jobid }).exec()
   if (!foundJob) {
-    console.log('no job found', job.jobid)
+    console.log(skull, 'no job found', job.jobid)
     return 'no job found'
   }
   //console.log(foundJob)
@@ -29,7 +38,7 @@ const processBilboMDJob = async (job) => {
   // Make sure the user exists
   const foundUser = await User.findById(foundJob.user).lean().exec()
   if (!foundUser) {
-    console.log('no user found for job:', job.jobid)
+    console.log(skull, 'no user found for job:', job.jobid)
     return 'no user found'
   }
 
@@ -37,91 +46,104 @@ const processBilboMDJob = async (job) => {
   foundJob.status = 'Running'
   foundJob.time_started = Date()
   const resultRunning = await foundJob.save()
-  console.log(`Job status set to: ${resultRunning.status}`)
+  console.log(check, `Job status set to: ${resultRunning.status}`)
 
   // BilboMD Magic Here
 
   const jobDir = path.join(process.env.DATA_VOL, foundJob.uuid)
 
-  // setup
-  // validates variables
-  // checks for runtime dependences
-
-  // input_for_dynamics_and_foxs
-  // clean/reformat experimental *.dat file
-  // checks Rg_min and Rg_max
-  // sets: $Rgstep = (Rg_mx - Rg_min) / 5
-  // sets: $step = 0.001
-  // sets a bunch of rando variables
-
   // minimization
-  // creates: minimize.inp
-  // requires: TOPOLOGY, PSF, and CRD
-  // runs: charmm < minimize.inp > minimize.out
-  // outputs: $file_min.crd
-  // outputs: $file_min.psf
   const minimizationData = {
     out_dir: jobDir,
     template: 'minimize',
-    topology_dir: process.env.BILBOMD_TOPPARDIR,
-    in_psf: 'input.psf',
-    in_crd: 'input.crd',
+    inp_basename: 'minimize',
+    topology_dir: topoFiles,
+    in_psf: foundJob.psf_file,
+    in_crd: foundJob.crd_file,
     out_min_crd: 'minimization_output.crd',
     out_min_pdb: 'minimization_output.pdb'
   }
 
-  await generateInputFile(minimizationData)
-  //console.log(emoji.get('white_check_mark'), resultGenMinimize, 'written!')
-  //await charmmMinimize(minimizationData)
-  await countDownTimer(3)
+  try {
+    const inpFile = await generateInputFile(minimizationData)
+    console.log(check, inpFile, 'written!')
+  } catch (err) {
+    console.log(skull, inpFile, 'file generation failed!')
+    console.log(err)
+  }
+
+  try {
+    console.log(rocket, 'Start CHARMM minimize')
+    const minimize = await runCHARMM(minimizationData)
+    console.log(check, 'CHARMM minimize done')
+  } catch (err) {
+    console.log(skull, 'CHARMM minimize failed!')
+    console.log(err)
+  }
 
   // heating
-  // creates: heat.inp
-  // requires: TOPOLOGY, PSF, and $file_min.crd
-  // STREAM const.inp
-  // runs: charmm < heat.inp > heat.out
-  // outputs: $file_heat.rst
-  // outputs: $file_heat.crd
-  // outputs: $file_heat.pdb
   const heatData = {
     out_dir: jobDir,
     template: 'heat',
-    topology_dir: process.env.BILBOMD_TOPPARDIR,
-    in_psf: 'input.psf',
+    inp_basename: 'heat',
+    topology_dir: topoFiles,
+    in_psf: foundJob.psf_file,
     in_crd: 'minimization_output.crd',
+    constinp: foundJob.const_inp_file,
     out_heat_rst: 'heat_output.rst',
     out_heat_crd: 'heat_output.crd',
     out_heat_pdb: 'heat_output.pdb'
   }
-  const resultGenHeat = await generateInputFile(heatData)
-  await countDownTimer(3)
+  try {
+    const inpFile = await generateInputFile(heatData)
+    //await countDownTimer('generate inp file', 5)
+    console.log(check, inpFile, 'created')
+  } catch (err) {
+    console.log(skull, inpFile, 'file generation failed!')
+    console.log(err)
+  }
+
+  try {
+    console.log(rocket, 'Start heating step')
+    const minimize = await runCHARMM(heatData)
+    console.log(check, 'CHARMM heating done')
+  } catch (err) {
+    console.log(skull, 'CHARMM heating failed!')
+    console.log(err)
+  }
 
   // dynamics
-  // creates ##  *.dyna##.inp files spaced $Rgstep apart
-  // requires: $Toppardir
-  // requires: PSF
-  // requires: $file_heat.crd
-  // requires: $file_heat.rst
-  // STREAM const.inp
-  //
-  // runs all ## jobs: charmm < $file.dyna$y.inp > $file.dyna$y.out
-  // output: *.start
-  // output: *.rst
-  // output: *.dcd
-  // output: *.end
   const dynamicsData = {
     out_dir: jobDir,
     template: 'dynamics',
-    topology_dir: process.env.BILBOMD_TOPPARDIR,
-    in_psf: 'input.psf',
+    inp_basename: '',
+    topology_dir: topoFiles,
+    in_psf: foundJob.psf_file,
     in_crd: 'heat_output.crd',
     in_rst: 'heat_output.rst',
+    constinp: foundJob.const_inp_file,
     rg_min: foundJob.rg_min,
     rg_max: foundJob.rg_max,
+    conf_sample: foundJob.conformational_sampling,
     timestep: 0.001
   }
 
-  await generateDynamicsInpFiles(dynamicsData)
+  try {
+    await generateDynamicsInpFiles(dynamicsData)
+    console.log(check, 'All dynamics.inp files created.')
+  } catch (err) {
+    console.log(skull, 'dynamics.inp file generation failed!')
+    console.log(err)
+  }
+
+  try {
+    console.log(rocket, 'Start Molecular Dynamics')
+    const minimize = await runMD(dynamicsData)
+    console.log(check, 'Molecular Dynamics')
+  } catch (err) {
+    console.log(skull, 'Molecular Dynamics failed!')
+    console.log(err)
+  }
 
   // foxs_from_new_dcd
 
@@ -148,7 +170,7 @@ const processBilboMDJob = async (job) => {
   foundJob.status = 'Completed'
   foundJob.time_completed = Date()
   const resultCompleted = await foundJob.save()
-  console.log(`Job status set to: ${resultCompleted.status}`)
+  console.log(check, `Job status set to: ${resultCompleted.status}`)
 
   // send mail to user
 
