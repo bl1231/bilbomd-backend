@@ -1,4 +1,5 @@
 require('dotenv').config()
+global.__basedir = __dirname
 require('express-async-errors')
 const express = require('express')
 const emoji = require('node-emoji')

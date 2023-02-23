@@ -8,6 +8,7 @@
 /logs
 /uploads
 /bilbomd-test-data
+/charmm
 
 # production
 /build

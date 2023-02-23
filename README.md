@@ -57,6 +57,11 @@ or in the background
 docker compose up -d
 ```
 
+## CHARMM information
+
+Structure File (PSF) The structure file is the concatenation of information in the RTF. It specifies the information for the entire structure. It has a hierarchical organization wherein atoms are grouped into residues which are grouped into segments which comprise the structure. Each atom is uniquely identified within a residue by its IUPAC name, residue identifier, and its segment identifier. Identifiers may be up to 4 characters in length.
+
+
 ## Authors
 
 Contributors names and contact info
