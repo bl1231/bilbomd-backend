@@ -14,7 +14,7 @@ RUN make -j8 -C build/cmake install
 
 FROM node:18-bullseye
 COPY --from=build_charmm /usr/local/src/charmm/bin/charmm /usr/local/bin/
-RUN apt-get update && apt-get install -y perl ncat
+RUN apt-get update && apt-get install -y perl ncat gfortran
 
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
