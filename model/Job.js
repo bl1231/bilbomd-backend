@@ -14,9 +14,10 @@ const jobSchema = new Schema(
       required: true
     },
     uuid: { type: String, required: true },
+    psf_file: { type: String, required: true },
+    crd_file: { type: String, required: true },
     const_inp_file: { type: String },
     data_file: { type: String, required: true },
-    pdbs: [pdbSchema],
     conformational_sampling: {
       type: Number,
       enum: [1, 2, 3, 4],

@@ -115,6 +115,8 @@ const createNewJob = async (req, res) => {
     const newJob = await Job.create({
       title: fields.title,
       uuid: UUID,
+      psf_file: files.psf_file.originalFilename,
+      crd_file: files.crd_file.originalFilename,
       const_inp_file: files.constinp.originalFilename,
       data_file: files.expdata.originalFilename,
       conformational_sampling: fields.num_conf,
