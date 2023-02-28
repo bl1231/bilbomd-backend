@@ -59,7 +59,47 @@ docker compose up -d
 
 ## CHARMM information
 
-Structure File (PSF) The structure file is the concatenation of information in the RTF. It specifies the information for the entire structure. It has a hierarchical organization wherein atoms are grouped into residues which are grouped into segments which comprise the structure. Each atom is uniquely identified within a residue by its IUPAC name, residue identifier, and its segment identifier. Identifiers may be up to 4 characters in length.
+
+
+### Structure File (PSF)
+
+  The structure file is the concatenation of
+  information in the RTF. It specifies the information for the
+  entire structure. It has a hierarchical organization wherein
+  atoms are grouped into residues which are grouped into
+  segments which comprise the structure. Each atom is uniquely
+  identified within a residue by its IUPAC name, residue
+  identifier, and its segment identifier. Identifiers may be up
+  to 4 characters in length.
+
+### bomlev
+
+The BOMBlev command sets the level which determines the types of errors which will terminate the program. The default is zero. A value of -1 is suggested for interactive use. Suggested values are;
+
+-5,-4
+
+Limit exceeded type of errors. Run only as debug.
+
+-3,-2
+
+Severe errors where results will be incorrect if continued.
+
+-1
+
+Moderately severe errors, results may be bad.
+
+0
+
+Parsing type errors. Some important warnings.
+
+1,2
+
+Serious warnings.
+
+3,4,5
+
+Assorted minor warnings (see WARNlev for their suppression).
+
 
 
 ## Authors

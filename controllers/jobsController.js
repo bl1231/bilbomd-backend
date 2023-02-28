@@ -53,11 +53,16 @@ const createNewJob = async (req, res) => {
   // create a unique folder for each job submission using UUIDs
   const UUID = uuid()
 
-  fs.mkdir(path.join(form.uploadDir, UUID), (err) => {
+  // const jobDir = path.join(form.uploadDir, UUID, 'fit')
+  const jobDir = path.join(form.uploadDir, UUID)
+  console.log('jobDir', jobDir)
+
+  fs.mkdir(jobDir, (err) => {
     if (err) {
       return console.error(err)
     }
-    console.log(emoji.get('white_check_mark'), `${UUID} directory created successfully!`)
+    console.log(emoji.get('white_check_mark'), `${UUID} job created`)
+    console.log(emoji.get('white_check_mark'), `${jobDir} directory created`)
   })
 
   // grab all the multi-part formdata and fill our arrays

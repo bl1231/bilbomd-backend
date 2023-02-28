@@ -2,38 +2,31 @@ const Job = require('../model/Job')
 const User = require('../model/User')
 const { sendJobCompleteEmail } = require('../config/nodemailerConfig')
 const {
-  generateInputFile,
-  generateDynamicsInpFiles,
-  runCHARMM,
-  runMD,
+  runMinimize,
+  runHeat,
+  runMolecularDynamics,
+  runFoXS,
   countDownTimer
 } = require('../controllers/bilbomdController')
 const path = require('path')
 const { spawn, exec } = require('node:child_process')
 const emoji = require('node-emoji')
-// emoji.get('rocket')
-// emoji.get('white_check_mark')
 const check = emoji.get('white_check_mark')
 const rocket = emoji.get('rocket')
 const skull = emoji.get('skull_and_crossbones')
-
+const id = emoji.get('id')
+const pepper = emoji.get('hot_pepper')
+const topoFiles = process.env.CHARM_TOPOLOGY
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-const topoFiles = process.env.CHARM_TOPOLOGY
-
-const bilbomdMinimize = async () => {
-  //
-}
-
 const processBilboMDJob = async (job) => {
-  // console.log('job:', job)
+  console.log(pepper, ' Start job', id, job.uuid)
   // Make sure job exists in DB
   const foundJob = await Job.findOne({ _id: job.jobid }).exec()
   if (!foundJob) {
-    console.log(skull, 'no job found', job.jobid)
+    console.log(skull, 'no job found for:', job.jobid)
     return 'no job found'
   }
-  //console.log(foundJob)
 
   // Make sure the user exists
   const foundUser = await User.findById(foundJob.user).lean().exec()
@@ -48,6 +41,8 @@ const processBilboMDJob = async (job) => {
   const resultRunning = await foundJob.save()
   console.log(check, `Job status set to: ${resultRunning.status}`)
 
+  //await countDownTimer('one', 5)
+
   // BilboMD Magic Here
 
   const jobDir = path.join(process.env.DATA_VOL, foundJob.uuid)
@@ -56,7 +51,6 @@ const processBilboMDJob = async (job) => {
   const minimizationData = {
     out_dir: jobDir,
     template: 'minimize',
-    inp_basename: 'minimize',
     topology_dir: topoFiles,
     in_psf: foundJob.psf_file,
     in_crd: foundJob.crd_file,
@@ -64,28 +58,12 @@ const processBilboMDJob = async (job) => {
     out_min_pdb: 'minimization_output.pdb'
   }
 
-  try {
-    const inpFile = await generateInputFile(minimizationData)
-    console.log(check, inpFile, 'written!')
-  } catch (err) {
-    console.log(skull, inpFile, 'file generation failed!')
-    console.log(err)
-  }
-
-  try {
-    console.log(rocket, 'Start CHARMM minimize')
-    const minimize = await runCHARMM(minimizationData)
-    console.log(check, 'CHARMM minimize done')
-  } catch (err) {
-    console.log(skull, 'CHARMM minimize failed!')
-    console.log(err)
-  }
+  await runMinimize(minimizationData)
 
   // heating
   const heatData = {
     out_dir: jobDir,
     template: 'heat',
-    inp_basename: 'heat',
     topology_dir: topoFiles,
     in_psf: foundJob.psf_file,
     in_crd: 'minimization_output.crd',
@@ -94,29 +72,13 @@ const processBilboMDJob = async (job) => {
     out_heat_crd: 'heat_output.crd',
     out_heat_pdb: 'heat_output.pdb'
   }
-  try {
-    const inpFile = await generateInputFile(heatData)
-    //await countDownTimer('generate inp file', 5)
-    console.log(check, inpFile, 'created')
-  } catch (err) {
-    console.log(skull, inpFile, 'file generation failed!')
-    console.log(err)
-  }
 
-  try {
-    console.log(rocket, 'Start heating step')
-    const minimize = await runCHARMM(heatData)
-    console.log(check, 'CHARMM heating done')
-  } catch (err) {
-    console.log(skull, 'CHARMM heating failed!')
-    console.log(err)
-  }
-
+  await runHeat(heatData)
+  //await countDownTimer('two', 5)
   // dynamics
   const dynamicsData = {
     out_dir: jobDir,
     template: 'dynamics',
-    inp_basename: '',
     topology_dir: topoFiles,
     in_psf: foundJob.psf_file,
     in_crd: 'heat_output.crd',
@@ -129,42 +91,36 @@ const processBilboMDJob = async (job) => {
   }
 
   try {
-    await generateDynamicsInpFiles(dynamicsData)
-    console.log(check, 'All dynamics.inp files created.')
-  } catch (err) {
-    console.log(skull, 'dynamics.inp file generation failed!')
-    console.log(err)
+    await runMolecularDynamics(dynamicsData)
+    await runFoXS(dynamicsData)
+  } catch (error) {
+    console.error(error)
   }
 
-  try {
-    console.log(rocket, 'Start Molecular Dynamics')
-    const minimize = await runMD(dynamicsData)
-    console.log(check, 'Molecular Dynamics')
-  } catch (err) {
-    console.log(skull, 'Molecular Dynamics failed!')
-    console.log(err)
-  }
+  // try {
+  //   await generateDynamicsInpFiles(dynamicsData)
+  //   console.log(check, 'All dynamics.inp files created.')
+  // } catch (err) {
+  //   console.log(skull, 'dynamics.inp file generation failed!')
+  //   console.log(err)
+  // }
+
+  // Run MD then extract PDBs from DCD Trajectory files
+  // try {
+  //   console.log(rocket, 'Start Molecular Dynamics')
+  //   await runMD(dynamicsData)
+  //   console.log(check, 'Molecular Dynamics Done!')
+  // } catch (err) {
+  //   console.log(skull, 'Molecular Dynamics failed!')
+  //   console.log(err)
+  // }
 
   // foxs_from_new_dcd
+  // need this guy to wait
 
   // multifoxs
 
   // extracting_pdbs
-
-  // bilbomd_done
-
-  // cleaning
-
-  // exec(`${bilbomd} ${foundJob.title.replace(/ /g, '_')}`, (error, stdout, stderr) => {
-  //   if (error) {
-  //     console.error(`exec error: ${error}`)
-  //     return
-  //   }
-  //   console.log(`stdout: ${stdout}`)
-  //   console.error(`stderr: ${stderr}`)
-  // })
-
-  //await sleep(10000)
 
   // Set job status to Completed
   foundJob.status = 'Completed'
