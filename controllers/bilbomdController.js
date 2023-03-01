@@ -13,14 +13,14 @@ const execFile = util.promisify(require('node:child_process').execFile)
 const myPath = require('path')
 const templates = myPath.resolve(__dirname, '../templates/bilbomd')
 const emoji = require('node-emoji')
-const e = require('express')
+
 const check = emoji.get('white_check_mark')
 const rocket = emoji.get('rocket')
 const skull = emoji.get('skull_and_crossbones')
 const pepper = emoji.get('hot_pepper')
 
 const writeToFile = async (templateString, params) => {
-  outFile = myPath.join(params.out_dir, params.charmm_inp_file)
+  const outFile = myPath.join(params.out_dir, params.charmm_inp_file)
   var template = Handlebars.compile(templateString)
   var outputString = template(params)
   await writeFile(outFile, outputString)
@@ -89,8 +89,8 @@ const watchForEndFile = async (dir, endFileName) => {
 
 const runMolecularDynamics = async (params) => {
   console.log('runMolecularDynamics ------------- START')
-  makeAllInpFiles = []
-  runAllCharmm = []
+  const makeAllInpFiles = []
+  const runAllCharmm = []
   const step = (params.rg_max - params.rg_min) / 5
   for (let rg = params.rg_min; rg <= params.rg_max; rg += step) {
     params.charmm_inp_file = `${params.template}_rg${rg}.inp`
@@ -138,8 +138,8 @@ const runFoXS = async (params) => {
   const foxsRgFile = myPath.join(params.out_dir, params.foxs_rg)
   makeFile(foxsRgFile)
 
-  makeAllDcd2PdbInpFiles = []
-  runAllCharmm = []
+  const makeAllDcd2PdbInpFiles = []
+  const runAllCharmm = []
   const step = (params.rg_max - params.rg_min) / 5
   for (let rg = params.rg_min; rg <= params.rg_max; rg += step) {
     for (let run = 1; run <= params.conf_sample; run += 1) {
@@ -172,21 +172,20 @@ const runFoXS = async (params) => {
   console.log('runFoXS ------------- END')
 }
 
-const asyncCHARMM = async (params) => {
-  console.log('asyncCHARMM -->', params.charmm_inp_file)
-  charmm = process.env.CHARMM
-  input = params.charmm_inp_file
-  output = params.charmm_out_file
-  await execFile(charmm, ['-o', output, '-i', input], {
-    cwd: params.out_dir
+const spawnFoXS = (pdbfile) => {
+  new Promise((resolve, reject) => {
+    console.log(rocket, 'Spawn FoXS job:', input)
+    const foxs = spawn(process.env.FOXS, ['-p', pdbfile], {
+      cwd: params.out_dir
+    })
   })
 }
 
 const spawnCHARMM = (params) =>
   new Promise((resolve, reject) => {
-    input = params.charmm_inp_file
-    output = params.charmm_out_file
-    console.log(rocket, 'Spawn CHARMMjob:', input)
+    const input = params.charmm_inp_file
+    const output = params.charmm_out_file
+    console.log(rocket, 'Spawn CHARMM job:', input)
     const charmm = spawn(process.env.CHARMM, ['-o', output, '-i', input], {
       cwd: params.out_dir
     })
@@ -199,7 +198,7 @@ const spawnCHARMM = (params) =>
     })
     charmm.on('close', (code) => {
       //console.log('finished:', input, 'exit code:', code)
-      resolve()
+      resolve(code)
     })
   })
 
