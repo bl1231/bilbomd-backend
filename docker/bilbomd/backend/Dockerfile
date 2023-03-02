@@ -25,20 +25,21 @@ RUN apt-get install -y \
   fftw-dev \
   opencv-data \
   python3-dev \
-  python3-numpy
+  python3-numpy \
+  doxygen
 WORKDIR /usr/local/src
 COPY ./scripts/imp-2.18.0.tar.gz .
 RUN tar zxvf imp-2.18.0.tar.gz
 RUN mkdir imp_release
 WORKDIR /usr/local/src/imp_release
-RUN cmake /usr/local/src/imp-2.18.0
+RUN cmake /usr/local/src/imp-2.18.0 -DIMP_STATIC=On -DIMP_DISABLED_MODULES=cgal:membrane:example
 RUN make -j8
 
 FROM node:18-bullseye
 COPY --from=build_charmm /usr/local/src/charmm/bin/charmm /usr/local/bin/
 COPY --from=build_imp /usr/local/src/imp_release/bin/foxs /usr/local/bin/
 COPY --from=build_imp /usr/local/src/imp_release/bin/multi_foxs /usr/local/bin/
-RUN apt-get update && apt-get install -y perl ncat
+RUN apt-get update && apt-get install -y perl ncat gfortran
 
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
