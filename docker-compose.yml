@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.9"
 
 services:
 
@@ -31,6 +31,10 @@ services:
       context: ./
       dockerfile: ./docker/bilbomd/backend/Dockerfile
     image: bl1231/bilbomd-backend
+    deploy:
+      resources:
+        limits:
+          cpus: '12'
     restart: unless-stopped
     env_file: .env
     environment:
@@ -67,8 +71,6 @@ services:
       - dbdata:/data/mongodb
     networks:
       - app-network
-
-
   # bilbomd-worker:
   #   build:
   #     context: ./
