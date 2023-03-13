@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@bull-board/api": "^4.12.1",
-    "@bull-board/express": "^4.11.1",
+    "@bull-board/express": "^5.0.0",
     "bullmq": "^3.10.1",
     "chokidar": "^3.5.3",
     "cookie-parser": "~1.4.4",
