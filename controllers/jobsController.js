@@ -92,7 +92,8 @@ const createNewJob = async (req, res) => {
     })
     .on('progress', (bytesReceived, bytesExpected) => {
       // what do I do in here?
-      console.log('tick.....')
+      let progress = Math.round((bytesReceived / bytesExpected) * 100)
+      console.log(progress, '%')
     })
     .on('end', () => {
       console.log(check, 'upload done')
@@ -111,12 +112,18 @@ const createNewJob = async (req, res) => {
     }
 
     console.log(check, 'all fields: ', fields)
+
     // find the user
     //console.log(fields.email);
     const user = await User.findOne({ email: fields.email }).exec()
     if (!user) return res.sendStatus(401) //Unauthorized
 
-    // create new job in MongoDB
+    // look inside files and check they are legit
+
+    // Create new job in MongoDB
+
+    const now = new Date()
+    console.log('now:', now)
     const newJob = await Job.create({
       title: fields.title,
       uuid: UUID,
@@ -128,12 +135,18 @@ const createNewJob = async (req, res) => {
       rg_min: fields.rg_min,
       rg_max: fields.rg_max,
       status: 'Submitted',
-      time_submitted: Date(),
+      time_submitted: now,
       user: user
     })
+    console.log('newJob:', newJob)
 
-    await newJob.save()
-    await jobQueue.queueJob({ title: newJob.title, uuid: newJob.uuid, jobid: newJob.id })
+    // await newJob.save()
+    await jobQueue.queueJob({
+      type: 'BilboMD',
+      title: newJob.title,
+      uuid: newJob.uuid,
+      jobid: newJob.id
+    })
     res
       .status(200)
       .json({ message: 'new BilboMD Job successfully created', jobid: newJob.id })
@@ -211,10 +224,39 @@ const getJobById = async (req, res) => {
   res.json(job)
 }
 
+const downloadJobResults = async (req, res) => {
+  if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
+  const job = await Job.findOne({ _id: req.params.id }).exec()
+  if (!job) {
+    return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+  }
+  resultFile = path.join(process.env.DATA_VOL, job.uuid, 'results.tar.gz')
+  try {
+    await fs.promises.access(resultFile)
+    console.log(`${resultFile} exists`)
+    res.download(resultFile, (err) => {
+      if (err) {
+        res.status(500).json({
+          message: 'Could not download the file . ' + err
+        })
+      }
+    })
+  } catch (error) {
+    console.error(`No ${resultFile} available.`)
+    return res.status(500).json({ message: `No ${resultFile} available.` })
+  }
+  // fs.access(resultFile, (err) => {
+  //   console.log(`${resultFile} ${err ? 'does not exist' : 'exists'}`)
+  //   return res.status(204).json({ message: 'No results.tar.gz file available' })
+  // })
+  // console.log(resultFile)
+}
+
 module.exports = {
   getAllJobs,
   createNewJob,
   updateJobStatus,
   deleteJob,
-  getJobById
+  getJobById,
+  downloadJobResults
 }

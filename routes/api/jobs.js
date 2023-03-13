@@ -13,5 +13,6 @@ router
   .delete(jobController.deleteJob)
 
 router.route('/:id').get(jobController.getJobById)
+router.route('/:id/results').get(jobController.downloadJobResults)
 
 module.exports = router
