@@ -20,7 +20,7 @@ const options = {
 const connectDB = async () => {
   console.log(url)
   try {
-    await mongoose.set('strictQuery', false)
+    // await mongoose.set('strictQuery', false)
     await mongoose.connect(url, options)
   } catch (err) {
     console.error(err)
