@@ -9,7 +9,7 @@
     "dev": "nodemon server"
   },
   "dependencies": {
-    "@bull-board/api": "^4.12.1",
+    "@bull-board/api": "^5.0.0",
     "@bull-board/express": "^5.0.0",
     "bullmq": "^3.10.1",
     "chokidar": "^3.5.3",
