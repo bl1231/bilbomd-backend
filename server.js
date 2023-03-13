@@ -14,14 +14,10 @@ const cookieParser = require('cookie-parser')
 const credentials = require('./middleware/credentials')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
-const bullmqWorker = require('./config/bullmqWorker')
 const PORT = process.env.PORT || 3500
 
 // Connect to MongoDB
 connectDB()
-
-// Connect to BullMQ
-bullmqWorker()
 
 // custom middleware logger
 app.use(logger)
