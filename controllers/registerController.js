@@ -4,7 +4,9 @@ const { v4: uuid } = require('uuid')
 const { sendVerificationEmail } = require('../config/nodemailerConfig')
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-const conformationURL = 'http://localhost:3001'
+// const conformationURL = 'http://localhost:3001'
+
+const { BILBOMD_URL } = process.env
 
 const handleNewUser = async (req, res) => {
   console.log('handleNewUser', req.body)
@@ -52,7 +54,7 @@ const handleNewUser = async (req, res) => {
     console.log(newUser)
 
     //send Verification email
-    sendVerificationEmail(email, conformationURL, confirmationCode)
+    sendVerificationEmail(email, BILBOMD_URL, confirmationCode)
 
     res.status(201).json({ success: `New user ${user} created!` })
   } catch (err) {
