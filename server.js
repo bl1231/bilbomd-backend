@@ -22,12 +22,6 @@ connectDB()
 // custom middleware logger
 app.use(logger)
 
-// Handle options credentials check - before CORS!
-// and fetch cookies credentials requirement
-// comment out after watching MERN tutorial
-// now included in corsOptions below,
-// app.use(credentials);
-
 // Cross Origin Resource Sharing
 // prevents unwanted clients from accessing our backend API.
 app.use(cors(corsOptions))
@@ -50,8 +44,8 @@ app.use('/register', require('./routes/register'))
 app.use('/verify', require('./routes/verify'))
 app.use('/magicklink', require('./routes/magicklink'))
 app.use('/auth', require('./routes/auth'))
-app.use('/jobs', require('./routes/api/jobs'))
-app.use('/users', require('./routes/api/users'))
+app.use('/jobs', require('./routes/jobs'))
+app.use('/users', require('./routes/users'))
 app.use('/admin', require('./routes/admin'))
 
 app.all('*', (req, res) => {
