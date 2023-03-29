@@ -38,9 +38,9 @@ const getAllJobs = async (req, res) => {
 // @route POST /jobs
 // @access Private
 const createNewJob = async (req, res) => {
-  console.log(req.headers['Content-Type'])
-  console.log(req.headers['content-type'])
-  console.log('body:', req.body)
+  // console.log(req.headers['Content-Type'])
+  // console.log(req.headers['content-type'])
+  // console.log('body:', req.body)
 
   const form = new formidable.IncomingForm()
   const files = []
@@ -116,6 +116,7 @@ const createNewJob = async (req, res) => {
     // find the user
     //console.log(fields.email);
     const user = await User.findOne({ email: fields.email }).exec()
+    // console.log('user:', user)
     if (!user) return res.sendStatus(401) //Unauthorized
 
     // look inside files and check they are legit
@@ -123,8 +124,8 @@ const createNewJob = async (req, res) => {
     // Create new job in MongoDB
 
     const now = new Date()
-    console.log('now:', now)
-    const newJob = await Job.create({
+    // console.log('now1:', now)
+    const newJob = new Job({
       title: fields.title,
       uuid: UUID,
       psf_file: files.psf_file.originalFilename,
@@ -138,9 +139,10 @@ const createNewJob = async (req, res) => {
       time_submitted: now,
       user: user
     })
-    console.log('newJob:', newJob)
+    await newJob.save()
+    // console.log('newJob:', newJob)
 
-    // await newJob.save()
+    // add job to BullMQ
     await jobQueue.queueJob({
       type: 'BilboMD',
       title: newJob.title,

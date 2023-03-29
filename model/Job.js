@@ -2,11 +2,6 @@ const mongoose = require('mongoose')
 const AutoIncrement = require('mongoose-sequence')(mongoose)
 const Schema = mongoose.Schema
 
-const pdbSchema = new Schema({
-  name: { type: String, required: true },
-  size: { type: Number }
-})
-
 const jobSchema = new Schema(
   {
     title: {
@@ -30,7 +25,7 @@ const jobSchema = new Schema(
       enum: ['Submitted', 'Pending', 'Running', 'Completed', 'Error'],
       default: 'Submitted'
     },
-    time_submitted: Date,
+    time_submitted: { type: Date, default: () => new Date(Date.now()) },
     time_started: Date,
     time_completed: Date,
     user: {
