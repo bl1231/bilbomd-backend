@@ -13,7 +13,8 @@ const allowedOrigins = [
   'http://192.168.1.104:80',
   'https://192.168.1.104:443',
   'https://192.168.1.104:443',
-  'https://bl1231.als.lbl.gov'
+  'https://bl1231.als.lbl.gov',
+  'https://bilbomd.bl1231.als.lbl.gov'
 ]
 
 module.exports = allowedOrigins
