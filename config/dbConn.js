@@ -20,6 +20,7 @@ const url = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOSTNAME}:${M
 const connectDB = async () => {
   console.log('MongoDB URL:', url)
   try {
+    mongoose.set('strictQuery', false)
     await mongoose.connect(url)
   } catch (err) {
     console.error(err)
