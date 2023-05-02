@@ -30,7 +30,7 @@ cd /wherever/this/will/live
 git clone https://github.com/bl1231/bilbomd-backend
 ```
 
-You can install the Node.js dependencies for testing purposes, but keep in mind that these will be installed inside the Docker container when you run `docker compose build`.
+You can install the Node.js dependencies for testing purposes, but keep in mind that these will be installed **inside** the Docker container when you run `docker compose build` from the `bilbomd` [main project](https://github.com/bl1231/bilbomd).
 
 ```
 npm install
