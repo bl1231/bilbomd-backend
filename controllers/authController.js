@@ -43,7 +43,7 @@ const otp = async (req, res) => {
   // Creates Secure Cookie with our refreshToken
   res.cookie('jwt', refreshToken, {
     httpOnly: true, //accessible only by web server
-    SameSite: 'none', //cross-site cookie
+    sameSite: 'None', //cross-site cookie
     secure: true, //https
     maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
   })
@@ -99,7 +99,7 @@ const refresh = (req, res) => {
 const logout = (req, res) => {
   const cookies = req.cookies
   if (!cookies?.jwt) return res.sendStatus(204) //No content
-  res.clearCookie('jwt', { httpOnly: true, SameSite: 'None', secure: true })
+  res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true })
   res.json({ message: 'Cookie cleared' })
 }
 
