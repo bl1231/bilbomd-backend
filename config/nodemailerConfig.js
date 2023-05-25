@@ -40,7 +40,14 @@ const sendVerificationEmail = (email, url, code) => {
     }
   }
 
-  transporter.sendMail(mailOptions).catch((err) => console.log(err))
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      console.log('Verification Email sent successfully!')
+    })
+    .catch((err) => {
+      console.error('Error sending Verification email:', err)
+    })
 }
 
 const sendMagickLinkEmail = (email, url, otp) => {
@@ -70,7 +77,14 @@ const sendMagickLinkEmail = (email, url, otp) => {
     }
   }
 
-  transporter.sendMail(mailOptions).catch((err) => console.log(err))
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      console.log('MagickLink Email sent successfully!')
+    })
+    .catch((err) => {
+      console.error('Error sending MagickLink email:', err)
+    })
 }
 
 const sendJobCompleteEmail = (email, url, jobid) => {
@@ -100,7 +114,14 @@ const sendJobCompleteEmail = (email, url, jobid) => {
     }
   }
 
-  transporter.sendMail(mailOptions).catch((err) => console.log(err))
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      console.log('Job Complete Email sent successfully!')
+    })
+    .catch((err) => {
+      console.error('Error sending Job Complete email:', err)
+    })
 }
 
 module.exports = { sendVerificationEmail, sendMagickLinkEmail, sendJobCompleteEmail }
