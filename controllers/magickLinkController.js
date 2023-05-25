@@ -11,10 +11,10 @@ const generateMagickLink = async (req, res) => {
   }
 
   const foundUser = await User.findOne({ email: email }).exec()
-  if (!foundUser) return res.sendStatus(401) // unauthorized.
+  if (!foundUser) return res.status(401).json({ message: 'no account with that email' }) // unauthorized.
   // Refuse to generate OTP if user is "Pending"
   if (foundUser.status == 'Pending')
-    return res.status(403).json({ message: 'verify email first' })
+    return res.status(403).json({ message: 'Pending', email: email })
   if (foundUser.active == false)
     return res.status(403).json({ message: 'account deactivated' })
   try {
