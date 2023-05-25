@@ -2,7 +2,7 @@ const User = require('../model/User')
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 const { sendMagickLinkEmail } = require('../config/nodemailerConfig')
-// const magicklinkURL = 'http://localhost:3001';
+
 const { BILBOMD_URL } = process.env
 const generateMagickLink = async (req, res) => {
   const { email } = req.body
@@ -12,6 +12,9 @@ const generateMagickLink = async (req, res) => {
 
   const foundUser = await User.findOne({ email: email }).exec()
   if (!foundUser) return res.sendStatus(401) // unauthorized.
+  // Refuse to generate OTP if user is "Pending"
+  if (foundUser.status == 'Pending')
+    return res.status(403).json({ message: 'verify email first' })
   try {
     // generate a 34 character One Time Password (OTP)
     let otp = ''
