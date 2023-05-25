@@ -15,6 +15,8 @@ const generateMagickLink = async (req, res) => {
   // Refuse to generate OTP if user is "Pending"
   if (foundUser.status == 'Pending')
     return res.status(403).json({ message: 'verify email first' })
+  if (foundUser.active == false)
+    return res.status(403).json({ message: 'account deactivated' })
   try {
     // generate a 34 character One Time Password (OTP)
     let otp = ''
