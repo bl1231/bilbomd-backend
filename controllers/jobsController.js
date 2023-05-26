@@ -1,5 +1,5 @@
 const formidable = require('formidable')
-const fs = require('fs')
+const fs = require('fs-extra')
 const path = require('path')
 const { v4: uuid } = require('uuid')
 const emoji = require('node-emoji')
@@ -55,15 +55,13 @@ const createNewJob = async (req, res) => {
 
   // const jobDir = path.join(form.uploadDir, UUID, 'fit')
   const jobDir = path.join(form.uploadDir, UUID)
-  console.log('jobDir', jobDir)
 
-  fs.mkdir(jobDir, (err) => {
-    if (err) {
-      return console.error(err)
-    }
-    console.log(emoji.get('white_check_mark'), `${UUID} job created`)
-    console.log(emoji.get('white_check_mark'), `${jobDir} directory created`)
-  })
+  try {
+    await fs.mkdir(jobDir, { recursive: true })
+    console.log(check, jobDir, ' created')
+  } catch (err) {
+    console.error(err)
+  }
 
   // grab all the multi-part formdata and fill our arrays
   form
@@ -141,6 +139,7 @@ const createNewJob = async (req, res) => {
     })
     await newJob.save()
     // console.log('newJob:', newJob)
+    console.log(check, newJob.id, ' created')
 
     // add job to BullMQ
     await jobQueue.queueJob({
@@ -149,9 +148,14 @@ const createNewJob = async (req, res) => {
       uuid: newJob.uuid,
       jobid: newJob.id
     })
+    console.log(check, 'BullMQ task added to queue')
     res
       .status(200)
-      .json({ message: 'new BilboMD Job successfully created', jobid: newJob.id })
+      .json({
+        message: 'new BilboMD Job successfully created',
+        jobid: newJob.id,
+        uuid: newJob.uuid
+      })
   })
 }
 
@@ -198,23 +202,42 @@ const updateJobStatus = async (req, res) => {
 const deleteJob = async (req, res) => {
   const { id } = req.body
 
-  // Confirm data
+  // Confirm that client sent id
   if (!id) {
     return res.status(400).json({ message: 'Job ID required' })
   }
 
-  // Confirm note exists to delete
+  // Confirm job exists to delete
   const job = await Job.findById(id).exec()
 
   if (!job) {
     return res.status(400).json({ message: 'Job not found' })
   }
 
+  // Delete from MongoDB
   const result = await job.deleteOne()
 
-  const reply = `Job '${result.title}' with ID ${result._id} deleted`
+  // Remove from disk . Thank you ChatGPT!
+  const jobDir = path.join(uploadFolder, job.uuid)
 
-  res.json(reply)
+  try {
+    // Check if the directory exists
+    const exists = await fs.pathExists(jobDir)
+    if (!exists) {
+      return res.status(404).send('Directory not found on disk')
+    }
+    // Recursively delete the directory
+    await fs.remove(jobDir)
+  } catch (error) {
+    console.error('Error deleting directory', error)
+    res.status(500).send('Error deleting directory')
+  }
+
+  // const reply = `Deleted Job: '${result.title}' with ID ${result._id} deleted`
+  const reply =
+    'Deleted Job: ' + result.title + 'with ID: ' + result._id + 'UUID: ' + result.uuid
+
+  res.json({ reply })
 }
 
 const getJobById = async (req, res) => {
