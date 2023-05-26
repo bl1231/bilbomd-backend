@@ -5,58 +5,72 @@ const jwt = require('jsonwebtoken')
 // @route POST /auth/otp
 // @access Public
 const otp = async (req, res) => {
-  const { otp } = req.body
+  try {
+    const { otp: code } = req.body
 
-  if (!otp) return res.status(400).json({ message: 'OTP required.' })
+    if (!code) return res.status(400).json({ message: 'OTP required.' })
 
-  // query MongoDB on OTP
-  const foundUser = await User.findOne({ otp }).exec()
-  if (!foundUser || !foundUser.status == 'Active') {
-    return res.status(401).json({ message: 'Unauthorized' })
-  }
+    const user = await User.findOne({ 'otp.code': code })
 
-  // Check if we found an entry in MongoDB with this OTP
-  const match = otp === foundUser.otp
+    if (user) {
+      console.log('Found User: ', user)
 
-  if (!match) return res.status(401).json({ message: 'Unauthorized' })
-
-  // accessToken - memory only, short lived, allows access to protected routes
-  const accessToken = jwt.sign(
-    {
-      UserInfo: {
-        username: foundUser.username,
-        roles: foundUser.roles,
-        email: foundUser.email
+      // Check if OTP has expired
+      const currentTimestamp = Date.now()
+      if (user.otp?.expiresAt < currentTimestamp) {
+        console.log('OTP has expired')
+        return res.status(401).json({ error: 'OTP has expired' })
       }
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: '15m' }
-  )
 
-  // refreshToken - http only, secure, allows for refresh of expired accessTokens
-  const refreshToken = jwt.sign(
-    { username: foundUser.username, roles: foundUser.roles, email: foundUser.email },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: '7d' }
-  )
+      // accessToken - memory only, short lived, allows access to protected routes
+      const accessToken = jwt.sign(
+        {
+          UserInfo: {
+            username: user.username,
+            roles: user.roles,
+            email: user.email
+          }
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: '15m' }
+      )
 
-  // Creates Secure Cookie with our refreshToken
-  res.cookie('jwt', refreshToken, {
-    httpOnly: true, //accessible only by web server
-    sameSite: 'None', //cross-site cookie
-    secure: true, //https
-    maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
-  })
+      // refreshToken - http only, secure, allows for refresh of expired accessTokens
+      const refreshToken = jwt.sign(
+        {
+          username: user.username,
+          roles: user.roles,
+          email: user.email
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+      )
 
-  // Save refreshToken & delete the OTP.
-  //foundUser.refreshToken = [...newRefreshTokenArray, newRefreshToken]
-  foundUser.otp = undefined
-  const result = await foundUser.save()
-  console.log('----------------------------------------------')
-  console.log('handleOTP', result)
-  console.log('----------------------------------------------')
+      // Creates Secure Cookie with our refreshToken
+      console.log('about to set cookie')
+      res.cookie('jwt', refreshToken, {
+        httpOnly: true, //accessible only by web server
+        sameSite: 'None', //cross-site cookie
+        secure: true, //https
+        maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
+      })
+      console.log('about to remove OTP ')
+      user.otp = undefined
+      const result = user.save()
+      console.log('----------------------------------------------')
+      console.log('handleOTP', result)
+      console.log('----------------------------------------------')
 
-  res.json({ accessToken })
+      // Send the accessToken back to client
+      res.json({ accessToken })
+    } else {
+      console.log('No user with that OTP')
+      res.status(401).json({ message: 'Invalid OTP' })
+    }
+  } catch (error) {
+    console.error('Error occurred while querying user:', error)
+    res.status(500).json({ message: 'Internal server error' })
+  }
 }
 
 // @desc Refresh
