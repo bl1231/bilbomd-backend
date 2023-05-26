@@ -1,10 +1,7 @@
 const User = require('../model/User')
 const { v4: uuid } = require('uuid')
-//const sendConfirmationEmail = require('../config/nodemailerConfig');
 const { sendVerificationEmail } = require('../config/nodemailerConfig')
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-// const conformationURL = 'http://localhost:3001'
 
 const { BILBOMD_URL } = process.env
 
@@ -34,15 +31,20 @@ const handleNewUser = async (req, res) => {
 
   try {
     //create a unique confirmation code
-    let confirmationCode = ''
+    let code = ''
     for (let i = 0; i < 36; i++) {
-      confirmationCode += characters[Math.floor(Math.random() * characters.length)]
+      code += characters[Math.floor(Math.random() * characters.length)]
     }
+    console.log('made new code: ', code)
+
+    //  120000 ms = 2minutes
+    // 3600000 ms = 1hour
+    const confirmationCode = { code: code, expiresAt: new Date(Date.now() + 3600000) }
 
     // unique UUID for each user
     const UUID = uuid()
 
-    //create and store the new user
+    // create and store the new user
     const newUser = await User.create({
       username: user,
       email: email,
@@ -54,7 +56,7 @@ const handleNewUser = async (req, res) => {
     console.log(newUser)
 
     //send Verification email
-    sendVerificationEmail(email, BILBOMD_URL, confirmationCode)
+    sendVerificationEmail(email, BILBOMD_URL, code)
 
     res.status(201).json({ success: `New user ${user} created!` })
   } catch (err) {

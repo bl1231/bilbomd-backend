@@ -27,8 +27,15 @@ const userSchema = new Schema(
       default: true
     },
     confirmationCode: {
-      type: String,
-      unique: true
+      code: {
+        type: String,
+        unique: true
+      },
+      expiresAt: {
+        type: Date,
+        expires: '2m',
+        index: { expireAfterSeconds: 0 }
+      }
     },
     otp: {
       code: {
