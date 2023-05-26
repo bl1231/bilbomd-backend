@@ -4,69 +4,79 @@ const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 const { BILBOMD_URL } = process.env
 
 const verifyNewUser = async (req, res) => {
-  if (!req?.body?.code) {
-    return res.status(400).json({ message: 'confirmation code required.' })
-  }
-  console.log('verification code:', req.body.code)
-  const user = await User.findOne({ confirmationCode: req.body.code }).exec()
-  console.log('verification code belongs to user:', user?.username, user?.email)
-
-  if (!user) {
-    return res.status(204).json({ message: `Unable to verify ${req.body.code}.` })
-  }
-
-  // console.log('unverified user:', user)
-
-  // Set status to "Active" and delete the conformationCode
-  if (req.body?.code) {
-    user.status = 'Active'
-    user.confirmationCode = undefined
-    const result = await user.save()
-    //console.log('save verified user to MongoDB:', result)
-  }
-  res.json({ message: 'verified' })
-}
-const resendVerificationCode = async (req, res) => {
-  const { email } = req.body
-  console.log('request to resendVerificationCode for:', email)
-
-  // confirm we have required data
-  if (!email)
-    return res.status(400).json({
-      message: 'email required.'
-    })
-
-  // check for user in the db
-  const foundUser = await User.findOne({ email: email }).exec()
-
-  if (!foundUser) return res.status(401).json({ message: 'no user with that email' })
-  // console.log('resendVerificationCode found user:', foundUser)
   try {
-    //create a new confirmation code
-    let confirmationCode = ''
-    for (let i = 0; i < 36; i++) {
-      confirmationCode += characters[Math.floor(Math.random() * characters.length)]
+    const { code } = req.body
+    if (!code) {
+      return res.status(400).json({ message: 'Confirmation code required.' })
     }
 
-    // add verification code to the Users MongoDB entry
-    foundUser.confirmationCode = confirmationCode
-    const result = await foundUser.save()
-    console.log(
-      'updated user: ',
-      result.username,
-      'email: ',
-      result.email,
-      'code: ',
-      result.confirmationCode
-    )
+    console.log('Verification code:', code)
+    const user = await User.findOne({ 'confirmationCode.code': code })
 
-    //send Verification email
-    sendVerificationEmail(email, BILBOMD_URL, confirmationCode)
+    if (!user) {
+      return res.status(400).json({ message: `Unable to verify ${code}.` })
+    }
 
-    res.status(201).json({ message: 'ok' })
-  } catch (err) {
-    console.log(err)
-    res.status(400).json({ message: 'invalid user data received' })
+    console.log('Verification code belongs to user:', user.username, user.email)
+
+    // Set status to "Active" and delete the confirmationCode
+    user.status = 'Active'
+    user.confirmationCode = undefined
+    await user.save()
+
+    res.json({ message: 'Verified' })
+  } catch (error) {
+    console.error('Error occurred during user verification:', error)
+    res.status(500).json({ message: 'Internal server error' })
   }
 }
+
+const resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body
+    console.log('Request to resendVerificationCode for:', email)
+
+    // Confirm we have required data
+    if (!email) {
+      return res.status(400).json({ message: 'Email required.' })
+    }
+
+    // Check for user in the db
+    const foundUser = await User.findOne({ email })
+
+    if (!foundUser) {
+      return res.status(401).json({ message: 'No user with that email.' })
+    }
+
+    // Generate a new confirmation code
+    let code = ''
+    for (let i = 0; i < 36; i++) {
+      code += characters[Math.floor(Math.random() * characters.length)]
+    }
+
+    const confirmationCode = { code, expiresAt: new Date(Date.now() + 3600000) }
+
+    // Add verification code to the user's MongoDB entry
+    foundUser.confirmationCode = confirmationCode
+    await foundUser.save()
+
+    console.log(
+      'Updated user:',
+      foundUser.username,
+      'Email:',
+      foundUser.email,
+      'Code:',
+      foundUser.confirmationCode
+    )
+
+    // Send verification email
+    sendVerificationEmail(email, BILBOMD_URL, code)
+
+    res.status(201).json({ message: 'OK' })
+  } catch (error) {
+    console.error('Error occurred during resendVerificationCode:', error)
+    res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
 module.exports = { verifyNewUser, resendVerificationCode }
