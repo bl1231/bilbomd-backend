@@ -24,6 +24,8 @@ const generateMagickLink = async (req, res) => {
       passcode += characters[Math.floor(Math.random() * characters.length)]
     }
 
+    // 120000ms = 2minutes
+    // 3600000ms = 1hour
     const otp = { code: passcode, expiresAt: new Date(Date.now() + 3600000) }
     // add OTP to the Users MongoDB entry
     foundUser.otp = otp
