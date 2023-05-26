@@ -19,17 +19,19 @@ const generateMagickLink = async (req, res) => {
     return res.status(403).json({ message: 'account deactivated' })
   try {
     // generate a 34 character One Time Password (OTP)
-    let otp = ''
+    let passcode = ''
     for (let i = 0; i < 34; i++) {
-      otp += characters[Math.floor(Math.random() * characters.length)]
+      passcode += characters[Math.floor(Math.random() * characters.length)]
     }
+
+    const otp = { code: passcode, expiresAt: new Date(Date.now() + 3600000) }
     // add OTP to the Users MongoDB entry
     foundUser.otp = otp
     const result = await foundUser.save()
     console.log(result)
 
     //send MagickLink email
-    sendMagickLinkEmail(email, BILBOMD_URL, otp)
+    sendMagickLinkEmail(email, BILBOMD_URL, passcode)
 
     res.status(201).json({ success: `OTP created for ${email}` })
   } catch (err) {
