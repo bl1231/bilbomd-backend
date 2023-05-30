@@ -1,3 +1,4 @@
+const { logger } = require('../middleware/loggers')
 const nodemailer = require('nodemailer')
 const hbs = require('nodemailer-express-handlebars')
 const user = process.env.SENDMAIL_USER
@@ -14,7 +15,7 @@ const transporter = nodemailer.createTransport({
 })
 
 const sendVerificationEmail = (email, url, code) => {
-  console.log('send verification email')
+  logger.info('send verification email to %s', email)
   transporter.use(
     'compile',
     hbs({
@@ -43,15 +44,15 @@ const sendVerificationEmail = (email, url, code) => {
   transporter
     .sendMail(mailOptions)
     .then(() => {
-      console.log('Verification Email sent successfully!')
+      logger.info('Verification Email sent successfully!')
     })
     .catch((err) => {
-      console.error('Error sending Verification email:', err)
+      logger.error('Error sending Verification email:', err)
     })
 }
 
 const sendMagickLinkEmail = (email, url, otp) => {
-  console.log('send magicklink email')
+  logger.info('send magicklink email to %s', email)
   transporter.use(
     'compile',
     hbs({
@@ -80,15 +81,15 @@ const sendMagickLinkEmail = (email, url, otp) => {
   transporter
     .sendMail(mailOptions)
     .then(() => {
-      console.log('MagickLink Email sent successfully!')
+      logger.info('MagickLink Email sent to %s successfully!', email)
     })
     .catch((err) => {
-      console.error('Error sending MagickLink email:', err)
+      logger.error('Error sending MagickLink email: %s', err)
     })
 }
 
 const sendJobCompleteEmail = (email, url, jobid) => {
-  console.log('send job complete email')
+  logger.info('send job complete email to %s', email)
   transporter.use(
     'compile',
     hbs({
@@ -117,10 +118,10 @@ const sendJobCompleteEmail = (email, url, jobid) => {
   transporter
     .sendMail(mailOptions)
     .then(() => {
-      console.log('Job Complete Email sent successfully!')
+      logger.info('Job Complete Email sent successfully!')
     })
     .catch((err) => {
-      console.error('Error sending Job Complete email:', err)
+      logger.error('Error sending Job Complete email:', err)
     })
 }
 

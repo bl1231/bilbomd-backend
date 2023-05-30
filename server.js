@@ -2,35 +2,34 @@ require('dotenv').config()
 global.__basedir = __dirname
 require('express-async-errors')
 const express = require('express')
-const expressWinston = require('express-winston')
+// const expressWinston = require('express-winston')
 const emoji = require('node-emoji')
 const app = express()
 const path = require('path')
 const cors = require('cors')
 const corsOptions = require('./config/corsOptions')
-// const { logger, logEvents } = require('./middleware/logger')
 // const errorHandler = require('./middleware/errorHandler')
-const { logger, requestLogger } = require('./middleware/loggers')
+const { logger } = require('./middleware/loggers')
 // const verifyJWT = require('./middleware/verifyJWT')
 const cookieParser = require('cookie-parser')
 // const credentials = require('./middleware/credentials')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
 const PORT = process.env.BILBOMD_BACKEND_PORT || 3500
-
+console.log('================================================')
 // Connect to MongoDB
 connectDB()
 
 // custom middleware logger
 // app.use(logger)
-app.use(
-  expressWinston.logger({
-    winstonInstance: requestLogger,
-    statusLevels: true
-  })
-)
-expressWinston.requestWhitelist.push('body')
-expressWinston.responseWhitelist.push('body')
+// app.use(
+//   expressWinston.logger({
+//     winstonInstance: requestLogger,
+//     statusLevels: true
+//   })
+// )
+// expressWinston.requestWhitelist.push('body')
+// expressWinston.responseWhitelist.push('body')
 
 // Cross Origin Resource Sharing
 // prevents unwanted clients from accessing our backend API.
@@ -69,12 +68,12 @@ app.all('*', (req, res) => {
   }
 })
 
-// log dem errors
-app.use(
-  expressWinston.errorLogger({
-    winstonInstance: logger
-  })
-)
+// This is to log application errors
+// app.use(
+//   expressWinston.errorLogger({
+//     winstonInstance: logger
+//   })
+// )
 
 // Only listen for traffic if we are actually connected to MongoDB.
 mongoose.connection.once('connected', () => {

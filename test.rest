@@ -1,0 +1,37 @@
+###
+GET http://localhost:3501
+
+###
+GET http://localhost:3501/nope
+
+###
+POST http://localhost:3501/register
+content-Type: application/json
+
+{ "user": "sclassen", "email": "scott.classen@me.com"}
+
+###
+POST http://localhost:3501/verify
+content-Type: application/json
+
+{ "code": "qKsn4FS6S3hHZOTfcupaAx7gLNmLUMRVYFtj"}
+
+
+###
+POST http://localhost:3501/auth/otp
+content-Type: application/json
+
+{ "otp": "zGU9l9gtkKDpxDlgjbA6g14cUJjqExa7Ug"}
+
+###
+POST http://localhost:3501/magicklink
+content-Type: application/json
+
+{ "email": "scott.classen@me.com"}
+
+
+###
+POST http://localhost:3501/verify/resend
+content-Type: application/json
+
+{ "email": "scott.classen@me.com"}

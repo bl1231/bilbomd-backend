@@ -1,3 +1,4 @@
+const { logger } = require('../middleware/loggers')
 const User = require('../model/User')
 const { v4: uuid } = require('uuid')
 const { sendVerificationEmail } = require('../config/nodemailerConfig')
@@ -6,9 +7,9 @@ const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 const { BILBOMD_URL } = process.env
 
 const handleNewUser = async (req, res) => {
-  console.log('handleNewUser', req.body)
+  // logger.info('handleNewUser', req.body)
   const { user, email } = req.body
-
+  logger.info('handleNewUser: %s %s', user, email)
   // confirm we have required data
   if (!user || !email)
     return res.status(400).json({
@@ -35,7 +36,7 @@ const handleNewUser = async (req, res) => {
     for (let i = 0; i < 36; i++) {
       code += characters[Math.floor(Math.random() * characters.length)]
     }
-    console.log('made new code: ', code)
+    logger.info('made new confirmationCode: %s', code)
 
     //  120000 ms = 2minutes
     // 3600000 ms = 1hour
@@ -53,7 +54,7 @@ const handleNewUser = async (req, res) => {
       UUID: UUID,
       createdAt: Date()
     })
-    console.log(newUser)
+    logger.info(newUser)
 
     //send Verification email
     sendVerificationEmail(email, BILBOMD_URL, code)

@@ -1,9 +1,12 @@
+const { logger } = require('../middleware/loggers')
+
 const User = require('../model/User')
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 const { sendMagickLinkEmail } = require('../config/nodemailerConfig')
 
 const { BILBOMD_URL } = process.env
+
 const generateMagickLink = async (req, res) => {
   const { email } = req.body
   if (!email) {
@@ -29,14 +32,16 @@ const generateMagickLink = async (req, res) => {
     const otp = { code: passcode, expiresAt: new Date(Date.now() + 3600000) }
     // add OTP to the Users MongoDB entry
     foundUser.otp = otp
-    const result = await foundUser.save()
-    console.log(result)
+    await foundUser.save()
+    const message = 'magicklink requested by %s send OTP: %s'
+    logger.info(message, foundUser.email, passcode)
 
     //send MagickLink email
     sendMagickLinkEmail(email, BILBOMD_URL, passcode)
 
     res.status(201).json({ success: `OTP created for ${email}` })
   } catch (err) {
+    logger.error(`magicklink error: ${err}`)
     res.status(500).json({ message: err.message })
   }
 }

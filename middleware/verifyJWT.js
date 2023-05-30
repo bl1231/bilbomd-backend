@@ -1,14 +1,12 @@
 const jwt = require('jsonwebtoken')
 
 const verifyJWT = (req, res, next) => {
-  //console.log('verifyJWT:', req.headers?.authorization)
   // apparently the authorization header can arrive with either an UPPER or lowercase Aa
   const authHeader = req.headers.authorization || req.headers.Authorization
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Unauthorized' })
     // return res.sendStatus(401)
   }
-  // console.log('AUTH-HEADER: ', authHeader) // Bearer token
 
   const token = authHeader.split(' ')[1]
 

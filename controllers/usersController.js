@@ -1,5 +1,6 @@
 const User = require('../model/User')
 const Job = require('../model/Job')
+const { logger } = require('../middleware/loggers')
 
 // @desc Get all users
 // @route GET /users
@@ -20,7 +21,6 @@ const getAllUsers = async (req, res) => {
 // @route PATCH /users
 // @access Private
 const updateUser = async (req, res) => {
-  console.log(req.body)
   const { id, username, roles, active, email } = req.body
 
   // Confirm data
@@ -37,7 +37,7 @@ const updateUser = async (req, res) => {
 
   // Does the user exist to update?
   const user = await User.findById(id).exec()
-  console.log('found user:', user)
+  logger.info('found user: %s', user)
 
   if (!user) {
     return res.status(400).json({ message: 'User not found' })

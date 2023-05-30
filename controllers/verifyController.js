@@ -1,3 +1,4 @@
+const { logger } = require('../middleware/loggers')
 const User = require('../model/User')
 const { sendVerificationEmail } = require('../config/nodemailerConfig')
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -10,23 +11,24 @@ const verifyNewUser = async (req, res) => {
       return res.status(400).json({ message: 'Confirmation code required.' })
     }
 
-    console.log('Verification code:', code)
+    logger.info('Received verification code: %s', code)
     const user = await User.findOne({ 'confirmationCode.code': code })
 
     if (!user) {
+      logger.warn('Unable to verify %s', code)
       return res.status(400).json({ message: `Unable to verify ${code}.` })
     }
 
-    console.log('Verification code belongs to user:', user.username, user.email)
+    logger.info('Verification code belongs to user: %s %s', user.username, user.email)
 
     // Set status to "Active" and delete the confirmationCode
     user.status = 'Active'
     user.confirmationCode = undefined
     await user.save()
-
+    logger.info('%s verified!', user.email)
     res.json({ message: 'Verified' })
   } catch (error) {
-    console.error('Error occurred during user verification:', error)
+    logger.error('Error occurred during user verification: %s', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 }
@@ -34,7 +36,7 @@ const verifyNewUser = async (req, res) => {
 const resendVerificationCode = async (req, res) => {
   try {
     const { email } = req.body
-    console.log('Request to resendVerificationCode for:', email)
+    logger.info('Request to resendVerificationCode for: %s', email)
 
     // Confirm we have required data
     if (!email) {
@@ -60,13 +62,11 @@ const resendVerificationCode = async (req, res) => {
     foundUser.confirmationCode = confirmationCode
     await foundUser.save()
 
-    console.log(
-      'Updated user:',
+    logger.info(
+      'Updated %s email: %s confirmationCode: %s',
       foundUser.username,
-      'Email:',
       foundUser.email,
-      'Code:',
-      foundUser.confirmationCode
+      foundUser.confirmationCode.code
     )
 
     // Send verification email
@@ -74,7 +74,7 @@ const resendVerificationCode = async (req, res) => {
 
     res.status(201).json({ message: 'OK' })
   } catch (error) {
-    console.error('Error occurred during resendVerificationCode:', error)
+    logger.error('Error occurred during resendVerificationCode: %s', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 }

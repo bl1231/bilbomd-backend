@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-
+const { logger } = require('../middleware/loggers')
 const {
   MONGO_USERNAME,
   MONGO_PASSWORD,
@@ -18,12 +18,12 @@ const url = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOSTNAME}:${M
 // }
 
 const connectDB = async () => {
-  console.log('MongoDB URL:', url)
+  logger.info('MongoDB URL: %s', url)
   try {
     mongoose.set('strictQuery', false)
     await mongoose.connect(url)
-  } catch (err) {
-    console.error(err)
+  } catch (error) {
+    logger.error('Error connecting to MongoDB: %s', error)
   }
 }
 

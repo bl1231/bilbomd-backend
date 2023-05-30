@@ -1,15 +1,13 @@
+const { logger } = require('../middleware/loggers')
 const formidable = require('formidable')
 const fs = require('fs-extra')
 const path = require('path')
 const { v4: uuid } = require('uuid')
-const emoji = require('node-emoji')
 const jobQueue = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
 
 const uploadFolder = path.join(process.env.DATA_VOL)
-
-const check = emoji.get('white_check_mark')
 
 // @desc Get all jobs
 // @route GET /jobs
@@ -27,7 +25,6 @@ const getAllJobs = async (req, res) => {
   const jobsWithUser = await Promise.all(
     jobs.map(async (job) => {
       const user = await User.findById(job.user).lean().exec()
-      // console.log('getAllJobs: ', user)
       return { ...job, username: user?.username }
     })
   )
@@ -38,10 +35,6 @@ const getAllJobs = async (req, res) => {
 // @route POST /jobs
 // @access Private
 const createNewJob = async (req, res) => {
-  // console.log(req.headers['Content-Type'])
-  // console.log(req.headers['content-type'])
-  // console.log('body:', req.body)
-
   const form = new formidable.IncomingForm()
   const files = []
   const fields = []
@@ -58,16 +51,16 @@ const createNewJob = async (req, res) => {
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    console.log(check, jobDir, ' created')
-  } catch (err) {
-    console.error(err)
+    logger.info('created %s', jobDir)
+  } catch (error) {
+    logger.error(error)
   }
 
   // grab all the multi-part formdata and fill our arrays
   form
     .on('field', (fieldName, value) => {
       // Capture the non-file field values here
-      console.log(check, 'got field: ', fieldName, 'value: ', value)
+      logger.info('got field: %s with value: %s', fieldName, value)
       fields.push({ fieldName, value })
     })
     .on('fileBegin', (fieldName, file) => {
@@ -78,15 +71,13 @@ const createNewJob = async (req, res) => {
       // file.filepath default pathname as per options.uploadDir and options.filename
       // file.filepath = CUSTOM_PATH // to change the final path
       file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
-      console.log(check, 'fileBegin: ', file.originalFilename)
+      logger.info('file: %s', file.originalFilename)
     })
     .on('file', (fieldName, file) => {
       // same as fileBegin, except
       // it is too late to change file.filepath
       // file.hash is available if options.hash was used
-      //console.log(fieldName, file);
       files.push({ fieldName, file })
-      console.log(check, 'file: ', file.originalFilename)
     })
     .on('progress', (bytesReceived, bytesExpected) => {
       // what do I do in here?
@@ -94,14 +85,14 @@ const createNewJob = async (req, res) => {
       console.log(progress, '%')
     })
     .on('end', () => {
-      console.log(check, 'upload done')
+      logger.info('upload done')
     })
 
   // parse the form
   form.parse(req, async (err, fields, files) => {
     // catch the errors
     if (err) {
-      console.log('Error parsing files')
+      logger.error('Error parsing files %s', err)
       return res.status(400).json({
         status: 'Fail',
         message: 'There was a problem parsing the uploaded files',
@@ -109,12 +100,11 @@ const createNewJob = async (req, res) => {
       })
     }
 
-    console.log(check, 'all fields: ', fields)
+    logger.info('Got fields: %s', fields)
 
     // find the user
-    //console.log(fields.email);
     const user = await User.findOne({ email: fields.email }).exec()
-    // console.log('user:', user)
+
     if (!user) return res.sendStatus(401) //Unauthorized
 
     // look inside files and check they are legit
@@ -122,7 +112,7 @@ const createNewJob = async (req, res) => {
     // Create new job in MongoDB
 
     const now = new Date()
-    // console.log('now1:', now)
+
     const newJob = new Job({
       title: fields.title,
       uuid: UUID,
@@ -138,8 +128,8 @@ const createNewJob = async (req, res) => {
       user: user
     })
     await newJob.save()
-    // console.log('newJob:', newJob)
-    console.log(check, newJob.id, ' created')
+
+    logger.info('created new job: %s', newJob.id)
 
     // add job to BullMQ
     await jobQueue.queueJob({
@@ -148,14 +138,12 @@ const createNewJob = async (req, res) => {
       uuid: newJob.uuid,
       jobid: newJob.id
     })
-    console.log(check, 'BullMQ task added to queue')
-    res
-      .status(200)
-      .json({
-        message: 'new BilboMD Job successfully created',
-        jobid: newJob.id,
-        uuid: newJob.uuid
-      })
+    logger.info('BullMQ task added to queue with UUID: %s', newJob.uuid)
+    res.status(200).json({
+      message: 'new BilboMD Job successfully created',
+      jobid: newJob.id,
+      uuid: newJob.uuid
+    })
   })
 }
 
@@ -229,7 +217,7 @@ const deleteJob = async (req, res) => {
     // Recursively delete the directory
     await fs.remove(jobDir)
   } catch (error) {
-    console.error('Error deleting directory', error)
+    logger.error('Error deleting directory %s', error)
     res.status(500).send('Error deleting directory')
   }
 
@@ -255,10 +243,9 @@ const downloadJobResults = async (req, res) => {
   if (!job) {
     return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
   }
-  resultFile = path.join(process.env.DATA_VOL, job.uuid, 'results.tar.gz')
+  const resultFile = path.join(process.env.DATA_VOL, job.uuid, 'results.tar.gz')
   try {
     await fs.promises.access(resultFile)
-    console.log(`${resultFile} exists`)
     res.download(resultFile, (err) => {
       if (err) {
         res.status(500).json({
@@ -267,14 +254,9 @@ const downloadJobResults = async (req, res) => {
       }
     })
   } catch (error) {
-    console.error(`No ${resultFile} available.`)
+    logger.error('No %s available.', resultFile)
     return res.status(500).json({ message: `No ${resultFile} available.` })
   }
-  // fs.access(resultFile, (err) => {
-  //   console.log(`${resultFile} ${err ? 'does not exist' : 'exists'}`)
-  //   return res.status(204).json({ message: 'No results.tar.gz file available' })
-  // })
-  // console.log(resultFile)
 }
 
 module.exports = {

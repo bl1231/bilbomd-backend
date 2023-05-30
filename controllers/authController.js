@@ -1,3 +1,4 @@
+const { logger } = require('../middleware/loggers')
 const User = require('../model/User')
 const jwt = require('jsonwebtoken')
 
@@ -13,12 +14,14 @@ const otp = async (req, res) => {
     const user = await User.findOne({ 'otp.code': code })
 
     if (user) {
-      console.log('Found User: ', user)
+      logger.debug('Found User: %s', user)
+      // logger.info({ level: 'info', message: 'hello' })
+      logger.info('OTP login for user: %s email: %s', user.username, user.email)
 
       // Check if OTP has expired
       const currentTimestamp = Date.now()
       if (user.otp?.expiresAt < currentTimestamp) {
-        console.log('OTP has expired')
+        logger.warn('OTP has expired')
         return res.status(401).json({ error: 'OTP has expired' })
       }
 
@@ -47,28 +50,25 @@ const otp = async (req, res) => {
       )
 
       // Creates Secure Cookie with our refreshToken
-      console.log('about to set cookie')
+      // logger.info('about to set cookie')
       res.cookie('jwt', refreshToken, {
         httpOnly: true, //accessible only by web server
         sameSite: 'None', //cross-site cookie
         secure: true, //https
         maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
       })
-      console.log('about to remove OTP ')
+      // logger.info('about to remove OTP ')
       user.otp = undefined
-      const result = user.save()
-      console.log('----------------------------------------------')
-      console.log('handleOTP', result)
-      console.log('----------------------------------------------')
+      await user.save()
 
       // Send the accessToken back to client
       res.json({ accessToken })
     } else {
-      console.log('No user with that OTP')
+      logger.warn('Invalid OTP')
       res.status(401).json({ message: 'Invalid OTP' })
     }
   } catch (error) {
-    console.error('Error occurred while querying user:', error)
+    logger.error('Error occurred while querying user: %s', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 }
@@ -78,7 +78,7 @@ const otp = async (req, res) => {
 // @access Public - because access token has expired
 const refresh = (req, res) => {
   const cookies = req.cookies
-  console.log('refresh got cookies:', cookies)
+  logger.info('refresh got cookies: %s', cookies)
 
   if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
 

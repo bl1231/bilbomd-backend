@@ -1,48 +1,31 @@
 const { createLogger, transports, format } = require('winston')
+const { splat, combine, timestamp, colorize, simple, json } = format
 
-const logsFolder = `./logs/`
+const logsFolder = `./logs`
 
-const loggerTransports = [
-  new transports.File({
-    level: 'info',
-    filename: `${logsFolder}logs.log`
-  })
-]
+// Format for console output
+const consoleFormat = combine(colorize(), splat(), simple())
 
-const loggerRequestTransports = [
-  new transports.File({
-    level: 'warn',
-    filename: `${logsFolder}requestWarnings.log`
-  }),
-  new transports.File({
-    level: 'error',
-    filename: `${logsFolder}requestErrors.log`
-  })
-]
+// Format for log file
+const fileFormat = combine(timestamp(), splat(), json())
 
-if (process.env.NODE_ENV !== 'production') {
-  loggerTransports.push(new transports.Console())
-
-  loggerRequestTransports.push(
-    new transports.File({
-      level: 'info',
-      filename: `${logsFolder}requestInfo.log`
-    })
-  )
-}
-
+// Create a Winston logger instance
 const logger = createLogger({
-  transports: loggerTransports,
-  format: format.combine(format.timestamp(), format.json(), format.prettyPrint())
-})
-
-const requestLogger = createLogger({
-  transports: loggerRequestTransports,
-  format: format.combine(format.timestamp(), format.json(), format.prettyPrint())
+  level: 'info',
+  transports: [
+    new transports.Console({
+      format: consoleFormat
+    }),
+    new transports.File({
+      filename: `${logsFolder}/error.log`,
+      level: 'error',
+      format: fileFormat
+    }),
+    new transports.File({ filename: `${logsFolder}/combined.log`, format: fileFormat })
+  ]
 })
 
 module.exports = {
   logger,
-  requestLogger,
   logsFolder
 }

@@ -7,7 +7,7 @@
   "scripts": {
     "test": "mocha --recursive --exit",
     "start": "node server",
-    "dev": "nodemon -r dotenv/config server"
+    "dev": "nodemon -q -r dotenv/config server"
   },
   "dependencies": {
     "@bull-board/api": "^5.0.0",
