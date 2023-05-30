@@ -34,7 +34,7 @@ const customFormat = printf(({ level, message, label, timestamp }) => {
 
 // Format for console output
 const consoleFormat = combine(
-  colorize(),
+  colorize({ all: true }),
   splat(),
   timestamp({
     format: 'YYYY-MM-DD HH:mm:ss'
