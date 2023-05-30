@@ -2,14 +2,16 @@ require('dotenv').config()
 global.__basedir = __dirname
 require('express-async-errors')
 const express = require('express')
+const expressWinston = require('express-winston')
 const emoji = require('node-emoji')
 const app = express()
 const path = require('path')
 const cors = require('cors')
 const corsOptions = require('./config/corsOptions')
-const { logger, logEvents } = require('./middleware/logger')
-const errorHandler = require('./middleware/errorHandler')
-const verifyJWT = require('./middleware/verifyJWT')
+// const { logger, logEvents } = require('./middleware/logger')
+// const errorHandler = require('./middleware/errorHandler')
+const { logger, requestLogger } = require('./middleware/loggers')
+// const verifyJWT = require('./middleware/verifyJWT')
 const cookieParser = require('cookie-parser')
 // const credentials = require('./middleware/credentials')
 const mongoose = require('mongoose')
@@ -20,7 +22,15 @@ const PORT = process.env.BILBOMD_BACKEND_PORT || 3500
 connectDB()
 
 // custom middleware logger
-app.use(logger)
+// app.use(logger)
+app.use(
+  expressWinston.logger({
+    winstonInstance: requestLogger,
+    statusLevels: true
+  })
+)
+expressWinston.requestWhitelist.push('body')
+expressWinston.responseWhitelist.push('body')
 
 // Cross Origin Resource Sharing
 // prevents unwanted clients from accessing our backend API.
@@ -60,7 +70,11 @@ app.all('*', (req, res) => {
 })
 
 // log dem errors
-app.use(errorHandler)
+app.use(
+  expressWinston.errorLogger({
+    winstonInstance: logger
+  })
+)
 
 // Only listen for traffic if we are actually connected to MongoDB.
 mongoose.connection.once('connected', () => {
@@ -75,5 +89,10 @@ mongoose.connection.once('connected', () => {
 
 mongoose.connection.on('error', (err) => {
   console.log(err)
-  logEvents(`${err.no}: ${err.code}\t${err.syscall}\t${err.hostname}`, 'mongo_error.log')
+  logger.error(
+    `${err.no}: ${err.code}\t${err.syscall}\t${err.hostname}`,
+    'mongo_error.log'
+  )
 })
+
+module.exports = app
