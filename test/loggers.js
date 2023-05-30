@@ -12,10 +12,10 @@ chai.use(chaiHttp)
 
 describe('Testing loggers', () => {
   function cleanup() {
-    fs.truncateSync(`${logsFolder}logs.log`)
-    fs.truncateSync(`${logsFolder}requestInfo.log`)
-    fs.truncateSync(`${logsFolder}requestWarnings.log`)
-    fs.truncateSync(`${logsFolder}requestErrors.log`)
+    fs.truncateSync(`${logsFolder}/bilbomd-backend.log`)
+    fs.truncateSync(`${logsFolder}/requestInfo.log`)
+    fs.truncateSync(`${logsFolder}/requestWarnings.log`)
+    fs.truncateSync(`${logsFolder}/requestErrors.log`)
   }
 
   before(() => {

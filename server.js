@@ -9,27 +9,21 @@ const path = require('path')
 const cors = require('cors')
 const corsOptions = require('./config/corsOptions')
 // const errorHandler = require('./middleware/errorHandler')
-const { logger } = require('./middleware/loggers')
+const { logger, requestLogger } = require('./middleware/loggers')
 // const verifyJWT = require('./middleware/verifyJWT')
 const cookieParser = require('cookie-parser')
 // const credentials = require('./middleware/credentials')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
 const PORT = process.env.BILBOMD_BACKEND_PORT || 3500
+
 console.log('================================================')
+
 // Connect to MongoDB
 connectDB()
 
 // custom middleware logger
-// app.use(logger)
-// app.use(
-//   expressWinston.logger({
-//     winstonInstance: requestLogger,
-//     statusLevels: true
-//   })
-// )
-// expressWinston.requestWhitelist.push('body')
-// expressWinston.responseWhitelist.push('body')
+app.use(requestLogger)
 
 // Cross Origin Resource Sharing
 // prevents unwanted clients from accessing our backend API.
@@ -68,12 +62,11 @@ app.all('*', (req, res) => {
   }
 })
 
-// This is to log application errors
-// app.use(
-//   expressWinston.errorLogger({
-//     winstonInstance: logger
-//   })
-// )
+// Error handling middleware
+app.use((err, req, res) => {
+  logger.error(err.message)
+  res.status(500).json({ error: 'Internal server error' })
+})
 
 // Only listen for traffic if we are actually connected to MongoDB.
 mongoose.connection.once('connected', () => {
