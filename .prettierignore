@@ -7,3 +7,5 @@
 **/.git
 **/node_modules
 **/scripts
+**/logs
+**/build
