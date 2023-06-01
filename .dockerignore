@@ -12,4 +12,6 @@ README.md
 logs
 .eslintrc.yml
 bilbomd-test-data
+uploads
 imp-2.18.0.tar.gz
+.env
