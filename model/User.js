@@ -28,8 +28,7 @@ const userSchema = new Schema(
     },
     confirmationCode: {
       code: {
-        type: String,
-        unique: true
+        type: String
       },
       expiresAt: {
         type: Date,
@@ -39,8 +38,7 @@ const userSchema = new Schema(
     },
     otp: {
       code: {
-        type: String,
-        unique: true
+        type: String
       },
       expiresAt: {
         type: Date
