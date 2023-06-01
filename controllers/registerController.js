@@ -61,6 +61,7 @@ const handleNewUser = async (req, res) => {
 
     res.status(201).json({ success: `New user ${user} created!` })
   } catch (err) {
+    logger.error('error %s', err)
     res.status(400).json({ message: 'Invalid user data received' })
   }
 }
