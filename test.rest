@@ -5,10 +5,21 @@ GET http://localhost:3501
 GET http://localhost:3501/nope
 
 ###
+POST http://localhost:3500/register
+content-Type: application/json
+
+{ "user": "sclassen", "email": "scott.classen@gmail.com"}
+
+###
+POST http://localhost:3500/register
+content-Type: application/json
+
+{ "user": "doodguy123", "email": "sclassen@lbl.gov"}
+###
 POST http://localhost:3501/register
 content-Type: application/json
 
-{ "user": "sclassen", "email": "scott.classen@me.com"}
+{ "user": "sclassen", "email": "scott.classen@me.com", "nope": "shouldnotbehere"}
 
 ###
 POST http://localhost:3501/verify
