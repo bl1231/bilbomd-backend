@@ -2,19 +2,20 @@ require('dotenv').config()
 global.__basedir = __dirname
 require('express-async-errors')
 const express = require('express')
-// const expressWinston = require('express-winston')
 const emoji = require('node-emoji')
 const app = express()
 const path = require('path')
 const cors = require('cors')
 const corsOptions = require('./config/corsOptions')
 // const errorHandler = require('./middleware/errorHandler')
-const { logger, requestLogger } = require('./middleware/loggers')
-// const verifyJWT = require('./middleware/verifyJWT')
+const { logger } = require('./middleware/loggers')
 const cookieParser = require('cookie-parser')
-// const credentials = require('./middleware/credentials')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
+// The crux comes when you want to testing/development
+// outside of a Docker compose when on the same machine
+// and you get port collision...
+// I think a judicious use of ENV variables will fix this
 // const PORT = process.env.BILBOMD_BACKEND_PORT || 3500
 const PORT = 3500
 
@@ -23,8 +24,36 @@ console.log('================================================')
 // Connect to MongoDB
 connectDB()
 
+// Attempt to get the original IP address
+// Didn't seem to work
+app.set('trust proxy', true)
+app.enable('trust proxy')
+
 // custom middleware logger
-app.use(requestLogger)
+// app.use(requestLogger)
+
+// const morganMiddleware = morgan(
+//   function (tokens, req, res) {
+//     return JSON.stringify({
+//       method: tokens.method(req, res),
+//       url: tokens.url(req, res),
+//       status: Number.parseFloat(tokens.status(req, res)),
+//       content_length: tokens.res(req, res, 'content-length'),
+//       response_time: Number.parseFloat(tokens['response-time'](req, res))
+//     })
+//   },
+//   {
+//     stream: {
+//       // Configure Morgan to use our custom logger with the http severity
+//       write: (message) => {
+//         const data = JSON.parse(message)
+//         logger.info(`incoming-request`, data)
+//       }
+//     }
+//   }
+// )
+
+// app.use(morganMiddleware)
 
 // Cross Origin Resource Sharing
 // prevents unwanted clients from accessing our backend API.
@@ -52,6 +81,7 @@ app.use('/jobs', require('./routes/jobs'))
 app.use('/users', require('./routes/users'))
 app.use('/admin', require('./routes/admin'))
 
+// Send 404 for any routes not served above
 app.all('*', (req, res) => {
   res.status(404)
   if (req.accepts('html')) {
@@ -75,7 +105,7 @@ mongoose.connection.once('connected', () => {
   app.listen(PORT, () =>
     console.log(
       emoji.get('white_check_mark'),
-      `BilboMD Backend Server running on port ${PORT}`
+      `BilboMD Backend Server listening on port ${PORT}`
     )
   )
 })

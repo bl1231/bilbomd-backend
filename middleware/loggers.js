@@ -1,6 +1,16 @@
 const { createLogger, transports, format } = require('winston')
-const { splat, combine, timestamp, label, colorize, simple, json, printf, prettyPrint } =
-  format
+const {
+  splat,
+  combine,
+  timestamp,
+  label,
+  colorize,
+  simple,
+  json,
+  printf,
+  errors,
+  prettyPrint
+} = format
 
 const logsFolder = `./logs`
 
@@ -29,12 +39,12 @@ const loggerRequestTransports = [
 
 //Custom format using the printf format.
 const customFormat = printf(({ level, message, label, timestamp }) => {
-  return `${timestamp} - ${level}: [${label}]  ${message}`
+  return `${timestamp} - ${level}: [${label ? label : 'tbd'}]  ${message}`
 })
 
 // Format for console output
 const consoleFormat = combine(
-  colorize({ all: true }),
+  colorize({ all: false }),
   splat(),
   timestamp({
     format: 'YYYY-MM-DD HH:mm:ss'
@@ -44,23 +54,31 @@ const consoleFormat = combine(
 )
 
 // Format for log file
-const fileFormat = combine(timestamp(), splat(), json())
+const fileFormat = combine(
+  timestamp(),
+  splat(),
+  timestamp({
+    format: 'YYYY-MM-DD HH:mm:ss'
+  }),
+  customFormat
+)
 
 // Create a Winston logger instance
 const logger = createLogger({
-  level: 'info',
+  // levels: winston.config.syslog.levels,
   transports: [
     new transports.Console({
       format: consoleFormat
     }),
     new transports.File({
-      filename: `${logsFolder}/bilbomd-backend-error.log`,
       level: 'error',
-      format: fileFormat
+      filename: `${logsFolder}/bilbomd-backend-error.log`,
+      format: json()
     }),
     new transports.File({
+      level: 'info',
       filename: `${logsFolder}/bilbomd-backend.log`,
-      format: fileFormat
+      format: json()
     })
   ]
 })
@@ -68,12 +86,16 @@ const logger = createLogger({
 // Create a Winston logger instance
 const reqLogger = createLogger({
   transports: loggerRequestTransports,
-  format: combine(timestamp(), json(), prettyPrint())
+  // format: combine(timestamp(), json(), prettyPrint())
+  format: fileFormat
 })
 
 // Define a middleware function for request logging
 const requestLogger = (req, res, next) => {
-  reqLogger.info(`${req.method} ${req.url}`)
+  // reqLogger.info(`${req.method} ${req.url}`)
+  reqLogger.info(
+    `${req.method} ${req.url} ${req.ip} ${req.ips} ${req.hostname} ${req.headers.origin}`
+  )
   next()
 }
 

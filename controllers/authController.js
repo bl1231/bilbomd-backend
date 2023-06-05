@@ -15,13 +15,12 @@ const otp = async (req, res) => {
 
     if (user) {
       logger.debug('Found User: %s', user)
-      // logger.info({ level: 'info', message: 'hello' })
       logger.info('OTP login for user: %s email: %s', user.username, user.email)
 
       // Check if OTP has expired
       const currentTimestamp = Date.now()
       if (user.otp?.expiresAt < currentTimestamp) {
-        logger.warn('OTP has expired')
+        logger.warn('OTP for %s has expired', user)
         return res.status(401).json({ error: 'OTP has expired' })
       }
 
@@ -50,25 +49,24 @@ const otp = async (req, res) => {
       )
 
       // Creates Secure Cookie with our refreshToken
-      // logger.info('about to set cookie')
       res.cookie('jwt', refreshToken, {
         httpOnly: true, //accessible only by web server
         sameSite: 'None', //cross-site cookie
         secure: true, //https
         maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
       })
-      // logger.info('about to remove OTP ')
+      // Undefine OTP in database
       user.otp = undefined
       await user.save()
 
       // Send the accessToken back to client
       res.json({ accessToken })
     } else {
-      logger.warn('Invalid OTP')
+      logger.warn('Invalid OTP: %s', code)
       res.status(401).json({ message: 'Invalid OTP' })
     }
   } catch (error) {
-    logger.error('Error occurred while querying user: %s', error)
+    logger.error('Internal server error OTP %s', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 }
@@ -114,6 +112,7 @@ const logout = (req, res) => {
   const cookies = req.cookies
   if (!cookies?.jwt) return res.sendStatus(204) //No content
   res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true })
+  logger.info('User logged out')
   res.json({ message: 'Cookie cleared' })
 }
 

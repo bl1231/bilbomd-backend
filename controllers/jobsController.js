@@ -13,9 +13,11 @@ const uploadFolder = path.join(process.env.DATA_VOL)
 // @route GET /jobs
 // @access Private
 const getAllJobs = async (req, res) => {
+  logger.debug('In jobsController')
   const jobs = await Job.find().lean()
   // If no jobs
   if (!jobs?.length) {
+    logger.warn('no jobs found')
     return res.status(400).json({ message: 'No jobs found' })
   }
 
@@ -53,14 +55,14 @@ const createNewJob = async (req, res) => {
     await fs.mkdir(jobDir, { recursive: true })
     logger.info('created %s', jobDir)
   } catch (error) {
-    logger.error(error)
+    logger.error('Error creating %s', error)
   }
 
   // grab all the multi-part formdata and fill our arrays
   form
     .on('field', (fieldName, value) => {
       // Capture the non-file field values here
-      logger.info('got field: %s with value: %s', fieldName, value)
+      logger.info('Got field: %s with value: %s', fieldName, value)
       fields.push({ fieldName, value })
     })
     .on('fileBegin', (fieldName, file) => {
@@ -82,7 +84,7 @@ const createNewJob = async (req, res) => {
     .on('progress', (bytesReceived, bytesExpected) => {
       // what do I do in here?
       let progress = Math.round((bytesReceived / bytesExpected) * 100)
-      console.log(progress, '%')
+      logger.debug(progress, '%')
     })
     .on('end', () => {
       logger.info('upload done')
@@ -105,9 +107,12 @@ const createNewJob = async (req, res) => {
     // find the user
     const user = await User.findOne({ email: fields.email }).exec()
 
-    if (!user) return res.sendStatus(401) //Unauthorized
+    if (!user) {
+      logger.warn('No user found with email: %s', fields.email)
+      return res.sendStatus(401)
+    }
 
-    // look inside files and check they are legit
+    // look inside files and check they are legit?
 
     // Create new job in MongoDB
 
@@ -199,13 +204,14 @@ const deleteJob = async (req, res) => {
   const job = await Job.findById(id).exec()
 
   if (!job) {
+    logger.warn('No job found')
     return res.status(400).json({ message: 'Job not found' })
   }
 
   // Delete from MongoDB
   const result = await job.deleteOne()
 
-  // Remove from disk . Thank you ChatGPT!
+  // Remove from disk.
   const jobDir = path.join(uploadFolder, job.uuid)
 
   try {
@@ -221,7 +227,12 @@ const deleteJob = async (req, res) => {
     res.status(500).send('Error deleting directory')
   }
 
-  // const reply = `Deleted Job: '${result.title}' with ID ${result._id} deleted`
+  logger.info(
+    'Deleted Job: %s with ID: %s UUID: %s',
+    result.title,
+    result._id,
+    result.uuid
+  )
   const reply =
     'Deleted Job: ' + result.title + 'with ID: ' + result._id + 'UUID: ' + result.uuid
 

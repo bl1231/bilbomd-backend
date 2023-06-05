@@ -1,48 +1,49 @@
 ###
-GET http://localhost:3501
+GET http://localhost:3502
 
 ###
-GET http://localhost:3501/nope
+GET http://localhost:3502/nope
 
 ###
-POST http://localhost:3500/register
+POST http://localhost:3502/register
 content-Type: application/json
 
 { "user": "sclassen", "email": "scott.classen@gmail.com"}
 
 ###
-POST http://localhost:3500/register
+POST http://localhost:3502/register
 content-Type: application/json
 
 { "user": "doodguy123", "email": "sclassen@lbl.gov"}
+
 ###
-POST http://localhost:3501/register
+POST http://localhost:3502/register
 content-Type: application/json
 
 { "user": "sclassen", "email": "scott.classen@me.com", "nope": "shouldnotbehere"}
 
 ###
-POST http://localhost:3501/verify
+POST http://localhost:3502/verify
 content-Type: application/json
 
 { "code": "qKsn4FS6S3hHZOTfcupaAx7gLNmLUMRVYFtj"}
 
 
 ###
-POST http://localhost:3501/auth/otp
+POST http://localhost:3502/auth/otp
 content-Type: application/json
 
-{ "otp": "zGU9l9gtkKDpxDlgjbA6g14cUJjqExa7Ug"}
+{ "otp": "Ms5pExCKo4NYrz03GHCfjEKsKLodTPDYPb"}
 
 ###
-POST http://localhost:3501/magicklink
+POST http://localhost:3502/magicklink
 content-Type: application/json
 
 { "email": "scott.classen@me.com"}
 
 
 ###
-POST http://localhost:3501/verify/resend
+POST http://localhost:3502/verify/resend
 content-Type: application/json
 
 { "email": "scott.classen@me.com"}
