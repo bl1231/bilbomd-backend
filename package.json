@@ -10,7 +10,7 @@
     "dev": "nodemon -q -r dotenv/config server"
   },
   "dependencies": {
-    "@bull-board/api": "^5.0.0",
+    "@bull-board/api": "^5.2.0",
     "@bull-board/express": "^5.2.0",
     "bullmq": "^3.14.1",
     "chokidar": "^3.5.3",
