@@ -4,8 +4,14 @@
   "version": "1.0.0",
   "main": "server.js",
   "private": true,
+  "jest": {
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
+  },
   "scripts": {
-    "test": "mocha --recursive --exit",
+    "test": "NODE_ENV=test jest --testTimeout=5000 --runInBand --verbose --detectOpenHandles",
     "start": "node server",
     "dev": "nodemon -q -r dotenv/config server"
   },
@@ -40,10 +46,16 @@
     "winston-mongodb": "^5.1.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.22.1",
+    "@babel/preset-env": "^7.22.4",
+    "@jest/globals": "^29.5.0",
     "@shelf/jest-mongodb": "^4.1.7",
+    "@types/jest": "^29.5.2",
+    "babel-jest": "^29.5.0",
     "chai": "^4.3.7",
     "chai-http": "^4.3.0",
     "eslint": "^8.41.0",
+    "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-react": "^7.32.2",
     "jest": "^29.5.0",
     "mocha": "^10.2.0",

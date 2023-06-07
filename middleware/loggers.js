@@ -50,9 +50,9 @@ const fileFormat = combine(timestamp(), splat(), json())
 const logger = createLogger({
   level: 'info',
   transports: [
-    new transports.Console({
-      format: consoleFormat
-    }),
+    // new transports.Console({
+    //   format: consoleFormat
+    // }),
     new transports.File({
       filename: `${logsFolder}/bilbomd-backend-error.log`,
       level: 'error',

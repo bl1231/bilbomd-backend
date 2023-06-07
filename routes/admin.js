@@ -26,4 +26,4 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
 
 router.use('/queues', serverAdapter.getRouter())
 
-module.exports = router
+module.exports = { router, queueMQ }
