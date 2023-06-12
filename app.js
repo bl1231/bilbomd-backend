@@ -8,13 +8,10 @@ const cors = require('cors')
 const corsOptions = require('./config/corsOptions')
 const { logger, requestLogger } = require('./middleware/loggers')
 const cookieParser = require('cookie-parser')
-const { router: adminRoutes, queueMQ } = require('./routes/admin')
-const { bilbomdQueue } = require('./queues/jobQueue')
+const { router: adminRoutes } = require('./routes/admin')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
-const PORT = process.env.BILBOMD_BACKEND_PORT || 3500
-// const PORT = 3500
-console.log(process.env.NODE_ENV)
+
 // Connect to MongoDB
 connectDB()
 
@@ -86,25 +83,4 @@ mongoose.connection.on('error', (err) => {
   )
 })
 
-const cleanup = async () => {
-  console.log('Close the queueMQ connection')
-  await queueMQ.close()
-  console.log('Close the bilbomdQueue connection')
-  await bilbomdQueue.close()
-
-  console.log('Close mongoose connection')
-  await mongoose.disconnect()
-}
-
-// Handle process termination signals
-process.on('SIGINT', async () => {
-  console.log('Received SIGINT signal in app.js')
-  await cleanup()
-  // process.exit(0)
-})
-process.on('SIGTERM', async () => {
-  console.log('Received SIGTERM signal')
-  await cleanup()
-  // process.exit(0)
-})
 module.exports = app

@@ -1,4 +1,5 @@
 const app = require('./app')
+// const { bilbomdQueue } = require('./queues/jobQueue')
 const PORT = process.env.BILBOMD_BACKEND_PORT || 3500
 // const PORT = 3500
 

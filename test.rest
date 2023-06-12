@@ -11,7 +11,7 @@ content-Type: application/json
 { "user": "sclassen", "email": "scott.classen@gmail.com"}
 
 ###
-POST http://localhost:3500/register
+POST http://localhost:3502/register
 content-Type: application/json
 
 { "user": "doodguy123", "email": "sclassen@lbl.gov"}
