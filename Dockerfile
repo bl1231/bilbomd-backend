@@ -25,5 +25,8 @@ RUN npm ci --omit=dev
 
 COPY --chown=bilbo:bilbomd . .
 
+# This can be mapped to a different port of the Docker host
 EXPOSE 3500
+
+# this can be overridden in docker-compose.dev.yml
 CMD [ "npm", "start" ]
