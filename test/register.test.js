@@ -9,7 +9,7 @@ require('dotenv').config()
 
 beforeAll(async () => {
   server = app.listen(5555, () => {
-    console.log('server started')
+    // console.log('server started')
   })
   await User.create({
     username: 'testuser1',

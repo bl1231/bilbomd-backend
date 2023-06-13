@@ -59,7 +59,7 @@ const handleNewUser = async (req, res) => {
     //send Verification email
     sendVerificationEmail(email, BILBOMD_URL, code)
 
-    res.status(201).json({ success: `New user ${user} created!` })
+    res.status(201).json({ success: `New user ${user} created!`, code: code })
   } catch (err) {
     logger.error('error %s', err)
     res.status(400).json({ message: 'Invalid user data received' })
