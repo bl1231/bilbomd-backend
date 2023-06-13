@@ -1,7 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const magickLinkController = require('../controllers/magickLinkController');
+const express = require('express')
+const router = express.Router()
+const { generateMagickLink } = require('../controllers/magickLinkController')
 
-router.post('/', magickLinkController.generateMagickLink);
+router.post('/', generateMagickLink)
 
-module.exports = router;
+module.exports = router

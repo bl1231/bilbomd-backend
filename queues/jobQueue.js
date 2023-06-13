@@ -15,4 +15,4 @@ const queueJob = async (job) => {
   await bilbomdQueue.add(job.title, job)
 }
 
-module.exports = { queueJob }
+module.exports = { queueJob, bilbomdQueue }

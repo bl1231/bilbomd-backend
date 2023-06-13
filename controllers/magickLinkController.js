@@ -10,7 +10,7 @@ const { BILBOMD_URL } = process.env
 const generateMagickLink = async (req, res) => {
   const { email } = req.body
   if (!email) {
-    return res.status(400).json({ messge: 'email is required' })
+    return res.status(400).json({ message: 'email is required' })
   }
 
   const foundUser = await User.findOne({ email: email }).exec()
@@ -39,7 +39,7 @@ const generateMagickLink = async (req, res) => {
     //send MagickLink email
     sendMagickLinkEmail(email, BILBOMD_URL, passcode)
 
-    res.status(201).json({ success: `OTP created for ${email}` })
+    res.status(201).json({ success: `OTP created for ${email}`, otp: passcode })
   } catch (err) {
     logger.error(`magicklink error: ${err}`)
     res.status(500).json({ message: err.message })
