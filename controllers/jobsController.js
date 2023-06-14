@@ -207,7 +207,7 @@ const deleteJob = async (req, res) => {
 
   // const reply = `Deleted Job: '${result.title}' with ID ${result._id} deleted`
   const reply =
-    'Deleted Job: ' + result.title + 'with ID: ' + result._id + 'UUID: ' + result.uuid
+    'Deleted Job: ' + result.title + ' with ID: ' + result._id + ' UUID: ' + result.uuid
 
   res.json({ reply })
 }
