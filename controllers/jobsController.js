@@ -127,7 +127,16 @@ const createNewJob = async (req, res) => {
       time_submitted: now,
       user: user
     })
-    await newJob.save()
+
+    await newJob.save().then(() => {
+      console.log('in here')
+    })
+
+    // try {
+    //   await newJob.save()
+    // } catch (err) {
+    //   console.log(err)
+    // }
 
     logger.info('created new job: %s', newJob.id)
 
