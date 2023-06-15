@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const AutoIncrement = require('mongoose-sequence')(mongoose)
+// const AutoIncrement = require('mongoose-sequence')(mongoose)
 const Schema = mongoose.Schema
 
 const jobSchema = new Schema(
@@ -39,10 +39,10 @@ const jobSchema = new Schema(
   }
 )
 
-jobSchema.plugin(AutoIncrement, {
-  inc_field: 'ticket',
-  id: 'ticketNums',
-  start_seq: 1
-})
+// jobSchema.plugin(AutoIncrement, {
+//   inc_field: 'ticket',
+//   id: 'ticketNums',
+//   start_seq: 1
+// })
 
 module.exports = mongoose.model('Job', jobSchema)

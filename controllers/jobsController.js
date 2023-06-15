@@ -54,6 +54,7 @@ const createNewJob = async (req, res) => {
     logger.info('created %s', jobDir)
   } catch (error) {
     logger.error(error)
+    return res.status(500).json({ message: 'Failed to create job directory' })
   }
 
   // grab all the multi-part formdata and fill our arrays
@@ -88,9 +89,7 @@ const createNewJob = async (req, res) => {
       logger.info('upload done')
     })
 
-  // parse the form
   form.parse(req, async (err, fields, files) => {
-    // catch the errors
     if (err) {
       logger.error('Error parsing files %s', err)
       return res.status(400).json({
@@ -100,50 +99,35 @@ const createNewJob = async (req, res) => {
       })
     }
 
-    logger.info('Got fields: %s', fields)
+    try {
+      const user = await User.findOne({ email: fields.email }).exec()
+      if (!user) {
+        return res.send(401).json({ message: 'No user found with that email' })
+      }
 
-    // find the user
-    const user = await User.findOne({ email: fields.email }).exec()
+      const newJob = createNewJobObject(fields, files, UUID, user)
+      await newJob.save()
 
-    if (!user) return res.sendStatus(401) //Unauthorized
+      logger.info('created new job: %s', newJob.id)
 
-    // look inside files and check they are legit
+      await jobQueue.queueJob({
+        type: 'BilboMD',
+        title: newJob.title,
+        uuid: newJob.uuid,
+        jobid: newJob.id
+      })
 
-    // Create new job in MongoDB
+      logger.info('BullMQ task added to queue with UUID: %s', newJob.uuid)
 
-    const now = new Date()
-
-    const newJob = new Job({
-      title: fields.title,
-      uuid: UUID,
-      psf_file: files.psf_file.originalFilename,
-      crd_file: files.crd_file.originalFilename,
-      const_inp_file: files.constinp.originalFilename,
-      data_file: files.expdata.originalFilename,
-      conformational_sampling: fields.num_conf,
-      rg_min: fields.rg_min,
-      rg_max: fields.rg_max,
-      status: 'Submitted',
-      time_submitted: now,
-      user: user
-    })
-    await newJob.save()
-
-    logger.info('created new job: %s', newJob.id)
-
-    // add job to BullMQ
-    await jobQueue.queueJob({
-      type: 'BilboMD',
-      title: newJob.title,
-      uuid: newJob.uuid,
-      jobid: newJob.id
-    })
-    logger.info('BullMQ task added to queue with UUID: %s', newJob.uuid)
-    res.status(200).json({
-      message: 'new BilboMD Job successfully created',
-      jobid: newJob.id,
-      uuid: newJob.uuid
-    })
+      res.status(200).json({
+        message: 'new BilboMD Job successfully created',
+        jobid: newJob.id,
+        uuid: newJob.uuid
+      })
+    } catch (err) {
+      logger.error('Error creating new job:', err)
+      res.status(500).json({ message: 'Failed to create new job' })
+    }
   })
 }
 
@@ -223,7 +207,7 @@ const deleteJob = async (req, res) => {
 
   // const reply = `Deleted Job: '${result.title}' with ID ${result._id} deleted`
   const reply =
-    'Deleted Job: ' + result.title + 'with ID: ' + result._id + 'UUID: ' + result.uuid
+    'Deleted Job: ' + result.title + ' with ID: ' + result._id + ' UUID: ' + result.uuid
 
   res.json({ reply })
 }
@@ -257,6 +241,25 @@ const downloadJobResults = async (req, res) => {
     logger.error('No %s available.', resultFile)
     return res.status(500).json({ message: `No ${resultFile} available.` })
   }
+}
+
+const createNewJobObject = (fields, files, UUID, user) => {
+  const now = new Date()
+
+  return new Job({
+    title: fields.title,
+    uuid: UUID,
+    psf_file: files.psf_file.originalFilename,
+    crd_file: files.crd_file.originalFilename,
+    const_inp_file: files.constinp.originalFilename,
+    data_file: files.expdata.originalFilename,
+    conformational_sampling: fields.num_conf,
+    rg_min: fields.rg_min,
+    rg_max: fields.rg_max,
+    status: 'Submitted',
+    time_submitted: now,
+    user: user
+  })
 }
 
 module.exports = {
