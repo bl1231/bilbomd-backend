@@ -18,7 +18,7 @@
   "dependencies": {
     "@bull-board/api": "^5.3.1",
     "@bull-board/express": "^5.3.1",
-    "bullmq": "^3.15.6",
+    "bullmq": "^3.15.8",
     "chokidar": "^3.5.3",
     "cookie-parser": "~1.4.6",
     "cors": "^2.8.5",
