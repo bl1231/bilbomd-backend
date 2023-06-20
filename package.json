@@ -1,7 +1,7 @@
 {
   "name": "bilbomd-backend",
   "description": "backend server for BilboMD webapp",
-  "version": "1.0.0",
+  "version": "0.0.5",
   "main": "server.js",
   "private": true,
   "jest": {
@@ -30,7 +30,7 @@
     "express-fileupload": "^1.4.0",
     "express-rate-limit": "^6.7.0",
     "express-winston": "^4.2.0",
-    "formidable": "^3.4.0",
+    "formidable": "^2.1.1",
     "fs-extra": "^11.1.1",
     "handlebars": "^4.7.7",
     "http-errors": "~2.0.0",
