@@ -20,13 +20,19 @@ content-Type: application/json
 POST http://localhost:3501/register
 content-Type: application/json
 
+{ "user": "classen", "email": "scott.classen@gmail.com"}
+
+###
+POST http://localhost:3501/register
+content-Type: application/json
+
 { "user": "sclassen", "email": "scott.classen@me.com", "nope": "shouldnotbehere"}
 
 ###
 POST http://localhost:3501/verify
 content-Type: application/json
 
-{ "code": "qKsn4FS6S3hHZOTfcupaAx7gLNmLUMRVYFtj"}
+{ "code": "chgWvpw4N8moRXnJbTgzSbKzGNjPHCDrCi7c"}
 
 
 ###
@@ -34,6 +40,13 @@ POST http://localhost:3501/auth/otp
 content-Type: application/json
 
 { "otp": "zGU9l9gtkKDpxDlgjbA6g14cUJjqExa7Ug"}
+
+
+###
+POST http://localhost:3501/auth/otp
+content-Type: application/json
+
+{ "otp": ""}
 
 ###
 POST http://localhost:3501/magicklink
