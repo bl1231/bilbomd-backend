@@ -36,7 +36,7 @@
     "http-errors": "~2.0.0",
     "jsonwebtoken": "^9.0.0",
     "mongodb": "^5.6.0",
-    "mongoose": "^7.3.0",
+    "mongoose": "^7.3.1",
     "mongoose-sequence": "^5.3.1",
     "nodemailer": "^6.9.3",
     "nodemailer-express-handlebars": "^6.1.0",
