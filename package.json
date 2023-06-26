@@ -30,7 +30,7 @@
     "express-fileupload": "^1.4.0",
     "express-rate-limit": "^6.7.0",
     "express-winston": "^4.2.0",
-    "formidable": "^3.4.0",
+    "formidable": "^2.1.2",
     "fs-extra": "^11.1.1",
     "handlebars": "^4.7.7",
     "http-errors": "~2.0.0",
