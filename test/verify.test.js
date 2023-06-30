@@ -48,3 +48,38 @@ describe('TEST /verify API', () => {
     expect(res.body.message).toBe('Verified')
   })
 })
+
+describe('TEST /verify/resend API', () => {
+  jest.setTimeout(5000)
+  test('should return error if email key is missing', async () => {
+    let res = await request(server).post('/verify/resend').send({ nope: '' })
+    expect(res.statusCode).toBe(400)
+    expect(res.body.message).toBe('Email required.')
+  })
+  test('should return error if email key is missing but email is provided', async () => {
+    let res = await request(server)
+      .post('/verify/resend')
+      .send({ nope: 'testuser3@example.com' })
+    expect(res.statusCode).toBe(400)
+    expect(res.body.message).toBe('Email required.')
+  })
+  test('should return error if email missing', async () => {
+    let res = await request(server).post('/verify/resend').send({ email: '' })
+    expect(res.statusCode).toBe(400)
+    expect(res.body.message).toBe('Email required.')
+  })
+  test('Should return error if no user found with that email', async () => {
+    let res = await request(server)
+      .post('/verify/resend')
+      .send({ email: 'nope@example.com' })
+    expect(res.statusCode).toBe(401)
+    expect(res.body.message).toBe('No user with that email.')
+  })
+  test('Should return success', async () => {
+    let res = await request(server)
+      .post('/verify/resend')
+      .send({ email: 'testuser3@example.com' })
+    expect(res.statusCode).toBe(201)
+    expect(res.body.message).toBe('OK')
+  })
+})
