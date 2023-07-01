@@ -97,7 +97,7 @@ const deleteUser = async (req, res) => {
 
   const reply = `Username ${result.username} with ID ${result._id} deleted`
 
-  res.json(reply)
+  res.status(200).json({ message: reply })
 }
 
 const getUser = async (req, res) => {
