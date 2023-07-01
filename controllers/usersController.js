@@ -66,7 +66,7 @@ const updateUser = async (req, res) => {
 
   const updatedUser = await user.save()
 
-  res.json({ message: `${updatedUser.username} updated` })
+  res.status(200).json({ message: `${updatedUser.username} updated` })
 }
 
 // @desc Delete a user
