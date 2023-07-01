@@ -153,13 +153,13 @@ describe('PATCH /users API', () => {
     user.roles = testUser1.roles
     user.active = testUser1.active
     user.email = 'updated@example.com'
-    // console.log('in jest test before patch', user)
+
     let res = await await request(server)
       .patch('/users')
       .send(user)
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'application/json')
-    // console.log('response body:', res.body)
+
     expect(res.statusCode).toBe(200)
     expect(res.body.message).toBe(`${user.username} updated`)
   })

@@ -28,7 +28,7 @@ afterAll(async () => {
   await new Promise((resolve) => server.close(resolve))
 })
 
-describe('TEST /verify API', () => {
+describe('POST /verify API', () => {
   jest.setTimeout(5000)
   test('should return error if no verification code provided', async () => {
     let res = await request(server).post('/verify').send({ code: '' })
@@ -49,7 +49,7 @@ describe('TEST /verify API', () => {
   })
 })
 
-describe('TEST /verify/resend API', () => {
+describe('POST /verify/resend API', () => {
   jest.setTimeout(5000)
   test('should return error if email key is missing', async () => {
     let res = await request(server).post('/verify/resend').send({ nope: '' })
