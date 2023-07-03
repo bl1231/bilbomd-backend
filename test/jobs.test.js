@@ -11,7 +11,7 @@ require('dotenv').config()
 let server
 let testUser1
 
-const generateValidToken = () => {
+const generateAccessToken = () => {
   const user = {
     username: 'testuser1',
     email: 'testuser1@example.com',
@@ -81,7 +81,7 @@ describe('GET /jobs API', () => {
     expect(res.body.message).toBe('Unauthorized')
   })
   test('should return error if no jobs found', async () => {
-    const token = generateValidToken()
+    const token = generateAccessToken()
     let res = await await request(server)
       .get('/jobs')
       .set('Authorization', `Bearer ${token}`)
@@ -91,7 +91,7 @@ describe('GET /jobs API', () => {
   })
   test('should return success with list of jobs', async () => {
     await createNewJob(testUser1)
-    const token = generateValidToken()
+    const token = generateAccessToken()
     let res = await await request(server)
       .get('/jobs')
       .set('Authorization', `Bearer ${token}`)
@@ -110,6 +110,37 @@ describe('POST /jobs API', () => {
     let res = await request(server).post('/jobs')
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('Unauthorized')
+  })
+  test('should return error if user not found', async () => {
+    const token = generateAccessToken()
+    let res = await request(server)
+      .post('/jobs')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
+      .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
+      .attach('const_inp_file', `${__dirname}/data/my_const.inp`)
+      .attach('data_file', `${__dirname}/data/pro_dna_saxs.dat`)
+      .field('title', 'Test Job')
+      .field('email', 'non-existant@example.com')
+    expect(res.statusCode).toBe(401)
+    expect(res.body.message).toBe('No user found with that email')
+  })
+  test('should return create new job and return success', async () => {
+    const token = generateAccessToken()
+    let res = await request(server)
+      .post('/jobs')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
+      .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
+      .attach('constinp', `${__dirname}/data/my_const.inp`)
+      .attach('expdata', `${__dirname}/data/pro_dna_saxs.dat`)
+      .field('title', 'Test Job')
+      .field('email', 'testuser1@example.com')
+      .field('rg_min', 30)
+      .field('rg_max', 40)
+      .field('num_conf', 1)
+    expect(res.statusCode).toBe(200)
+    expect(res.body.message).toBe('new BilboMD Job successfully created')
   })
 })
 

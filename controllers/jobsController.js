@@ -35,13 +35,14 @@ const getAllJobs = async (req, res) => {
 // @route POST /jobs
 // @access Private
 const createNewJob = async (req, res) => {
-  const form = new formidable.IncomingForm()
-  const files = []
-  const fields = []
-  form.multiples = true
-  form.keepExtensions = true
-  form.maxFileSize = 500 * 1024 * 1024 //5MB
-  form.uploadDir = uploadFolder
+  const form = formidable({
+    multiples: true,
+    keepExtensions: true,
+    maxFileSize: 500 * 1024 * 1024, //5MB
+    uploadDir: uploadFolder
+  })
+  // const files = []
+  // const fields = []
 
   // create a unique folder for each job submission using UUIDs
   const UUID = uuid()
@@ -58,36 +59,28 @@ const createNewJob = async (req, res) => {
   }
 
   // grab all the multi-part formdata and fill our arrays
-  form
-    .on('field', (fieldName, value) => {
-      // Capture the non-file field values here
-      logger.info('got field: %s with value: %s', fieldName, value)
-      fields.push({ fieldName, value })
-    })
-    .on('fileBegin', (fieldName, file) => {
-      // accessible here
-      // fieldName the name in the form (<input name="thisname" type="file">) or http filename for octetstream
-      // file.originalFilename http filename or null if there was a parsing error
-      // file.newFilename generated hexoid or what options.filename returned
-      // file.filepath default pathname as per options.uploadDir and options.filename
-      // file.filepath = CUSTOM_PATH // to change the final path
-      file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
-      logger.info('file: %s', file.originalFilename)
-    })
-    .on('file', (fieldName, file) => {
-      // same as fileBegin, except
-      // it is too late to change file.filepath
-      // file.hash is available if options.hash was used
-      files.push({ fieldName, file })
-    })
-    .on('progress', (bytesReceived, bytesExpected) => {
-      // what do I do in here?
-      let progress = Math.round((bytesReceived / bytesExpected) * 100)
-      console.log(progress, '%')
-    })
-    .on('end', () => {
-      logger.info('upload done')
-    })
+  // form
+  //   .on('field', (fieldName, value) => {
+  //     logger.info('FIELD: %s with value: %s', fieldName, value)
+  //     fields.push({ fieldName, value })
+  //   })
+  //   .on('fileBegin', (fieldName, file) => {
+  //     file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
+  //     logger.info('FILE: %s', file.originalFilename)
+  //   })
+  //   .on('file', (fieldName, file) => {
+  //     files.push({ fieldName, file })
+  //     // console.log('field - ', fieldName, 'file - ', file.originalFilename)
+  //     const { originalFilename } = file
+  //     console.log(originalFilename)
+  //   })
+  //   .on('progress', (bytesReceived, bytesExpected) => {
+  //     let progress = Math.round((bytesReceived / bytesExpected) * 100)
+  //     // console.log(progress, '%')
+  //   })
+  //   .on('end', () => {
+  //     logger.info('upload done')
+  //   })
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
@@ -99,12 +92,16 @@ const createNewJob = async (req, res) => {
       })
     }
 
+    // console.log('fields:', fields)
+    // console.log('files:', files)
+
     try {
       const user = await User.findOne({ email: fields.email }).exec()
       if (!user) {
-        return res.send(401).json({ message: 'No user found with that email' })
+        return res.status(401).json({ message: 'No user found with that email' })
       }
-
+      // console.log('FIELDS: ', fields)
+      // console.log('FILES: ', files)
       const newJob = createNewJobObject(fields, files, UUID, user)
       await newJob.save()
 
@@ -126,6 +123,7 @@ const createNewJob = async (req, res) => {
       })
     } catch (err) {
       logger.error('Error creating new job:', err)
+      console.log(err)
       res.status(500).json({ message: 'Failed to create new job' })
     }
   })
