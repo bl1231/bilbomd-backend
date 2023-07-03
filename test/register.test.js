@@ -8,9 +8,8 @@ let server
 require('dotenv').config()
 
 beforeAll(async () => {
-  server = app.listen(5555, () => {
-    // console.log('server started')
-  })
+  server = app.listen(5555)
+  await User.deleteMany()
   await User.create({
     username: 'testuser1',
     email: 'testuser1@example.com',

@@ -59,7 +59,6 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  // await User.deleteOne({ username: 'testuser3' })
   await mongoose.disconnect()
   await queueMQ.close()
   await bilbomdQueue.close()
