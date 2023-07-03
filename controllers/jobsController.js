@@ -36,7 +36,6 @@ const getAllJobs = async (req, res) => {
 // @access Private
 const createNewJob = async (req, res) => {
   const form = formidable({
-    multiples: true,
     keepExtensions: true,
     maxFileSize: 500 * 1024 * 1024, //5MB
     uploadDir: uploadFolder
@@ -52,13 +51,13 @@ const createNewJob = async (req, res) => {
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    logger.info('created %s', jobDir)
+    logger.info('Created Directory: %s', jobDir)
   } catch (error) {
     logger.error(error)
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
 
-  // grab all the multi-part formdata and fill our arrays
+  // These are custom event handlers if you want to do fancy stuff
   // form
   //   .on('field', (fieldName, value) => {
   //     logger.info('FIELD: %s with value: %s', fieldName, value)
@@ -82,6 +81,11 @@ const createNewJob = async (req, res) => {
   //     logger.info('upload done')
   //   })
 
+  // As far as I can tell this is the way to keep original filenames
+  form.on('fileBegin', (fieldName, file) => {
+    file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
+  })
+
   form.parse(req, async (err, fields, files) => {
     if (err) {
       logger.error('Error parsing files %s', err)
@@ -92,16 +96,13 @@ const createNewJob = async (req, res) => {
       })
     }
 
-    // console.log('fields:', fields)
-    // console.log('files:', files)
-
     try {
-      const user = await User.findOne({ email: fields.email }).exec()
+      const { email } = fields
+      const user = await User.findOne({ email }).exec()
       if (!user) {
         return res.status(401).json({ message: 'No user found with that email' })
       }
-      // console.log('FIELDS: ', fields)
-      // console.log('FILES: ', files)
+
       const newJob = createNewJobObject(fields, files, UUID, user)
       await newJob.save()
 
@@ -117,7 +118,7 @@ const createNewJob = async (req, res) => {
       logger.info('BullMQ task added to queue with UUID: %s', newJob.uuid)
 
       res.status(200).json({
-        message: 'new BilboMD Job successfully created',
+        message: 'New BilboMD Job successfully created',
         jobid: newJob.id,
         uuid: newJob.uuid
       })
@@ -189,12 +190,12 @@ const deleteJob = async (req, res) => {
 
   // Remove from disk . Thank you ChatGPT!
   const jobDir = path.join(uploadFolder, job.uuid)
-
+  // console.log('jobDir:', jobDir)
   try {
     // Check if the directory exists
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
-      return res.status(404).send('Directory not found on disk')
+      return res.status(404).json({ message: 'Directory not found on disk' })
     }
     // Recursively delete the directory
     await fs.remove(jobDir)
@@ -207,16 +208,28 @@ const deleteJob = async (req, res) => {
   const reply =
     'Deleted Job: ' + result.title + ' with ID: ' + result._id + ' UUID: ' + result.uuid
 
-  res.json({ reply })
+  res.status(200).json({ reply })
 }
 
 const getJobById = async (req, res) => {
-  if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
-  const job = await Job.findOne({ _id: req.params.id }).exec()
-  if (!job) {
-    return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+  const jobId = req.params.id
+
+  if (!jobId) {
+    return res.status(400).json({ message: 'Job ID required.' })
   }
-  res.json(job)
+
+  try {
+    const job = await Job.findOne({ _id: jobId }).exec()
+
+    if (!job) {
+      return res.status(404).json({ message: `No job matches ID ${jobId}.` })
+    }
+
+    res.status(200).json(job)
+  } catch (error) {
+    logger.error('Error retrieving job:', error)
+    res.status(500).json({ message: 'Failed to retrieve job.' })
+  }
 }
 
 const downloadJobResults = async (req, res) => {
