@@ -65,7 +65,7 @@ afterAll(async () => {
   await new Promise((resolve) => server.close(resolve))
 })
 
-describe('GET /users API', () => {
+describe('GET /users', () => {
   // Test cases for the GET /users endpoint
   jest.setTimeout(5000)
   let testUser1 // Declare a variable to store the test user
@@ -110,7 +110,7 @@ describe('GET /users API', () => {
   })
 })
 
-describe('PATCH /users API', () => {
+describe('PATCH /users', () => {
   // Test cases for the PATCH /users endpoint
   jest.setTimeout(5000)
   let testUser1 // Declare a variable to store the test user
@@ -184,7 +184,7 @@ describe('PATCH /users API', () => {
   })
 })
 
-describe('DELETE /users API', () => {
+describe('DELETE /users', () => {
   // Test cases for the DELETE /users endpoint
   jest.setTimeout(5000)
   let testUser1 // Declare a variable to store the test user

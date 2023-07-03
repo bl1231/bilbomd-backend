@@ -7,7 +7,7 @@ const { bilbomdQueue } = require('../queues/jobQueue')
 
 require('dotenv').config()
 
-describe('POST /magicklink API', () => {
+describe('POST /magicklink', () => {
   let server
   let confirmationCode
   beforeAll(async () => {

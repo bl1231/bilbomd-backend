@@ -27,7 +27,7 @@ afterAll(async () => {
   await new Promise((resolve) => server.close(resolve))
 })
 
-describe('POST /register API', () => {
+describe('POST /register', () => {
   jest.setTimeout(5000)
   test('should return error if no user or email provided', async () => {
     let res = await request(server).post('/register').send({ user: '', email: '' })
