@@ -42,6 +42,7 @@ app.use('/magicklink', require('./routes/magicklink'))
 app.use('/auth', require('./routes/auth'))
 app.use('/jobs', require('./routes/jobs'))
 app.use('/users', require('./routes/users'))
+app.use('/af2pae', require('./routes/af2pae'))
 app.use('/admin', adminRoutes)
 
 app.all('*', (req, res) => {
