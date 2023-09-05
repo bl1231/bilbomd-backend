@@ -9,7 +9,7 @@ from time import time
 from collections import defaultdict
 import numpy
 import igraph
-import networkx as nx
+# import networkx as nx
 
 
 def parse_pae_file(pae_json_file):
@@ -32,46 +32,6 @@ def parse_pae_file(pae_json_file):
         raise ValueError('Invalid PAE JSON format.')
 
     return matrix
-
-
-def domains_from_pae_matrix_networkx(pae_matrix, pae_power=1, pae_cutoff=5, graph_resolution=1):
-    """
-    Takes a predicted aligned error (PAE) matrix representing the predicted error in distances
-    between each pair of residues in a model, and uses a graph-based community clustering algorithm
-    to partition the model into approximately rigid groups.
-
-    Arguments:
-
-        * pae_matrix: a (n_residues x n_residues) numpy array. Diagonal elements should be set to
-          some non-zero value to avoid divide-by-zero warnings
-        * pae_power (optional, default=1): each edge in the graph will be weighted proportional to
-          (1/pae**pae_power)
-        * pae_cutoff (optional, default=5): graph edges will only be created for residue pairs with
-          pae<pae_cutoff
-        * graph_resolution (optional, default=1): regulates how aggressively the clustering
-          algorithm is. Smaller values lead to larger clusters. Value should be larger than zero,
-          and values larger than 5 are unlikely to be useful.
-
-    Returns:
-
-        A series of lists, where each list contains the indices of residues belonging
-        to one cluster.
-    """
-
-    weights = 1/pae_matrix**pae_power
-
-    nxg = nx.Graph()
-    size = weights.shape[0]
-    nxg.add_nodes_from(range(size))
-    edges = numpy.argwhere(pae_matrix < pae_cutoff)
-    sel_weights = weights[edges.T[0], edges.T[1]]
-    wedges = [(i, j, w) for (i, j), w in zip(edges, sel_weights)]
-    nxg.add_weighted_edges_from(wedges)
-
-    nx_clusters = nx.algorithms.community.greedy_modularity_communities(
-        nxg, weight='weight', resolution=graph_resolution)
-    return nx_clusters
-
 
 def domains_from_pae_matrix_igraph(pae_matrix, pae_power=1, pae_cutoff=5, graph_resolution=1):
     """
