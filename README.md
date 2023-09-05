@@ -44,6 +44,12 @@ Production is run via docker compose. However, for interactive development effor
 npm run dev
 ```
 
+## Builf docker image
+
+```bash
+docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
+```
+
 ## Authors
 
 Contributors names and contact info
@@ -52,7 +58,7 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
-- 1.0.0
+- 0.0.7
   - baseline
   - will start using [Semantic Versioning](https://semver.org/)
 - 0.0.3
