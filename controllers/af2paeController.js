@@ -28,6 +28,7 @@ const createNewConstFile = async (req, res) => {
   }
 
   form.on('fileBegin', (fieldName, file) => {
+    // console.log('got file: ', file.originalFilename)
     file.filepath = path.join(jobDir, file.originalFilename)
   })
 
@@ -66,19 +67,45 @@ const createNewConstFile = async (req, res) => {
   })
 }
 
+const downloadConstFile = async (req, res) => {
+  const { uuid } = req.query
+  if (!uuid) return res.status(400).json({ message: 'Job UUID required.' })
+  console.log('UUID: ', uuid)
+  const constFile = path.join(af2paeUploads, uuid, 'const.inp')
+  try {
+    await fs.promises.access(constFile)
+    res.download(constFile, (err) => {
+      if (err) {
+        res.status(500).json({
+          message: 'Could not download the file . ' + err
+        })
+      }
+    })
+  } catch (error) {
+    logger.error('No %s available.', constFile)
+    return res.status(500).json({ message: `No ${constFile} available.` })
+  }
+}
+
 const spawnAF2PAEInpFileMaker = (af2paeDir) => {
   const logFile = path.join(af2paeDir, 'af2pae.log')
   const errorFile = path.join(af2paeDir, 'af2pae_error.log')
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
+  const af2pae_script = '/app/scripts/write_const_from_pae.py'
+  const args = [af2pae_script, 'pae.json', 'mol.crd']
+
   return new Promise((resolve, reject) => {
-    const af2pae = spawn('python3', ['--version'])
+    const af2pae = spawn('python', args, { cwd: af2paeDir })
     af2pae.stdout?.on('data', (data) => {
       logger.info('spawnAF2PAEInpFileMaker stdout %s', data.toString())
       logStream.write(data.toString())
+      // const constFileContent = `uuid: ${af2paeDir}`
+      // constFileStream.write(constFileContent)
     })
     af2pae.stderr?.on('data', (data) => {
       logger.error('spawnAF2PAEInpFileMaker stderr', data.toString())
+      console.log(data)
       errorStream.write(data.toString())
     })
     af2pae.on('error', (error) => {
@@ -98,5 +125,6 @@ const spawnAF2PAEInpFileMaker = (af2paeDir) => {
 }
 
 module.exports = {
-  createNewConstFile
+  createNewConstFile,
+  downloadConstFile
 }
