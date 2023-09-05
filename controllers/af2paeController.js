@@ -9,15 +9,20 @@ const uploadFolder = path.join(process.env.DATA_VOL)
 const af2paeUploads = path.join(uploadFolder, 'af2pae_uploads')
 
 const createNewConstFile = async (req, res) => {
+  const UUID = uuid()
   const form = formidable({
-    keepExtensions: true,
+    keepExtensions: false,
+    allowEmptyFiles: false,
+    maxFiles: 2,
     maxFileSize: 500 * 1024 * 1024, //5MB
-    uploadDir: af2paeUploads
+    uploadDir: af2paeUploads,
+    filename: (name, ext, part, form) => {
+      if (part.name == 'crd_file') return path.join(UUID, part.name + '.crd')
+      if (part.name == 'pae_file') return path.join(UUID, part.name + '.json')
+    }
   })
 
-  const UUID = uuid()
-
-  const jobDir = path.join(form.uploadDir, UUID)
+  const jobDir = path.join(af2paeUploads, UUID)
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
@@ -27,10 +32,10 @@ const createNewConstFile = async (req, res) => {
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
 
-  form.on('fileBegin', (fieldName, file) => {
-    // console.log('got file: ', file.originalFilename)
-    file.filepath = path.join(jobDir, file.originalFilename)
-  })
+  // form.on('fileBegin', (fieldName, file) => {
+  //   // console.log('got file: ', file.originalFilename)
+  //   file.filepath = path.join(jobDir, file.originalFilename)
+  // })
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
@@ -93,7 +98,7 @@ const spawnAF2PAEInpFileMaker = (af2paeDir) => {
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const af2pae_script = '/app/scripts/write_const_from_pae.py'
-  const args = [af2pae_script, 'pae.json', 'mol.crd']
+  const args = [af2pae_script, 'pae_file.json', 'crd_file.crd']
 
   return new Promise((resolve, reject) => {
     const af2pae = spawn('python', args, { cwd: af2paeDir })
