@@ -58,15 +58,20 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 0.0.8
+  - Add new routes for PAE jiffy (creates const.inp from AlphaFold PAE JSON input file).
+  - Dockerfile build was moved from bullseye to continuumio/miniconda3 to enable conda envs inside Docker container.
+  - Add Michal's PAE script `write_const_from_pae.py`` directly to this project.
+  - Update all NPM dependencies as of 08/06/2023
 - 0.0.7
-  - baseline
-  - will start using [Semantic Versioning](https://semver.org/)
+  - baseline.
+  - will start using [Semantic Versioning](https://semver.org/).
 - 0.0.3
-  - BullMQ queue system added
+  - BullMQ queue system added.
 - 0.0.2
-  - Authentication and RBAC added
+  - Authentication and RBAC added.
 - 0.0.1
-  - Initial Release
+  - Initial Release.
 
 ## Acknowledgments
 
