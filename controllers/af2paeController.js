@@ -15,7 +15,7 @@ const createNewConstFile = async (req, res) => {
     keepExtensions: false,
     allowEmptyFiles: false,
     maxFiles: 2,
-    maxFileSize: 500 * 1024 * 1024, //5MB
+    maxFileSize: 2500 * 1024 * 1024, //25MB
     uploadDir: af2paeUploads,
     filename: (name, ext, part, form) => {
       logger.info('form from host: %s', form.headers.host)
