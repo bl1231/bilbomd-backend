@@ -37,7 +37,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
     "mongoose-sequence": "^5.3.1",
-    "nodemailer": "^6.9.4",
+    "nodemailer": "^6.9.5",
     "nodemailer-express-handlebars": "^6.1.0",
     "uuid": "^9.0.0",
     "winston": "^3.10.0",
