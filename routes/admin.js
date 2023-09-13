@@ -3,7 +3,7 @@ const router = express.Router()
 const { createBullBoard } = require('@bull-board/api')
 const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter')
 const { ExpressAdapter } = require('@bull-board/express')
-const { Queue: QueueMQ, Worker, QueueScheduler } = require('bullmq')
+const { Queue: QueueMQ } = require('bullmq')
 
 const basePath = '/admin/queues'
 
@@ -19,7 +19,7 @@ const queueMQ = new QueueMQ('bilbomd', { connection: redisOptions })
 const serverAdapter = new ExpressAdapter()
 serverAdapter.setBasePath(basePath)
 
-const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
+createBullBoard({
   queues: [new BullMQAdapter(queueMQ)],
   serverAdapter: serverAdapter
 })
