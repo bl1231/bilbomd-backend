@@ -40,8 +40,6 @@ const createNewJob = async (req, res) => {
     maxFileSize: 500 * 1024 * 1024, //5MB
     uploadDir: uploadFolder
   })
-  // const files = []
-  // const fields = []
 
   // create a unique folder for each job submission using UUIDs
   const UUID = uuid()
@@ -56,30 +54,6 @@ const createNewJob = async (req, res) => {
     logger.error(error)
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
-
-  // These are custom event handlers if you want to do fancy stuff
-  // form
-  //   .on('field', (fieldName, value) => {
-  //     logger.info('FIELD: %s with value: %s', fieldName, value)
-  //     fields.push({ fieldName, value })
-  //   })
-  //   .on('fileBegin', (fieldName, file) => {
-  //     file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
-  //     logger.info('FILE: %s', file.originalFilename)
-  //   })
-  //   .on('file', (fieldName, file) => {
-  //     files.push({ fieldName, file })
-  //     // console.log('field - ', fieldName, 'file - ', file.originalFilename)
-  //     const { originalFilename } = file
-  //     console.log(originalFilename)
-  //   })
-  //   .on('progress', (bytesReceived, bytesExpected) => {
-  //     let progress = Math.round((bytesReceived / bytesExpected) * 100)
-  //     // console.log(progress, '%')
-  //   })
-  //   .on('end', () => {
-  //     logger.info('upload done')
-  //   })
 
   // As far as I can tell this is the way to keep original filenames
   form.on('fileBegin', (fieldName, file) => {
