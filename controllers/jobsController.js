@@ -3,7 +3,7 @@ const formidable = require('formidable')
 const fs = require('fs-extra')
 const path = require('path')
 const { v4: uuid } = require('uuid')
-const jobQueue = require('../queues/jobQueue')
+const { queueJob, getJobByUUID, getPositionOfJob } = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
 
@@ -13,6 +13,8 @@ const uploadFolder = path.join(process.env.DATA_VOL)
 // @route GET /jobs
 // @access Private
 const getAllJobs = async (req, res) => {
+  // await getAllBullMQJobs()
+  // await getWaitingJobs()
   const jobs = await Job.find().lean()
   // If no jobs
   if (!jobs?.length) {
@@ -25,7 +27,9 @@ const getAllJobs = async (req, res) => {
   const jobsWithUser = await Promise.all(
     jobs.map(async (job) => {
       const user = await User.findById(job.user).lean().exec()
-      return { ...job, username: user?.username }
+      const position = await getPositionOfJob(job.uuid)
+      const bullmqJob = await getJobByUUID(job.uuid)
+      return { ...job, username: user?.username, position: position, bullmq: bullmqJob }
     })
   )
   res.json(jobsWithUser)
@@ -82,14 +86,15 @@ const createNewJob = async (req, res) => {
 
       logger.info('created new job: %s', newJob.id)
 
-      await jobQueue.queueJob({
+      const BullId = await queueJob({
         type: 'BilboMD',
         title: newJob.title,
         uuid: newJob.uuid,
         jobid: newJob.id
       })
 
-      logger.info('BullMQ task added to queue with UUID: %s', newJob.uuid)
+      logger.info('Job added to bilbomd queue with UUID: %s', newJob.uuid)
+      logger.info('Job added to bilbomd queue with ID: %s', BullId)
 
       res.status(200).json({
         message: 'New BilboMD Job successfully created',
@@ -98,7 +103,6 @@ const createNewJob = async (req, res) => {
       })
     } catch (err) {
       logger.error('Error creating new job:', err)
-      console.log(err)
       res.status(500).json({ message: 'Failed to create new job' })
     }
   })
