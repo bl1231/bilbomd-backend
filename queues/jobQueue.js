@@ -27,9 +27,7 @@ const queueJob = async (job) => {
   }
 }
 
-// Function to get all jobs in the queue
 const getAllBullMQJobs = async () => {
-  // Use the getJobs method to fetch all jobs
   const jobs = await bilbomdQueue.getJobs(
     ['completed', 'failed', 'waiting', 'active', 'delayed'],
     0,
@@ -38,10 +36,10 @@ const getAllBullMQJobs = async () => {
   )
 
   // Iterate through the jobs and display information
-  jobs.forEach(async (job) => {
-    const status = await job.getState()
-    logger.info('job %s status %s %s', job.id, status, job.name)
-  })
+  // jobs.forEach(async (job) => {
+  //   const status = await job.getState()
+  //   logger.info('job %s status %s %s', job.id, status, job.name)
+  // })
   return jobs
 }
 
@@ -69,28 +67,72 @@ const getPositionOfJob = async (jobUUID) => {
     const totalNumberWaiting = waitingJobs.length
     return `${position} out of ${totalNumberWaiting}`
   }
-  return -1 // Job not found in the "Waiting" queue
+  return ''
 }
 
 const getJobByUUID = async (UUID) => {
   const allJobs = await getAllBullMQJobs()
   const job = allJobs.find((job) => job.data.uuid === UUID)
   if (job) {
-    // logger.info('job: %s', job)
-    getJobLog(job.id)
-    return job
+    return parseJobLogs(job)
   }
   logger.info('no job')
 }
 
-const getJobLog = async (JobId) => {
-  const logData = await bilbomdQueue.getJobLogs(JobId, 0, -1, 'asc')
+const parseJobLogs = async (job) => {
+  const logData = await bilbomdQueue.getJobLogs(job.id, 0, -1, 'asc')
   const logEntries = logData.logs
-  // logger.info('job log: %s', log)
-  logEntries.forEach((entry, index) => {
-    // console.log(`Log entry ${index + 1}: ${entry}`)
-    logger.info(`job ${JobId} log entry ${index + 1}: ${entry}`)
+  const bilboMDSteps = {
+    minimize: 'no',
+    heat: 'no',
+    md: 'no',
+    foxs: 'no',
+    multifoxs: 'no',
+    results: 'no',
+    email: 'no'
+  }
+  const stepStatus = updateStepStatus(logEntries, bilboMDSteps)
+  const lastLogMessage = logEntries.at(-1)
+  job.bilbomdStep = stepStatus
+  // logger.info('last step %s', lastLogMessage)
+  job.bilbomdLastStep = lastLogMessage
+  return job
+}
+
+const updateStepStatus = (jobLogs, steps) => {
+  const updatedSteps = { ...steps } // Create a copy of the original steps object
+
+  jobLogs.forEach((logLine) => {
+    if (logLine.includes('start minimization')) {
+      updatedSteps.minimize = 'start'
+    } else if (logLine.includes('start heating')) {
+      updatedSteps.heat = 'start'
+    } else if (logLine.includes('start molecular dynamics')) {
+      updatedSteps.md = 'start'
+    } else if (logLine.includes('start FoXS')) {
+      updatedSteps.foxs = 'start'
+    } else if (logLine.includes('start MultiFoXS')) {
+      updatedSteps.multifoxs = 'start'
+    } else if (logLine.includes('start gather results')) {
+      updatedSteps.results = 'start'
+    } else if (logLine.includes('end minimization')) {
+      updatedSteps.minimize = 'end'
+    } else if (logLine.includes('end heating')) {
+      updatedSteps.heat = 'end'
+    } else if (logLine.includes('end molecular dynamics')) {
+      updatedSteps.md = 'end'
+    } else if (logLine.includes('end FoXS')) {
+      updatedSteps.foxs = 'end'
+    } else if (logLine.includes('end MultiFoXS')) {
+      updatedSteps.multifoxs = 'end'
+    } else if (logLine.includes('end gather results')) {
+      updatedSteps.results = 'end'
+    } else if (logLine.includes('email notification sent to')) {
+      updatedSteps.email = 'end'
+    }
   })
+
+  return updatedSteps
 }
 
 module.exports = {

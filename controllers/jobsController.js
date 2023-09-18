@@ -53,7 +53,7 @@ const createNewJob = async (req, res) => {
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    logger.info('Created Directory: %s', jobDir)
+    logger.info('Created directory: %s', jobDir)
   } catch (error) {
     logger.error(error)
     return res.status(500).json({ message: 'Failed to create job directory' })
@@ -84,7 +84,7 @@ const createNewJob = async (req, res) => {
       const newJob = createNewJobObject(fields, files, UUID, user)
       await newJob.save()
 
-      logger.info('created new job: %s', newJob.id)
+      logger.info('Save new job to MongoDB %s', newJob.id)
 
       const BullId = await queueJob({
         type: 'BilboMD',
@@ -93,8 +93,8 @@ const createNewJob = async (req, res) => {
         jobid: newJob.id
       })
 
-      logger.info('Job added to bilbomd queue with UUID: %s', newJob.uuid)
-      logger.info('Job added to bilbomd queue with ID: %s', BullId)
+      logger.info('Bilbomd Job assigned UUID: %s', newJob.uuid)
+      logger.info('BilboMD Job assigned BullMQ ID: %s', BullId)
 
       res.status(200).json({
         message: 'New BilboMD Job successfully created',
