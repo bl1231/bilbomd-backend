@@ -1,7 +1,11 @@
 const { createLogger, transports, format } = require('winston')
-const { splat, combine, timestamp, label, colorize, simple, json, printf, prettyPrint } =
-  format
+const { splat, combine, timestamp, label, colorize, json, printf, prettyPrint } = format
+const moment = require('moment-timezone')
 
+const localTimezone = 'America/Los_Angeles'
+const customTimestamp = () => {
+  return moment().tz(localTimezone).format('YYYY-MM-DD HH:mm:ss')
+}
 const logsFolder = `./logs`
 
 // const getLabel = (callingModule) => {
@@ -37,22 +41,22 @@ const consoleFormat = combine(
   colorize({ all: true }),
   splat(),
   timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss'
+    format: customTimestamp
   }),
   label({ label: 'test' }),
   customFormat
 )
 
 // Format for log file
-const fileFormat = combine(timestamp(), splat(), json())
+const fileFormat = combine(timestamp({ format: customTimestamp }), splat(), json())
 
 // Create a Winston logger instance
 const logger = createLogger({
   level: 'info',
   transports: [
-    // new transports.Console({
-    //   format: consoleFormat
-    // }),
+    new transports.Console({
+      format: consoleFormat
+    }),
     new transports.File({
       filename: `${logsFolder}/bilbomd-backend-error.log`,
       level: 'error',
@@ -68,7 +72,7 @@ const logger = createLogger({
 // Create a Winston logger instance
 const reqLogger = createLogger({
   transports: loggerRequestTransports,
-  format: combine(timestamp(), json(), prettyPrint())
+  format: combine(timestamp({ format: customTimestamp }), json(), prettyPrint())
 })
 
 // Define a middleware function for request logging

@@ -3,7 +3,7 @@ const formidable = require('formidable')
 const fs = require('fs-extra')
 const path = require('path')
 const { v4: uuid } = require('uuid')
-const jobQueue = require('../queues/jobQueue')
+const { queueJob, getJobByUUID, getPositionOfJob } = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
 
@@ -13,6 +13,8 @@ const uploadFolder = path.join(process.env.DATA_VOL)
 // @route GET /jobs
 // @access Private
 const getAllJobs = async (req, res) => {
+  // await getAllBullMQJobs()
+  // await getWaitingJobs()
   const jobs = await Job.find().lean()
   // If no jobs
   if (!jobs?.length) {
@@ -25,7 +27,9 @@ const getAllJobs = async (req, res) => {
   const jobsWithUser = await Promise.all(
     jobs.map(async (job) => {
       const user = await User.findById(job.user).lean().exec()
-      return { ...job, username: user?.username }
+      const position = await getPositionOfJob(job.uuid)
+      const bullmqJob = await getJobByUUID(job.uuid)
+      return { ...job, username: user?.username, position: position, bullmq: bullmqJob }
     })
   )
   res.json(jobsWithUser)
@@ -40,8 +44,6 @@ const createNewJob = async (req, res) => {
     maxFileSize: 500 * 1024 * 1024, //5MB
     uploadDir: uploadFolder
   })
-  // const files = []
-  // const fields = []
 
   // create a unique folder for each job submission using UUIDs
   const UUID = uuid()
@@ -51,35 +53,11 @@ const createNewJob = async (req, res) => {
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    logger.info('Created Directory: %s', jobDir)
+    logger.info('Created directory: %s', jobDir)
   } catch (error) {
     logger.error(error)
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
-
-  // These are custom event handlers if you want to do fancy stuff
-  // form
-  //   .on('field', (fieldName, value) => {
-  //     logger.info('FIELD: %s with value: %s', fieldName, value)
-  //     fields.push({ fieldName, value })
-  //   })
-  //   .on('fileBegin', (fieldName, file) => {
-  //     file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
-  //     logger.info('FILE: %s', file.originalFilename)
-  //   })
-  //   .on('file', (fieldName, file) => {
-  //     files.push({ fieldName, file })
-  //     // console.log('field - ', fieldName, 'file - ', file.originalFilename)
-  //     const { originalFilename } = file
-  //     console.log(originalFilename)
-  //   })
-  //   .on('progress', (bytesReceived, bytesExpected) => {
-  //     let progress = Math.round((bytesReceived / bytesExpected) * 100)
-  //     // console.log(progress, '%')
-  //   })
-  //   .on('end', () => {
-  //     logger.info('upload done')
-  //   })
 
   // As far as I can tell this is the way to keep original filenames
   form.on('fileBegin', (fieldName, file) => {
@@ -106,16 +84,17 @@ const createNewJob = async (req, res) => {
       const newJob = createNewJobObject(fields, files, UUID, user)
       await newJob.save()
 
-      logger.info('created new job: %s', newJob.id)
+      logger.info('Save new job to MongoDB %s', newJob.id)
 
-      await jobQueue.queueJob({
+      const BullId = await queueJob({
         type: 'BilboMD',
         title: newJob.title,
         uuid: newJob.uuid,
         jobid: newJob.id
       })
 
-      logger.info('BullMQ task added to queue with UUID: %s', newJob.uuid)
+      logger.info('Bilbomd Job assigned UUID: %s', newJob.uuid)
+      logger.info('BilboMD Job assigned BullMQ ID: %s', BullId)
 
       res.status(200).json({
         message: 'New BilboMD Job successfully created',
@@ -124,7 +103,6 @@ const createNewJob = async (req, res) => {
       })
     } catch (err) {
       logger.error('Error creating new job:', err)
-      console.log(err)
       res.status(500).json({ message: 'Failed to create new job' })
     }
   })

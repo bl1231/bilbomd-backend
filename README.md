@@ -58,6 +58,11 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 0.0.9
+  - Improve Job Details page.
+  - Add function to gather status for each BilboMD step.
+  - Update all npm dependencies.
+  - Remove the default `priority: 1` from the `defaultJobOptions` configuration.
 - 0.0.8
   - Add new routes for PAE jiffy (creates const.inp from AlphaFold PAE JSON input file).
   - Dockerfile build was moved from bullseye to continuumio/miniconda3 to enable conda envs inside Docker container.
