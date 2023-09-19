@@ -62,8 +62,6 @@ const createNewJob = async (req, res) => {
 
   // create a unique folder for each job submission using UUIDs
   const UUID = uuid()
-
-  // const jobDir = path.join(form.uploadDir, UUID, 'fit')
   const jobDir = path.join(form.uploadDir, UUID)
 
   try {
@@ -75,9 +73,22 @@ const createNewJob = async (req, res) => {
   }
 
   // As far as I can tell this is the way to keep original filenames
-  form.on('fileBegin', (fieldName, file) => {
-    file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
-  })
+  // form.on('fileBegin', (fieldName, file) => {
+  //   file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
+  // })
+
+  // Function to rename and save files with lowercase filenames
+  const renameAndSaveFiles = async (files) => {
+    // console.log(files)
+    const filesPromises = Object.values(files).map(async (file) => {
+      const lowercaseFilename = file.originalFilename.toLowerCase()
+      const newFilePath = path.join(jobDir, lowercaseFilename)
+      await fs.promises.rename(file.filepath, newFilePath)
+      return newFilePath
+    })
+
+    await Promise.all(filesPromises)
+  }
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
@@ -95,6 +106,8 @@ const createNewJob = async (req, res) => {
       if (!user) {
         return res.status(401).json({ message: 'No user found with that email' })
       }
+
+      await renameAndSaveFiles(files)
 
       const newJob = createNewJobObject(fields, files, UUID, user)
       await newJob.save()
@@ -250,13 +263,21 @@ const downloadJobResults = async (req, res) => {
 const createNewJobObject = (fields, files, UUID, user) => {
   const now = new Date()
 
+  // Create an object to store the file information with lowercase filenames
+  const fileInformation = {
+    psf_file: files.psf_file.originalFilename.toLowerCase(),
+    crd_file: files.crd_file.originalFilename.toLowerCase(),
+    const_inp_file: files.constinp.originalFilename.toLowerCase(),
+    data_file: files.expdata.originalFilename.toLowerCase()
+  }
+
   return new Job({
     title: fields.title,
     uuid: UUID,
-    psf_file: files.psf_file.originalFilename,
-    crd_file: files.crd_file.originalFilename,
-    const_inp_file: files.constinp.originalFilename,
-    data_file: files.expdata.originalFilename,
+    psf_file: fileInformation.psf_file,
+    crd_file: fileInformation.crd_file,
+    const_inp_file: fileInformation.const_inp_file,
+    data_file: fileInformation.data_file,
     conformational_sampling: fields.num_conf,
     rg_min: fields.rg_min,
     rg_max: fields.rg_max,
