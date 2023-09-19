@@ -135,11 +135,23 @@ const updateStepStatus = (jobLogs, steps) => {
   return updatedSteps
 }
 
+const getActiveCount = async () => {
+  const num = await bilbomdQueue.getActiveCount()
+  return num
+}
+
+const getWaitingCount = async () => {
+  const num = await bilbomdQueue.getWaitingCount()
+  return num
+}
+
 module.exports = {
   queueJob,
   bilbomdQueue,
   getAllBullMQJobs,
   getWaitingJobs,
   getPositionOfJob,
-  getJobByUUID
+  getJobByUUID,
+  getActiveCount,
+  getWaitingCount
 }
