@@ -72,11 +72,6 @@ const createNewJob = async (req, res) => {
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
 
-  // As far as I can tell this is the way to keep original filenames
-  // form.on('fileBegin', (fieldName, file) => {
-  //   file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
-  // })
-
   // Function to rename and save files with lowercase filenames
   const renameAndSaveFiles = async (files) => {
     // console.log(files)
