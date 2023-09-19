@@ -3,7 +3,13 @@ const formidable = require('formidable')
 const fs = require('fs-extra')
 const path = require('path')
 const { v4: uuid } = require('uuid')
-const { queueJob, getJobByUUID, getPositionOfJob } = require('../queues/jobQueue')
+const {
+  queueJob,
+  getJobByUUID,
+  getPositionOfJob,
+  getActiveCount,
+  getWaitingCount
+} = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
 
@@ -29,7 +35,16 @@ const getAllJobs = async (req, res) => {
       const user = await User.findById(job.user).lean().exec()
       const position = await getPositionOfJob(job.uuid)
       const bullmqJob = await getJobByUUID(job.uuid)
-      return { ...job, username: user?.username, position: position, bullmq: bullmqJob }
+      const bullmqActiveCount = await getActiveCount()
+      const bullmqWaitCount = await getWaitingCount()
+      return {
+        ...job,
+        username: user?.username,
+        position: position,
+        bullmq: bullmqJob,
+        active_count: bullmqActiveCount,
+        waiting_count: bullmqWaitCount
+      }
     })
   )
   res.json(jobsWithUser)
