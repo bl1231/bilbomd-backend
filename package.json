@@ -16,8 +16,8 @@
     "dev": "nodemon -q -r dotenv/config server"
   },
   "dependencies": {
-    "@bull-board/api": "^5.8.3",
-    "@bull-board/express": "^5.8.3",
+    "@bull-board/api": "^5.8.4",
+    "@bull-board/express": "^5.8.4",
     "bullmq": "^4.11.0",
     "cookie-parser": "~1.4.6",
     "cors": "^2.8.5",
