@@ -58,6 +58,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 0.0.10
+  - Add BullMQ Summary routes
 - 0.0.9
   - Improve Job Details page.
   - Add function to gather status for each BilboMD step.
