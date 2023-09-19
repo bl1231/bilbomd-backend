@@ -9,7 +9,7 @@ const getQueueStatus = async (req, res) => {
     active_count: bullmqActiveCount,
     waiting_count: bullmqWaitCount
   }
-  logger.info(queueStatus)
+  // logger.info(queueStatus)
   res.json(queueStatus)
 }
 
