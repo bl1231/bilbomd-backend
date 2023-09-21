@@ -58,6 +58,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 0.0.12
+  - Add number of Workers to the Backend BullMQ Controller
 - 0.0.11
   - fix the bug where CHARMM fails when filenames have uppercase letters
 - 0.0.10
