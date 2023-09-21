@@ -145,6 +145,11 @@ const getWaitingCount = async () => {
   return num
 }
 
+const getWorkers = async () => {
+  const workers = await bilbomdQueue.getWorkers()
+  return workers
+}
+
 module.exports = {
   queueJob,
   bilbomdQueue,
@@ -153,5 +158,6 @@ module.exports = {
   getPositionOfJob,
   getJobByUUID,
   getActiveCount,
-  getWaitingCount
+  getWaitingCount,
+  getWorkers
 }
