@@ -3,13 +3,7 @@ const formidable = require('formidable')
 const fs = require('fs-extra')
 const path = require('path')
 const { v4: uuid } = require('uuid')
-const {
-  queueJob,
-  getJobByUUID,
-  getPositionOfJob,
-  getActiveCount,
-  getWaitingCount
-} = require('../queues/jobQueue')
+const { queueJob, getJobByUUID, getPositionOfJob } = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
 
@@ -19,8 +13,6 @@ const uploadFolder = path.join(process.env.DATA_VOL)
 // @route GET /jobs
 // @access Private
 const getAllJobs = async (req, res) => {
-  // await getAllBullMQJobs()
-  // await getWaitingJobs()
   const jobs = await Job.find().lean()
   // If no jobs
   if (!jobs?.length) {
@@ -35,15 +27,11 @@ const getAllJobs = async (req, res) => {
       const user = await User.findById(job.user).lean().exec()
       const position = await getPositionOfJob(job.uuid)
       const bullmqJob = await getJobByUUID(job.uuid)
-      const bullmqActiveCount = await getActiveCount()
-      const bullmqWaitCount = await getWaitingCount()
       return {
         ...job,
         username: user?.username,
         position: position,
-        bullmq: bullmqJob,
-        active_count: bullmqActiveCount,
-        waiting_count: bullmqWaitCount
+        bullmq: bullmqJob
       }
     })
   )
