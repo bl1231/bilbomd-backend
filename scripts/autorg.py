@@ -22,9 +22,10 @@ def calculate_rg(file_path):
     rg_min = round(rg * 0.8)
     rg_max = round(rg * 1.5)
 
-    print(f"Rg: {round(rg)}")
-    print(f"Rg_min: {rg_min}")
-    print(f"Rg_max: {rg_max}")
+    # print(f"Rg: {round(rg)}")
+    # print(f"Rg_min: {rg_min}")
+    # print(f"Rg_max: {rg_max}")
+    print(f"rg: {round(rg)}, rg_min: {rg_min}, rg_max: {rg_max}")
 
 
 if __name__ == "__main__":
