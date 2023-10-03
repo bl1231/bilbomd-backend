@@ -282,12 +282,14 @@ const getAutoRg = async (req, res) => {
   const jobDir = path.join(uploadFolder, 'autorg_uploads', UUID)
   const form = formidable({
     keepExtensions: true,
-    maxFileSize: 500 * 1024 * 1024, //5MB
-    uploadDir: jobDir,
-    filename: (name, ext, part, form) => {
-      logger.info('form from host: %s', form.headers.host)
-      if (part.name == 'expdata') return path.join(jobDir, part.name + '.dat')
-    }
+    allowEmptyFiles: false,
+    maxFileSize: 250 * 1024 * 1024,
+    uploadDir: jobDir
+    // filename: (name, ext, part, form) => {
+    //   logger.info('form from host: %s', form.headers.host)
+    //   logger.info('got part.name %s', part.name)
+    //   if (part.name == 'expdata') return path.join(jobDir, part.name + '.dat')
+    // }
   })
 
   try {
@@ -298,7 +300,20 @@ const getAutoRg = async (req, res) => {
     return res.status(500).json({ message: 'Failed to create AutoRg job directory' })
   }
 
-  form.parse(req, async (err, fields) => {
+  // Function to save files
+  const saveFile = async (files) => {
+    // console.log(files)
+    const filesPromises = Object.values(files).map(async (file) => {
+      // const lowercaseFilename = file.originalFilename.toLowerCase()
+      const newFilePath = path.join(jobDir, 'expdata.dat')
+      await fs.promises.rename(file.filepath, newFilePath)
+      return newFilePath
+    })
+
+    await Promise.all(filesPromises)
+  }
+
+  form.parse(req, async (err, fields, files) => {
     if (err) {
       logger.error('Error parsing files %s', err)
       return res.status(400).json({
@@ -315,6 +330,8 @@ const getAutoRg = async (req, res) => {
         return res.status(401).json({ message: 'No user found with that email' })
       }
 
+      await saveFile(files)
+
       const autorgResults = await spawnAutoRgCalculator(jobDir)
 
       logger.info(autorgResults)
@@ -322,10 +339,18 @@ const getAutoRg = async (req, res) => {
       res.status(200).json({
         message: 'AutoRg Success',
         uuid: UUID,
-        rg: 20,
-        rg_min: 17,
-        rg_max: 31
+        rg: autorgResults.rg,
+        rg_min: autorgResults.rg_min,
+        rg_max: autorgResults.rg_max
       })
+      // remove the uploaded files.
+      // comment out for debugging I suppose.
+      try {
+        await fs.remove(jobDir)
+        logger.info(`Deleted upload folder: ${jobDir}`)
+      } catch (error) {
+        logger.error(`Error deleting upload folder: ${jobDir}`, error)
+      }
     } catch (error) {
       logger.error('Error calculatign AutoRg', error)
       res.status(500).json({ message: 'Failed to calculate AutoRg', error: error })
