@@ -7,7 +7,7 @@ const {
 } = require('../controllers/af2paeController')
 const verifyJWT = require('../middleware/verifyJWT')
 
-// router.use(verifyJWT)
+router.use(verifyJWT)
 
 router.route('/').get(downloadConstFile).post(createNewConstFile)
 
