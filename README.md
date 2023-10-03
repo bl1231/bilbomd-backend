@@ -38,13 +38,15 @@ npm install
 
 ### Executing program
 
-Production is run via docker compose. However, for interactive development efforts you probably want to run using `npm`:
+Production is run via docker compose. However, for interactive local development efforts you probably want to run using `npm`:
 
 ```bash
 npm run dev
 ```
 
 ## Build docker image
+
+To test if the `Dockerfile` will build you can use this command:
 
 ```bash
 docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
