@@ -3,6 +3,7 @@ Simple python jiffy to calculate the min and max Rg values
 """
 import argparse
 import bioxtasraw.RAWAPI as raw
+import json
 
 
 def parse_args():
@@ -22,10 +23,18 @@ def calculate_rg(file_path):
     rg_min = round(rg * 0.8)
     rg_max = round(rg * 1.5)
 
-    # print(f"Rg: {round(rg)}")
-    # print(f"Rg_min: {rg_min}")
-    # print(f"Rg_max: {rg_max}")
-    print(f"rg: {round(rg)}, rg_min: {rg_min}, rg_max: {rg_max}")
+   # Create a dictionary with the results
+    result_dict = {
+        "rg": round(rg),
+        "rg_min": rg_min,
+        "rg_max": rg_max
+    }
+
+    # Convert the dictionary to a JSON string
+    json_result = json.dumps(result_dict)
+
+    # Print the JSON string
+    print(json_result)
 
 
 if __name__ == "__main__":
