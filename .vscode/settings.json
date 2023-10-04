@@ -1,7 +1,13 @@
 {
-"editor.detectIndentation": false,
-"editor.formatOnSave": true,
-"editor.tabSize": 2,
-"editor.insertSpaces": true,
-"editor.showUnused": true
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.showUnused": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.autopep8",
+    "editor.formatOnSave": true
+  },
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true
 }
