@@ -77,7 +77,12 @@ def corect_first_character(pae, output_file):
 def define_clusters_for_selected_pae(pae, row_start, row_end, col_start, col_end):
     with open(pae, 'r') as json_file:
         data = json.load(json_file)
-    matrix = data["predicted_aligned_error"]    
+    if  'pae' in data:
+      matrix = data["pae"]
+    elif 'predicted_aligned_error' in data:
+      matrix = data["predicted_aligned_error"] 
+    else:
+      raise ValueError('Invalid PAE JSON format.') 
     selected_matrix = []
     for i, row in enumerate(matrix):
         new_row = []
