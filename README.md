@@ -60,6 +60,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 0.0.13
+  - Update the PAE Pythons script
 - 0.0.12
   - Add number of Workers to the Backend BullMQ Controller
 - 0.0.11
