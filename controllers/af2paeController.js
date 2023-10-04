@@ -99,7 +99,7 @@ const spawnAF2PAEInpFileMaker = (af2paeDir) => {
   const errorFile = path.join(af2paeDir, 'af2pae_error.log')
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
-  const af2pae_script = '/app/scripts/write_const_from_pae.py'
+  const af2pae_script = '/app/scripts/pae_ratios.py'
   const args = [af2pae_script, 'pae_file.json', 'crd_file.crd']
 
   return new Promise((resolve, reject) => {
