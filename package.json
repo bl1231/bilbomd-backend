@@ -1,7 +1,7 @@
 {
   "name": "bilbomd-backend",
   "description": "backend server for BilboMD webapp",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "main": "server.js",
   "private": true,
   "jest": {
