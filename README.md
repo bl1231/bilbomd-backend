@@ -60,6 +60,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 0.0.14
+  - Add AutoRg API endpoint that uses [BioXTAS RAW](https://github.com/jbhopkins/bioxtasraw) to calcualte `rg_min` and `rg_max`
 - 0.0.13
   - Update the PAE Pythons script
 - 0.0.12
