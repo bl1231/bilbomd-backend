@@ -38,13 +38,15 @@ npm install
 
 ### Executing program
 
-Production is run via docker compose. However, for interactive development efforts you probably want to run using `npm`:
+Production is run via docker compose. However, for interactive local development efforts you probably want to run using `npm`:
 
 ```bash
 npm run dev
 ```
 
-## Builf docker image
+## Build docker image
+
+To test if the `Dockerfile` will build you can use this command:
 
 ```bash
 docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
@@ -74,7 +76,7 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 - 0.0.8
   - Add new routes for PAE jiffy (creates const.inp from AlphaFold PAE JSON input file).
   - Dockerfile build was moved from bullseye to continuumio/miniconda3 to enable conda envs inside Docker container.
-  - Add Michal's PAE script `write_const_from_pae.py`` directly to this project.
+  - Add Michal's PAE script `write_const_from_pae.py` directly to this project.
   - Update all NPM dependencies as of 08/06/2023
 - 0.0.7
   - baseline.

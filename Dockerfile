@@ -7,7 +7,8 @@ RUN apt-get install -y \
     ncat \
     ca-certificates \
     curl \
-    gnupg
+    gnupg \
+    zip
 
 RUN mkdir -p /etc/apt/keyrings
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
@@ -30,11 +31,34 @@ RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/b
 RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
 
 # install Python packages needed for the PAE const.inp script
-RUN conda install numpy 
-RUN conda install -c conda-forge python-igraph
+# and BioXTAS 
+RUN conda install pillow six wheel numpy=1.24.3 scipy=1.10.1 matplotlib numba h5py cython numexpr reportlab
+RUN conda install -c conda-forge python-igraph=0.10.4 dbus-python fabio pyfai hdf5plugin mmcif_pdbx svglib
+
+# install BioXTAS
+RUN apt-get install -y build-essential
+
+# Create a directory for BioXTAS and copy the source ZIP file
+RUN mkdir /BioXTAS
+COPY RAW-2.2.1-source.zip /BioXTAS/
+
+# Change the working directory to BioXTAS
+WORKDIR /BioXTAS
+
+# Unzip the source ZIP file
+RUN unzip RAW-2.2.1-source.zip
+
+# Build BioXTAS using Python setup.py
+RUN python setup.py build_ext --inplace
+
+# Install BioXTAS using pip
+RUN pip install .
 
 # Switch to the non-root user
 USER bilbo:bilbomd
+
+# switch back so we can install bilbomd-backend
+WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./

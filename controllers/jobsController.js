@@ -3,6 +3,7 @@ const formidable = require('formidable')
 const fs = require('fs-extra')
 const path = require('path')
 const { v4: uuid } = require('uuid')
+const spawn = require('child_process').spawn
 const { queueJob, getJobByUUID, getPositionOfJob } = require('../queues/jobQueue')
 const Job = require('../model/Job')
 const User = require('../model/User')
@@ -275,11 +276,138 @@ const createNewJobObject = (fields, files, UUID, user) => {
   })
 }
 
+const getAutoRg = async (req, res) => {
+  // create a unique folder for each autoRg submission using UUIDs
+  const UUID = uuid()
+  const jobDir = path.join(uploadFolder, 'autorg_uploads', UUID)
+  const form = formidable({
+    keepExtensions: true,
+    allowEmptyFiles: false,
+    maxFileSize: 250 * 1024 * 1024,
+    uploadDir: jobDir
+    // filename: (name, ext, part, form) => {
+    //   logger.info('form from host: %s', form.headers.host)
+    //   logger.info('got part.name %s', part.name)
+    //   if (part.name == 'expdata') return path.join(jobDir, part.name + '.dat')
+    // }
+  })
+
+  try {
+    await fs.mkdir(jobDir, { recursive: true })
+    logger.info('Created AutoRg directory: %s', jobDir)
+  } catch (error) {
+    logger.error(error)
+    return res.status(500).json({ message: 'Failed to create AutoRg job directory' })
+  }
+
+  // Function to save files
+  const saveFile = async (files) => {
+    // console.log(files)
+    const filesPromises = Object.values(files).map(async (file) => {
+      // const lowercaseFilename = file.originalFilename.toLowerCase()
+      const newFilePath = path.join(jobDir, 'expdata.dat')
+      await fs.promises.rename(file.filepath, newFilePath)
+      return newFilePath
+    })
+
+    await Promise.all(filesPromises)
+  }
+
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      logger.error('Error parsing files %s', err)
+      return res.status(400).json({
+        status: 'Fail',
+        message: 'There was a problem parsing the uploaded files',
+        error: err
+      })
+    }
+
+    try {
+      const { email } = fields
+      const user = await User.findOne({ email }).exec()
+      if (!user) {
+        return res.status(401).json({ message: 'No user found with that email' })
+      }
+
+      await saveFile(files)
+
+      const autorgResults = await spawnAutoRgCalculator(jobDir)
+
+      logger.info(autorgResults)
+
+      res.status(200).json({
+        message: 'AutoRg Success',
+        uuid: UUID,
+        rg: autorgResults.rg,
+        rg_min: autorgResults.rg_min,
+        rg_max: autorgResults.rg_max
+      })
+      // remove the uploaded files.
+      // comment out for debugging I suppose.
+      try {
+        await fs.remove(jobDir)
+        logger.info(`Deleted upload folder: ${jobDir}`)
+      } catch (error) {
+        logger.error(`Error deleting upload folder: ${jobDir}`, error)
+      }
+    } catch (error) {
+      logger.error('Error calculatign AutoRg', error)
+      res.status(500).json({ message: 'Failed to calculate AutoRg', error: error })
+    }
+  })
+}
+
+const spawnAutoRgCalculator = (dir) => {
+  const logFile = path.join(dir, 'autoRg.log')
+  const errorFile = path.join(dir, 'autoRg_error.log')
+  const logStream = fs.createWriteStream(logFile)
+  const errorStream = fs.createWriteStream(errorFile)
+  const autoRg_script = '/app/scripts/autorg.py'
+  const args = [autoRg_script, 'expdata.dat']
+
+  return new Promise((resolve, reject) => {
+    const autoRg = spawn('python', args, { cwd: dir })
+    let autoRg_json = ''
+    autoRg.stdout?.on('data', (data) => {
+      logger.info('spawnAutoRgCalculator stdout %s', data.toString())
+      logStream.write(data.toString())
+      autoRg_json += data.toString()
+    })
+    autoRg.stderr?.on('data', (data) => {
+      logger.error('spawnAutoRgCalculator stderr', data.toString())
+      console.log(data)
+      errorStream.write(data.toString())
+    })
+    autoRg.on('error', (error) => {
+      logger.error('spawnAutoRgCalculator error:', error)
+      reject(error)
+    })
+    autoRg.on('exit', (code) => {
+      if (code === 0) {
+        try {
+          // Parse the stdout data as JSON
+          const analysisResults = JSON.parse(autoRg_json)
+          logger.info('spawnAutoRgCalculator close success exit code:', code)
+          resolve(analysisResults)
+        } catch (parseError) {
+          logger.error('Error parsing analysis results:', parseError)
+          reject(parseError)
+        }
+      } else {
+        logger.error('spawnAutoRgCalculator close error exit code:', code)
+        reject(`spawnAutoRgCalculator on close reject`)
+      }
+    })
+  })
+}
+
 module.exports = {
   getAllJobs,
   createNewJob,
   updateJobStatus,
   deleteJob,
   getJobById,
-  downloadJobResults
+  downloadJobResults,
+  getAutoRg
 }
