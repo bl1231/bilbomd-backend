@@ -8,7 +8,7 @@ const { BILBOMD_URL } = process.env
 
 /**
  * @swagger
- * /register/new-user:
+ * /register:
  *   post:
  *     summary: Create a New User
  *     description: Creates a new user with the provided username and email.
