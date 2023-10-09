@@ -6,48 +6,29 @@ const { logger } = require('../middleware/loggers')
  * @swagger
  * /users:
  *   get:
- *     summary: Get All Users
- *     description: Retrieves a list of all users.
+ *     summary: Get all users
+ *     description: Retrieve a list of all users.
  *     tags:
  *       - User Management
  *     responses:
  *       200:
- *         description: List of users retrieved successfully.
+ *         description: Users retrieved successfully.
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   username:
- *                     type: string
- *                     description: The username of the user.
- *                   email:
- *                     type: string
- *                     description: The email address of the user.
+ *                 $ref: '#/components/schemas/User'
  *       400:
  *         description: No users found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
+ *       500:
+ *         description: Internal server error.
  */
 const getAllUsers = async (req, res) => {
   const users = await User.find().lean()
   if (!users) return res.status(400).json({ message: 'No users found' })
   res.json(users)
 }
-
-// @desc Create new user
-// @route POST /users
-// @access Private
-
-// do this in register?
 
 /**
  * @swagger
@@ -69,25 +50,7 @@ const getAllUsers = async (req, res) => {
  *         required: true
  *         description: The user object to update.
  *         schema:
- *           type: object
- *           properties:
- *             id:
- *               type: string
- *               description: The ID of the user.
- *             username:
- *               type: string
- *               description: The updated username.
- *             roles:
- *               type: array
- *               items:
- *                 type: string
- *               description: The updated roles of the user.
- *             active:
- *               type: boolean
- *               description: The updated active status of the user.
- *             email:
- *               type: string
- *               description: The updated email address of the user.
+ *           $ref: '#/components/schemas/User'
  *     responses:
  *       200:
  *         description: User updated successfully.
@@ -275,14 +238,7 @@ const deleteUser = async (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 username:
- *                   type: string
- *                   description: The username of the user.
- *                 email:
- *                   type: string
- *                   description: The email address of the user.
+ *               $ref: '#/components/schemas/User'
  *       400:
  *         description: Bad request. Invalid input or missing fields.
  *         content:
