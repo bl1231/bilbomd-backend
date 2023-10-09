@@ -11,6 +11,8 @@ const cookieParser = require('cookie-parser')
 const { router: adminRoutes } = require('./routes/admin')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
+const swaggerUi = require('swagger-ui-express')
+const swaggerDocument = require('./swagger.json')
 
 // Connect to MongoDB
 connectDB()
@@ -46,6 +48,9 @@ app.use('/af2pae', require('./routes/af2pae'))
 app.use('/autorg', require('./routes/autorg'))
 app.use('/bullmq', require('./routes/bullmq'))
 app.use('/admin', adminRoutes)
+app.use('/api-docs', express.static('./swagger.json'))
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup('./swagger.json'))
 
 app.all('*', (req, res) => {
   res.status(404)
@@ -63,20 +68,6 @@ app.use((err, req, res) => {
   logger.error(err.message)
   res.status(500).json({ error: 'Internal server error' })
 })
-
-// Start the server
-// let server = null
-// if (process.env.NODE_ENV !== 'TEST') {
-//   server = app.listen(PORT, () => {
-//     console.log(`Server is running on port ${PORT}`)
-//   })
-// }
-
-// Only listen for traffic if we are actually connected to MongoDB.
-// mongoose.connection.once('connected', () => {
-//   // console.log('Connected to MongoDB')
-//   app.listen(PORT, () => console.log(`BilboMD Backend Server running on port ${PORT}`))
-// })
 
 mongoose.connection.on('error', (err) => {
   console.log('mongoose error: ', err)

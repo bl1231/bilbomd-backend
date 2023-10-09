@@ -18,7 +18,7 @@ const url = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOSTNAME}:${M
 // }
 
 const connectDB = async () => {
-  logger.info('MongoDB URL: %s', url)
+  // logger.info('MongoDB URL: %s', url)
   try {
     mongoose.set('strictQuery', false)
     await mongoose.connect(url)
