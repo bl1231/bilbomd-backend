@@ -138,7 +138,7 @@ const otp = async (req, res) => {
 /**
  * @swagger
  * /auth/refresh:
- *   post:
+ *   get:
  *     summary: Refresh Access Token
  *     description: Refreshes the access token using a valid refresh token.
  *     tags:

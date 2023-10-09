@@ -6,6 +6,66 @@ const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 
 const { BILBOMD_URL } = process.env
 
+/**
+ * @swagger
+ * /register/new-user:
+ *   post:
+ *     summary: Create a New User
+ *     description: Creates a new user with the provided username and email.
+ *     tags:
+ *       - User Management
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user:
+ *                 type: string
+ *                 description: The username of the new user.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the new user.
+ *             required:
+ *               - user
+ *               - email
+ *     responses:
+ *       201:
+ *         description: User created successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: string
+ *                   description: Success message.
+ *                 code:
+ *                   type: string
+ *                   description: Confirmation code for email verification.
+ *       400:
+ *         description: Invalid user data received.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       409:
+ *         description: Conflict. Duplicate username or email found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const handleNewUser = async (req, res) => {
   // logger.info('handleNewUser', req.body)
   const { user, email } = req.body

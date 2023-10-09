@@ -2,9 +2,41 @@ const User = require('../model/User')
 const Job = require('../model/Job')
 const { logger } = require('../middleware/loggers')
 
-// @desc Get all users
-// @route GET /users
-// @access Private
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get All Users
+ *     description: Retrieves a list of all users.
+ *     tags:
+ *       - User Management
+ *     responses:
+ *       200:
+ *         description: List of users retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                     description: The username of the user.
+ *                   email:
+ *                     type: string
+ *                     description: The email address of the user.
+ *       400:
+ *         description: No users found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const getAllUsers = async (req, res) => {
   const users = await User.find().lean()
   if (!users) return res.status(400).json({ message: 'No users found' })
@@ -17,9 +49,87 @@ const getAllUsers = async (req, res) => {
 
 // do this in register?
 
-// @desc Update a user
-// @route PATCH /users
-// @access Private
+/**
+ * @swagger
+ * /users/{id}:
+ *   patch:
+ *     summary: Update User
+ *     description: Updates an existing user's information.
+ *     tags:
+ *       - User Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the user to update.
+ *       - in: body
+ *         name: user
+ *         required: true
+ *         description: The user object to update.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *               description: The ID of the user.
+ *             username:
+ *               type: string
+ *               description: The updated username.
+ *             roles:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               description: The updated roles of the user.
+ *             active:
+ *               type: boolean
+ *               description: The updated active status of the user.
+ *             email:
+ *               type: string
+ *               description: The updated email address of the user.
+ *     responses:
+ *       200:
+ *         description: User updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message.
+ *       400:
+ *         description: Bad request. Invalid input or missing fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       409:
+ *         description: Conflict. Duplicate username found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const updateUser = async (req, res) => {
   const { id, username, roles, active, email } = req.body
 
@@ -69,9 +179,53 @@ const updateUser = async (req, res) => {
   res.status(200).json({ message: `${updatedUser.username} updated` })
 }
 
-// @desc Delete a user
-// @route DELETE /users
-// @access Private
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete User
+ *     description: Deletes an existing user by their ID.
+ *     tags:
+ *       - User Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the user to delete.
+ *     responses:
+ *       200:
+ *         description: User deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message.
+ *       400:
+ *         description: Bad request. Invalid input or missing fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const deleteUser = async (req, res) => {
   const { id } = req.body
 
@@ -100,6 +254,56 @@ const deleteUser = async (req, res) => {
   res.status(200).json({ message: reply })
 }
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Get User by ID
+ *     description: Retrieves user information by their ID.
+ *     tags:
+ *       - User Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the user to retrieve.
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 username:
+ *                   type: string
+ *                   description: The username of the user.
+ *                 email:
+ *                   type: string
+ *                   description: The email address of the user.
+ *       400:
+ *         description: Bad request. Invalid input or missing fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const getUser = async (req, res) => {
   if (!req?.params?.id) return res.status(400).json({ message: 'User ID required' })
   const user = await User.findOne({ _id: req.params.id }).lean().exec()

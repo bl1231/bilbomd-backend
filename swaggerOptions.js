@@ -4,12 +4,12 @@ const options = {
   swaggerDefinition: {
     openapi: '3.0.0',
     info: {
-      title: 'BilboMD Backend', // Title of your API
-      version: '0.0.14', // Version of your API
+      title: 'BilboMD Backend',
+      version: '0.0.14',
       description: 'API documentation for bilbomd-backend'
     }
   },
-  apis: ['./controllers/*.js'] // Specify the path to your route files
+  apis: ['./controllers/*.js']
 }
 
 const swaggerSpec = swaggerJsdoc(options)
