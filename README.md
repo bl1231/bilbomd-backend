@@ -60,6 +60,11 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 1.0.0
+  - Implement versioned API (start with `v1`)
+  - Start out with a new major package version (`1.0.0`)
+  - API will make best effort to conform to [OpenAPI 3.\*](https://swagger.io/specification/) specification.
+  - Add [SwaggerUI](https://swagger.io/tools/swagger-ui/) for public facing API documentation.
 - 0.0.14
   - Add AutoRg API endpoint that uses [BioXTAS RAW](https://github.com/jbhopkins/bioxtasraw) to calcualte `rg_min` and `rg_max`
 - 0.0.13
