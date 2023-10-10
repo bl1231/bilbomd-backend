@@ -1,0 +1,205 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "BilboMD Backend",
+    "version": "0.0.14",
+    "description": "API documentation for bilbomd-backend"
+  },
+  "servers": [
+    {
+      "url": "https://bl1231.als.lbl.gov/bilbomd-dev-backend/v1",
+      "description": "production"
+    },
+    {
+      "url": "http://localhost:3501/v1",
+      "description": "development"
+    }
+  ],
+  "paths": {},
+  "components": {
+    "schemas": {
+      "User": {
+        "title": "User",
+        "required": [
+          "username",
+          "email"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "refreshToken": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "email": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "Active"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "confirmationCode": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "otp": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "UUID": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_access": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "_id": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Job": {
+        "title": "Job",
+        "required": [
+          "title",
+          "uuid",
+          "psf_file",
+          "crd_file",
+          "data_file",
+          "rg_min",
+          "rg_max",
+          "user"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "psf_file": {
+            "type": "string"
+          },
+          "crd_file": {
+            "type": "string"
+          },
+          "const_inp_file": {
+            "type": "string"
+          },
+          "data_file": {
+            "type": "string"
+          },
+          "conformational_sampling": {
+            "type": "number",
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "rg_min": {
+            "type": "number"
+          },
+          "rg_max": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Submitted",
+              "Pending",
+              "Running",
+              "Completed",
+              "Error"
+            ]
+          },
+          "time_submitted": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "time_started": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "time_completed": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "type": "string"
+          },
+          "_id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "tags": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

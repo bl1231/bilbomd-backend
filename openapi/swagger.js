@@ -2,8 +2,8 @@ const fs = require('fs')
 const swaggerSpec = require('./swaggerOptions')
 const m2s = require('mongoose-to-swagger')
 
-const User = require('./model/User')
-const Job = require('./model/Job')
+const User = require('../model/User')
+const Job = require('../model/Job')
 
 // Generate the Swagger definition for Mongoose/MongoDB schema
 const userSwaggerDefinition = m2s(User)
@@ -16,7 +16,7 @@ swaggerSpec.components.schemas = swaggerSpec.components.schemas || {}
 swaggerSpec.components.schemas.User = userSwaggerDefinition
 swaggerSpec.components.schemas.Job = jobSwaggerDefinition
 
-// Assuming Bearer authentication
+// Add Bearer authentication
 swaggerSpec.security = [
   {
     bearerAuth: []
@@ -32,4 +32,4 @@ swaggerSpec.components.securitySchemes = {
 }
 
 // Write the updated Swagger JSON to a file
-fs.writeFileSync('swagger.json', JSON.stringify(swaggerSpec, null, 2))
+fs.writeFileSync('openapi/v1/swagger_v1.json', JSON.stringify(swaggerSpec, null, 2))

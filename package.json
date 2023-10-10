@@ -14,7 +14,7 @@
     "test": "NODE_ENV=test jest --testTimeout=5000 --runInBand --verbose --detectOpenHandles",
     "start": "node server",
     "dev": "nodemon -q -r dotenv/config server",
-    "generate-swagger": "node ./swagger.js"
+    "generate-swagger": "node ./openapi/swagger.js"
   },
   "dependencies": {
     "@bull-board/api": "^5.8.4",

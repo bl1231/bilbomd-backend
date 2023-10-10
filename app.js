@@ -12,7 +12,8 @@ const { router: adminRoutes } = require('./routes/admin')
 const mongoose = require('mongoose')
 const connectDB = require('./config/dbConn')
 const swaggerUi = require('swagger-ui-express')
-const swaggerDocument = require('./swagger.json')
+const swaggerDocumentV1 = require('./openapi/v1/swagger_v1.json')
+// const swaggerDocumentV2 = require('./swagger_v2.json')
 
 // Connect to MongoDB
 connectDB()
@@ -33,23 +34,27 @@ app.use(express.json({ limit: '5mb' }))
 // middleware for COOKIES
 app.use(cookieParser())
 
-// serve static files
+// Serve static files
 app.use('/', express.static(path.join(__dirname, '/public')))
 
-// our routes
+// Root routes (no version)
 app.use('/', require('./routes/root'))
-app.use('/register', require('./routes/register'))
-app.use('/verify', require('./routes/verify'))
-app.use('/magicklink', require('./routes/magicklink'))
-app.use('/auth', require('./routes/auth'))
-app.use('/jobs', require('./routes/jobs'))
-app.use('/users', require('./routes/users'))
-app.use('/af2pae', require('./routes/af2pae'))
-app.use('/autorg', require('./routes/autorg'))
-app.use('/bullmq', require('./routes/bullmq'))
-app.use('/admin', adminRoutes)
-app.use('/api-docs', express.static('./swagger.json'))
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+
+// Version 1 routes
+app.use('/v1/register', require('./routes/register'))
+app.use('/v1/verify', require('./routes/verify'))
+app.use('/v1/magicklink', require('./routes/magicklink'))
+app.use('/v1/auth', require('./routes/auth'))
+app.use('/v1/jobs', require('./routes/jobs'))
+app.use('/v1/users', require('./routes/users'))
+app.use('/v1/af2pae', require('./routes/af2pae'))
+app.use('/v1/autorg', require('./routes/autorg'))
+app.use('/v1/bullmq', require('./routes/bullmq'))
+app.use('/v1/admin', adminRoutes)
+
+// Swagger documentation for Version 1
+app.use('/v1/api-docs', express.static('./openapi/v1/swagger_v1.json'))
+app.use('/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
 
 app.all('*', (req, res) => {
   res.status(404)
@@ -63,7 +68,7 @@ app.all('*', (req, res) => {
 })
 
 // Error handling middleware
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   logger.error(err.message)
   res.status(500).json({ error: 'Internal server error' })
 })
