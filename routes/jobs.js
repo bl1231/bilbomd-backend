@@ -10,9 +10,9 @@ router
   .get(jobController.getAllJobs)
   .post(jobController.createNewJob)
   .patch(jobController.updateJobStatus)
-  .delete(jobController.deleteJob)
 
 router.route('/:id').get(jobController.getJobById)
+router.route('/:id').delete(jobController.deleteJob)
 router.route('/:id/results').get(jobController.downloadJobResults)
 
 module.exports = router
