@@ -5,7 +5,7 @@ const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 const { BILBOMD_URL } = process.env
 
 /**
- * @swagger
+ * @openapi
  * /verify:
  *   post:
  *     summary: Verify New User
@@ -84,7 +84,7 @@ const verifyNewUser = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /resend-verification:
  *   post:
  *     summary: Resend Verification Code

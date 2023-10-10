@@ -11,7 +11,7 @@ const User = require('../model/User')
 const uploadFolder = path.join(process.env.DATA_VOL)
 
 /**
- * @swagger
+ * @openapi
  * /jobs:
  *   get:
  *     summary: Get All Jobs
@@ -75,7 +75,7 @@ const getAllJobs = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /jobs:
  *   post:
  *     summary: Create a new job
@@ -214,7 +214,7 @@ const createNewJob = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /jobs:
  *   patch:
  *     summary: Update job status
@@ -296,7 +296,7 @@ const updateJobStatus = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /jobs:
  *   delete:
  *     summary: Delete a job
@@ -379,7 +379,7 @@ const deleteJob = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /jobs/{id}:
  *   get:
  *     summary: Get a job by its ID.
@@ -428,7 +428,7 @@ const getJobById = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /jobs/{id}/download:
  *   get:
  *     summary: Download job results by its ID.
@@ -501,8 +501,8 @@ const createNewJobObject = (fields, files, UUID, user) => {
 }
 
 /**
- * @swagger
- * /autoRg:
+ * @openapi
+ * /autorg:
  *   post:
  *     summary: Calculate AutoRg for uploaded data.
  *     tags:

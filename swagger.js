@@ -16,5 +16,20 @@ swaggerSpec.components.schemas = swaggerSpec.components.schemas || {}
 swaggerSpec.components.schemas.User = userSwaggerDefinition
 swaggerSpec.components.schemas.Job = jobSwaggerDefinition
 
+// Assuming Bearer authentication
+swaggerSpec.security = [
+  {
+    bearerAuth: []
+  }
+]
+
+swaggerSpec.components.securitySchemes = {
+  bearerAuth: {
+    type: 'http',
+    scheme: 'bearer',
+    bearerFormat: 'JWT'
+  }
+}
+
 // Write the updated Swagger JSON to a file
 fs.writeFileSync('swagger.json', JSON.stringify(swaggerSpec, null, 2))

@@ -3,7 +3,7 @@ const Job = require('../model/Job')
 const { logger } = require('../middleware/loggers')
 
 /**
- * @swagger
+ * @openapi
  * /users:
  *   get:
  *     summary: Get all users
@@ -31,28 +31,29 @@ const getAllUsers = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /users/{id}:
  *   patch:
  *     summary: Update User
  *     description: Updates an existing user's information.
  *     tags:
  *       - User Management
+ *     requestBody:
+ *       description: User object to update.
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: string
  *         required: true
  *         description: The ID of the user to update.
- *       - in: body
- *         name: user
- *         required: true
- *         description: The user object to update.
  *         schema:
- *           $ref: '#/components/schemas/User'
+ *           type: string
  *     responses:
- *       200:
+ *       '200':
  *         description: User updated successfully.
  *         content:
  *           application/json:
@@ -62,7 +63,7 @@ const getAllUsers = async (req, res) => {
  *                 message:
  *                   type: string
  *                   description: Success message.
- *       400:
+ *       '400':
  *         description: Bad request. Invalid input or missing fields.
  *         content:
  *           application/json:
@@ -72,7 +73,7 @@ const getAllUsers = async (req, res) => {
  *                 message:
  *                   type: string
  *                   description: Error message.
- *       404:
+ *       '404':
  *         description: User not found.
  *         content:
  *           application/json:
@@ -82,7 +83,7 @@ const getAllUsers = async (req, res) => {
  *                 message:
  *                   type: string
  *                   description: Error message.
- *       409:
+ *       '409':
  *         description: Conflict. Duplicate username found.
  *         content:
  *           application/json:
@@ -132,18 +133,13 @@ const updateUser = async (req, res) => {
   user.active = active
   user.email = email
 
-  // if (password) {
-  //   // Hash password
-  //   user.password = await bcrypt.hash(password, 10) // salt rounds
-  // }
-
   const updatedUser = await user.save()
 
   res.status(200).json({ message: `${updatedUser.username} updated` })
 }
 
 /**
- * @swagger
+ * @openapi
  * /users/{id}:
  *   delete:
  *     summary: Delete User
@@ -218,7 +214,7 @@ const deleteUser = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /users/{id}:
  *   get:
  *     summary: Get User by ID

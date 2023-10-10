@@ -7,7 +7,7 @@ const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 const { BILBOMD_URL } = process.env
 
 /**
- * @swagger
+ * @openapi
  * /register:
  *   post:
  *     summary: Create a New User

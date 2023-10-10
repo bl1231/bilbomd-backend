@@ -3,7 +3,7 @@ const User = require('../model/User')
 const jwt = require('jsonwebtoken')
 
 /**
- * @swagger
+ * @openapi
  * /auth/otp:
  *   post:
  *     summary: Authenticate user with OTP
@@ -136,7 +136,7 @@ const otp = async (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /auth/refresh:
  *   get:
  *     summary: Refresh Access Token
@@ -218,7 +218,7 @@ const refresh = (req, res) => {
 }
 
 /**
- * @swagger
+ * @openapi
  * /auth/logout:
  *   post:
  *     summary: Logout and Clear JWT Cookie
