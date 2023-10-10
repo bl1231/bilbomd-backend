@@ -5,12 +5,22 @@
     "version": "0.0.14",
     "description": "API documentation for bilbomd-backend"
   },
+  "servers": [
+    {
+      "url": "https://bl1231.als.lbl.gov/bilbomd-dev-backend",
+      "description": "production"
+    },
+    {
+      "url": "http://localhost:3501",
+      "description": "development"
+    }
+  ],
   "paths": {
     "/af2pae": {
       "post": {
         "summary": "Create a new const file from PAE matrix.",
         "tags": [
-          "Const File Utilities"
+          "Utilities"
         ],
         "description": "Endpoint for creating a new const file.",
         "requestBody": {
@@ -51,7 +61,7 @@
       "get": {
         "summary": "Download Const File",
         "tags": [
-          "Const File Utilities"
+          "Utilities"
         ],
         "description": "Download the const.inp file associated with a job by its UUID.",
         "parameters": [
@@ -215,27 +225,20 @@
         "tags": [
           "Authentication"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "refreshToken": {
-                    "type": "string",
-                    "description": "The refresh token."
-                  }
-                },
-                "required": [
-                  "refreshToken"
-                ]
-              }
-            }
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "jwt",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The refresh token received in a cookie."
           }
-        },
+        ],
         "responses": {
           "200": {
-            "description": "New access token generated successfully.",
+            "description": "Successful refresh.",
             "content": {
               "application/json": {
                 "schema": {
@@ -251,7 +254,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized. The provided refresh token is invalid or expired.",
+            "description": "Unauthorized. Invalid or missing refresh token.",
             "content": {
               "application/json": {
                 "schema": {
@@ -267,7 +270,7 @@
             }
           },
           "403": {
-            "description": "Forbidden. The provided refresh token is invalid.",
+            "description": "Forbidden. Refresh token is invalid or expired.",
             "content": {
               "application/json": {
                 "schema": {
@@ -523,29 +526,26 @@
             "description": "Internal server error."
           }
         }
-      },
+      }
+    },
+    "/jobs/{id}": {
       "delete": {
-        "summary": "Delete a job",
-        "description": "Delete a job by its ID and remove associated files from disk.",
+        "summary": "Delete a Job by ID",
+        "description": "Delete a job by its unique identifier.",
         "tags": [
           "Job Management"
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "description": "The ID of the job to delete."
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "The ID of the job to delete.",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Job deleted successfully.",
@@ -556,7 +556,7 @@
                   "properties": {
                     "reply": {
                       "type": "string",
-                      "description": "A success message indicating the deleted job details."
+                      "description": "A success message indicating the deleted job."
                     }
                   }
                 }
@@ -564,7 +564,7 @@
             }
           },
           "400": {
-            "description": "Job ID required, or job not found, or directory not found on disk.",
+            "description": "Bad Request. Invalid or missing job ID.",
             "content": {
               "application/json": {
                 "schema": {
@@ -572,7 +572,23 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "An error message indicating the invalid or missing ID."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. The job with the specified ID was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "An error message indicating the job was not found."
                     }
                   }
                 }
@@ -580,12 +596,23 @@
             }
           },
           "500": {
-            "description": "Internal server error."
+            "description": "Internal Server Error. Failed to delete the job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "An error message indicating the failure to delete the job."
+                    }
+                  }
+                }
+              }
+            }
           }
         }
-      }
-    },
-    "/jobs/{id}": {
+      },
       "get": {
         "summary": "Get a job by its ID.",
         "tags": [
@@ -662,7 +689,7 @@
       "post": {
         "summary": "Calculate AutoRg for uploaded data.",
         "tags": [
-          "AutoRg Calculation"
+          "Utilities"
         ],
         "requestBody": {
           "required": true,

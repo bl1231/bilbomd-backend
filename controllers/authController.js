@@ -143,20 +143,16 @@ const otp = async (req, res) => {
  *     description: Refreshes the access token using a valid refresh token.
  *     tags:
  *       - Authentication
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               refreshToken:
- *                 type: string
- *                 description: The refresh token.
- *             required:
- *               - refreshToken
+ *     parameters:
+ *       - in: cookie
+ *         name: jwt
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The refresh token received in a cookie.
  *     responses:
- *       200:
- *         description: New access token generated successfully.
+ *       '200':
+ *         description: Successful refresh.
  *         content:
  *           application/json:
  *             schema:
@@ -165,8 +161,8 @@ const otp = async (req, res) => {
  *                 accessToken:
  *                   type: string
  *                   description: The new access token.
- *       401:
- *         description: Unauthorized. The provided refresh token is invalid or expired.
+ *       '401':
+ *         description: Unauthorized. Invalid or missing refresh token.
  *         content:
  *           application/json:
  *             schema:
@@ -175,8 +171,8 @@ const otp = async (req, res) => {
  *                 message:
  *                   type: string
  *                   description: Error message.
- *       403:
- *         description: Forbidden. The provided refresh token is invalid.
+ *       '403':
+ *         description: Forbidden. Refresh token is invalid or expired.
  *         content:
  *           application/json:
  *             schema:

@@ -50,7 +50,6 @@ app.use('/bullmq', require('./routes/bullmq'))
 app.use('/admin', adminRoutes)
 app.use('/api-docs', express.static('./swagger.json'))
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup('./swagger.json'))
 
 app.all('*', (req, res) => {
   res.status(404)

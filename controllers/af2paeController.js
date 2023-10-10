@@ -14,7 +14,7 @@ const af2paeUploads = path.join(uploadFolder, 'af2pae_uploads')
  *   post:
  *     summary: Create a new const file from PAE matrix.
  *     tags:
- *       - Const File Utilities
+ *       - Utilities
  *     description: Endpoint for creating a new const file.
  *     requestBody:
  *       required: true
@@ -112,7 +112,7 @@ const createNewConstFile = async (req, res) => {
  *   get:
  *     summary: Download Const File
  *     tags:
- *      - Const File Utilities
+ *      - Utilities
  *     description: Download the const.inp file associated with a job by its UUID.
  *     parameters:
  *       - in: query
