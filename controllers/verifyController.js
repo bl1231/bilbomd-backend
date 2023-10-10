@@ -24,7 +24,7 @@ const { BILBOMD_URL } = process.env
  *                 type: string
  *                 description: The confirmation code to verify the new user.
  *     responses:
- *       200:
+ *       '200':
  *         description: User verified successfully.
  *         content:
  *           application/json:
@@ -34,7 +34,7 @@ const { BILBOMD_URL } = process.env
  *                 message:
  *                   type: string
  *                   description: Success message.
- *       400:
+ *       '400':
  *         description: Bad request. Invalid input or missing fields.
  *         content:
  *           application/json:
@@ -44,7 +44,7 @@ const { BILBOMD_URL } = process.env
  *                 message:
  *                   type: string
  *                   description: Error message.
- *       500:
+ *       '500':
  *         description: Internal server error.
  *         content:
  *           application/json:
@@ -85,7 +85,7 @@ const verifyNewUser = async (req, res) => {
 
 /**
  * @openapi
- * /resend-verification:
+ * /verify/resend:
  *   post:
  *     summary: Resend Verification Code
  *     description: Resend a verification code to a user's email for account confirmation.
@@ -103,7 +103,7 @@ const verifyNewUser = async (req, res) => {
  *                 type: string
  *                 description: The user's email address for resending the verification code.
  *     responses:
- *       201:
+ *       '201':
  *         description: Verification code resent successfully.
  *         content:
  *           application/json:
@@ -113,7 +113,7 @@ const verifyNewUser = async (req, res) => {
  *                 message:
  *                   type: string
  *                   description: Success message.
- *       400:
+ *       '400':
  *         description: Bad request. Invalid input or missing fields.
  *         content:
  *           application/json:
@@ -123,7 +123,7 @@ const verifyNewUser = async (req, res) => {
  *                 message:
  *                   type: string
  *                   description: Error message.
- *       401:
+ *       '401':
  *         description: Unauthorized. No user with the provided email.
  *         content:
  *           application/json:
@@ -133,7 +133,7 @@ const verifyNewUser = async (req, res) => {
  *                 message:
  *                   type: string
  *                   description: Error message.
- *       500:
+ *       '500':
  *         description: Internal server error.
  *         content:
  *           application/json:
