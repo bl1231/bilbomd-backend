@@ -1,11 +1,14 @@
 const swaggerJsdoc = require('swagger-jsdoc')
 
+// const VERSION = '@VERSION@'
+const VERSION = process.env.npm_package_version
+
 const options = {
   swaggerDefinition: {
     openapi: '3.0.0',
     info: {
       title: 'BilboMD Backend',
-      version: '0.0.14',
+      version: VERSION,
       description: 'API documentation for bilbomd-backend'
     }
   },
