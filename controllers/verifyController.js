@@ -4,6 +4,57 @@ const { sendVerificationEmail } = require('../config/nodemailerConfig')
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const { BILBOMD_URL } = process.env
 
+/**
+ * @openapi
+ * /verify:
+ *   post:
+ *     summary: Verify New User
+ *     description: Verify a new user's registration using a confirmation code.
+ *     tags:
+ *       - User Management
+ *     requestBody:
+ *       description: The confirmation code to verify the new user.
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: The confirmation code to verify the new user.
+ *     responses:
+ *       '200':
+ *         description: User verified successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message.
+ *       '400':
+ *         description: Bad request. Invalid input or missing fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       '500':
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const verifyNewUser = async (req, res) => {
   try {
     const { code } = req.body
@@ -21,7 +72,6 @@ const verifyNewUser = async (req, res) => {
 
     logger.info('Verification code belongs to user: %s %s', user.username, user.email)
 
-    // Set status to "Active" and delete the confirmationCode
     user.status = 'Active'
     user.confirmationCode = undefined
     await user.save()
@@ -33,6 +83,67 @@ const verifyNewUser = async (req, res) => {
   }
 }
 
+/**
+ * @openapi
+ * /verify/resend:
+ *   post:
+ *     summary: Resend Verification Code
+ *     description: Resend a verification code to a user's email for account confirmation.
+ *     tags:
+ *       - User Management
+ *     requestBody:
+ *       description: The user's email to resend the verification code.
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The user's email address for resending the verification code.
+ *     responses:
+ *       '201':
+ *         description: Verification code resent successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message.
+ *       '400':
+ *         description: Bad request. Invalid input or missing fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       '401':
+ *         description: Unauthorized. No user with the provided email.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       '500':
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const resendVerificationCode = async (req, res) => {
   try {
     const { email } = req.body

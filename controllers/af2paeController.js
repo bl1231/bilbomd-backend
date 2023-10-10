@@ -8,6 +8,38 @@ const User = require('../model/User')
 const uploadFolder = path.join(process.env.DATA_VOL)
 const af2paeUploads = path.join(uploadFolder, 'af2pae_uploads')
 
+/**
+ * @openapi
+ * /af2pae:
+ *   post:
+ *     summary: Create a new const file from PAE matrix.
+ *     tags:
+ *       - Utilities
+ *     description: Endpoint for creating a new const file.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email associated with the user.
+ *               crd_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The CRD file to upload.
+ *               pae_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The PAE file to upload.
+ *     responses:
+ *       '200':
+ *         description: Const file created successfully.
+ *       '400':
+ *         description: Invalid form data.
+ */
 const createNewConstFile = async (req, res) => {
   const UUID = uuid()
 
@@ -74,6 +106,50 @@ const createNewConstFile = async (req, res) => {
   })
 }
 
+/**
+ * @openapi
+ * /af2pae:
+ *   get:
+ *     summary: Download Const File
+ *     tags:
+ *      - Utilities
+ *     description: Download the const.inp file associated with a job by its UUID.
+ *     parameters:
+ *       - in: query
+ *         name: uuid
+ *         required: true
+ *         description: The UUID of the job for which to download the const.inp file.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Const file downloaded successfully.
+ *         content:
+ *           application/octet-stream:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       400:
+ *         description: Bad Request. The UUID parameter is missing or invalid.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: The error message indicating the missing or invalid UUID.
+ *       500:
+ *         description: Internal Server Error. Failed to download the const.inp file.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: The error message indicating the failure to download the file.
+ */
 const downloadConstFile = async (req, res) => {
   const { uuid } = req.query
   if (!uuid) return res.status(400).json({ message: 'Job UUID required.' })

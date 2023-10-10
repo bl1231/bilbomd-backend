@@ -10,9 +10,44 @@ const User = require('../model/User')
 
 const uploadFolder = path.join(process.env.DATA_VOL)
 
-// @desc Get all jobs
-// @route GET /jobs
-// @access Private
+/**
+ * @openapi
+ * /jobs:
+ *   get:
+ *     summary: Get All Jobs
+ *     description: Retrieve a list of all jobs.
+ *     tags:
+ *       - Job Management
+ *     responses:
+ *       200:
+ *         description: List of jobs retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Job'
+ *       400:
+ *         description: Bad request. No jobs found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const getAllJobs = async (req, res) => {
   const jobs = await Job.find().lean()
   // If no jobs
@@ -39,9 +74,67 @@ const getAllJobs = async (req, res) => {
   res.json(jobsWithUser)
 }
 
-// @desc Create new job
-// @route POST /jobs
-// @access Private
+/**
+ * @openapi
+ * /jobs:
+ *   post:
+ *     summary: Create a new job
+ *     description: Create a new job submission.
+ *     tags:
+ *       - Job Management
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email address of the user.
+ *               files:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Array of files to be uploaded.
+ *     responses:
+ *       200:
+ *         description: New BilboMD Job successfully created.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: A success message.
+ *                 jobid:
+ *                   type: string
+ *                   description: The ID of the newly created job.
+ *                 uuid:
+ *                   type: string
+ *                   description: The UUID associated with the job.
+ *       400:
+ *         description: There was a problem parsing the uploaded files.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   description: Status of the request (Fail).
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *                 error:
+ *                   type: string
+ *                   description: Detailed error description.
+ *       401:
+ *         description: No user found with that email.
+ *       500:
+ *         description: Internal server error.
+ */
 const createNewJob = async (req, res) => {
   const form = formidable({
     keepExtensions: true,
@@ -60,11 +153,6 @@ const createNewJob = async (req, res) => {
     logger.error(error)
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
-
-  // As far as I can tell this is the way to keep original filenames
-  // form.on('fileBegin', (fieldName, file) => {
-  //   file.filepath = path.join(form.uploadDir, UUID, file.originalFilename)
-  // })
 
   // Function to rename and save files with lowercase filenames
   const renameAndSaveFiles = async (files) => {
@@ -125,9 +213,54 @@ const createNewJob = async (req, res) => {
   })
 }
 
-// @desc Update existing job
-// @route PATCH /jobs
-// @access Private
+/**
+ * @openapi
+ * /jobs:
+ *   patch:
+ *     summary: Update job status
+ *     description: Update the status of a job.
+ *     tags:
+ *       - Job Management
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: The ID of the job to update.
+ *               email:
+ *                 type: string
+ *                 description: The email address associated with the job.
+ *               status:
+ *                 type: string
+ *                 description: The new status for the job.
+ *     responses:
+ *       200:
+ *         description: Job status updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: A success message indicating the job title that was updated.
+ *       400:
+ *         description: All fields are required, or job not found, or nothing to do.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       500:
+ *         description: Internal server error.
+ */
 const updateJobStatus = async (req, res) => {
   const { id, email, status } = req.body
 
@@ -162,11 +295,65 @@ const updateJobStatus = async (req, res) => {
   res.json(`'${updatedJob.title}' updated`)
 }
 
-// @desc Delete a job
-// @route DELETE /jobs
-// @access Private
+/**
+ * @openapi
+ * /jobs/{id}:
+ *   delete:
+ *     summary: Delete a Job by ID
+ *     description: Delete a job by its unique identifier.
+ *     tags:
+ *       - Job Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the job to delete.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Job deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reply:
+ *                   type: string
+ *                   description: A success message indicating the deleted job.
+ *       400:
+ *         description: Bad Request. Invalid or missing job ID.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: An error message indicating the invalid or missing ID.
+ *       404:
+ *         description: Not Found. The job with the specified ID was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: An error message indicating the job was not found.
+ *       500:
+ *         description: Internal Server Error. Failed to delete the job.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: An error message indicating the failure to delete the job.
+ */
 const deleteJob = async (req, res) => {
-  const { id } = req.body
+  const { id } = req.params
 
   // Confirm that client sent id
   if (!id) {
@@ -206,6 +393,34 @@ const deleteJob = async (req, res) => {
   res.status(200).json({ reply })
 }
 
+/**
+ * @openapi
+ * /jobs/{id}:
+ *   get:
+ *     summary: Get a job by its ID.
+ *     tags:
+ *       - Job Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID of the job to retrieve.
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Job retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Job'
+ *       400:
+ *         description: Bad request. Job ID required.
+ *       404:
+ *         description: No job matches the provided ID.
+ *       500:
+ *         description: Internal server error.
+ */
 const getJobById = async (req, res) => {
   const jobId = req.params.id
 
@@ -227,6 +442,30 @@ const getJobById = async (req, res) => {
   }
 }
 
+/**
+ * @openapi
+ * /jobs/{id}/download:
+ *   get:
+ *     summary: Download job results by its ID.
+ *     tags:
+ *       - Job Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID of the job to download results from.
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Job results downloaded successfully.
+ *       '204':
+ *         description: No job matches the provided ID.
+ *       '400':
+ *         description: Bad request. Job ID required.
+ *       '500':
+ *         description: Internal server error.
+ */
 const downloadJobResults = async (req, res) => {
   if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
   const job = await Job.findOne({ _id: req.params.id }).exec()
@@ -276,8 +515,58 @@ const createNewJobObject = (fields, files, UUID, user) => {
   })
 }
 
+/**
+ * @openapi
+ * /autorg:
+ *   post:
+ *     summary: Calculate AutoRg for uploaded data.
+ *     tags:
+ *       - Utilities
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email address of the user.
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The data file to calculate AutoRg from.
+ *     responses:
+ *       200:
+ *         description: AutoRg calculation successful.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: A success message.
+ *                 uuid:
+ *                   type: string
+ *                   description: The UUID of the AutoRg calculation.
+ *                 rg:
+ *                   type: number
+ *                   description: The calculated Rg value.
+ *                 rg_min:
+ *                   type: number
+ *                   description: The minimum Rg value.
+ *                 rg_max:
+ *                   type: number
+ *                   description: The maximum Rg value.
+ *       400:
+ *         description: Bad request. Missing email or file.
+ *       401:
+ *         description: Unauthorized. No user found with the provided email.
+ *       500:
+ *         description: Internal server error.
+ */
 const getAutoRg = async (req, res) => {
-  // create a unique folder for each autoRg submission using UUIDs
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, 'autorg_uploads', UUID)
   const form = formidable({
@@ -285,11 +574,6 @@ const getAutoRg = async (req, res) => {
     allowEmptyFiles: false,
     maxFileSize: 250 * 1024 * 1024,
     uploadDir: jobDir
-    // filename: (name, ext, part, form) => {
-    //   logger.info('form from host: %s', form.headers.host)
-    //   logger.info('got part.name %s', part.name)
-    //   if (part.name == 'expdata') return path.join(jobDir, part.name + '.dat')
-    // }
   })
 
   try {
@@ -300,16 +584,12 @@ const getAutoRg = async (req, res) => {
     return res.status(500).json({ message: 'Failed to create AutoRg job directory' })
   }
 
-  // Function to save files
   const saveFile = async (files) => {
-    // console.log(files)
     const filesPromises = Object.values(files).map(async (file) => {
-      // const lowercaseFilename = file.originalFilename.toLowerCase()
       const newFilePath = path.join(jobDir, 'expdata.dat')
       await fs.promises.rename(file.filepath, newFilePath)
       return newFilePath
     })
-
     await Promise.all(filesPromises)
   }
 

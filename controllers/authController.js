@@ -2,9 +2,71 @@ const { logger } = require('../middleware/loggers')
 const User = require('../model/User')
 const jwt = require('jsonwebtoken')
 
-// @desc OTP
-// @route POST /auth/otp
-// @access Public
+/**
+ * @openapi
+ * /auth/otp:
+ *   post:
+ *     summary: Authenticate user with OTP
+ *     description: Authenticate a user by providing a one-time password (OTP).
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               otp:
+ *                 type: string
+ *                 description: The one-time password provided by the user.
+ *                 example: 123456
+ *     responses:
+ *       200:
+ *         description: Authentication successful. Returns an access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: An access token for the authenticated user.
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       400:
+ *         description: Bad Request. Missing or invalid OTP.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *                   example: OTP required.
+ *       401:
+ *         description: Unauthorized. Invalid OTP or OTP has expired.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message.
+ *                   example: OTP has expired.
+ *       500:
+ *         description: Internal Server Error. An error occurred while processing the request.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *                   example: Internal server error.
+ */
 const otp = async (req, res) => {
   try {
     const { otp: code } = req.body
@@ -73,9 +135,53 @@ const otp = async (req, res) => {
   }
 }
 
-// @desc Refresh
-// @route GET /auth/refresh
-// @access Public - because access token has expired
+/**
+ * @openapi
+ * /auth/refresh:
+ *   get:
+ *     summary: Refresh Access Token
+ *     description: Refreshes the access token using a valid refresh token.
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: cookie
+ *         name: jwt
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The refresh token received in a cookie.
+ *     responses:
+ *       '200':
+ *         description: Successful refresh.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: The new access token.
+ *       '401':
+ *         description: Unauthorized. Invalid or missing refresh token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *       '403':
+ *         description: Forbidden. Refresh token is invalid or expired.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ */
 const refresh = (req, res) => {
   const cookies = req.cookies
   logger.info('refresh got cookies: %s', cookies)
@@ -107,9 +213,28 @@ const refresh = (req, res) => {
   })
 }
 
-// @desc Logout
-// @route POST /auth/logout
-// @access Public - just to clear cookie if exists
+/**
+ * @openapi
+ * /auth/logout:
+ *   post:
+ *     summary: Logout and Clear JWT Cookie
+ *     description: Logs out the user by clearing the JWT cookie.
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       204:
+ *         description: JWT cookie cleared successfully.
+ *       200:
+ *         description: JWT cookie cleared successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message.
+ */
 const logout = (req, res) => {
   const cookies = req.cookies
   if (!cookies?.jwt) return res.sendStatus(204) //No content

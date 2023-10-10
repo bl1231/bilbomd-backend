@@ -5,6 +5,46 @@ const User = require('../model/User')
 const { sendMagickLinkEmail } = require('../config/nodemailerConfig')
 const { BILBOMD_URL } = process.env
 
+/**
+ * @openapi
+ * /magicklink:
+ *   post:
+ *     summary: Generate a MagickLink for user authentication.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email address of the user.
+ *     responses:
+ *       201:
+ *         description: MagickLink and OTP created successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: string
+ *                   description: A success message.
+ *                 otp:
+ *                   type: string
+ *                   description: The generated OTP (One-Time Password).
+ *       400:
+ *         description: Bad request. Missing email.
+ *       401:
+ *         description: Unauthorized. No account found with the provided email.
+ *       403:
+ *         description: Forbidden. Account is pending or deactivated.
+ *       500:
+ *         description: Internal server error.
+ */
 const generateMagickLink = async ({ body: { email } }, res) => {
   if (!email) {
     return res.status(400).json({ message: 'email is required' })
