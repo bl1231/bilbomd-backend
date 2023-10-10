@@ -3,7 +3,7 @@ const swaggerJsdoc = require('swagger-jsdoc')
 const VERSION = process.env.npm_package_version
 
 const options = {
-  swaggerDefinition: {
+  definition: {
     openapi: '3.0.0',
     info: {
       title: 'BilboMD Backend',
@@ -21,9 +21,11 @@ const options = {
       }
     ]
   },
-  apis: ['../controllers/*.js']
+  apis: ['./controllers/*.js']
 }
 
 const swaggerSpec = swaggerJsdoc(options)
+
+console.log(swaggerSpec)
 
 module.exports = swaggerSpec
