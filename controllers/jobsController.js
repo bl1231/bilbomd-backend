@@ -297,22 +297,19 @@ const updateJobStatus = async (req, res) => {
 
 /**
  * @openapi
- * /jobs:
+ * /jobs/{id}:
  *   delete:
- *     summary: Delete a job
- *     description: Delete a job by its ID and remove associated files from disk.
+ *     summary: Delete a Job by ID
+ *     description: Delete a job by its unique identifier.
  *     tags:
  *       - Job Management
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id:
- *                 type: string
- *                 description: The ID of the job to delete.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the job to delete.
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Job deleted successfully.
@@ -323,9 +320,9 @@ const updateJobStatus = async (req, res) => {
  *               properties:
  *                 reply:
  *                   type: string
- *                   description: A success message indicating the deleted job details.
+ *                   description: A success message indicating the deleted job.
  *       400:
- *         description: Job ID required, or job not found, or directory not found on disk.
+ *         description: Bad Request. Invalid or missing job ID.
  *         content:
  *           application/json:
  *             schema:
@@ -333,12 +330,30 @@ const updateJobStatus = async (req, res) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message.
+ *                   description: An error message indicating the invalid or missing ID.
+ *       404:
+ *         description: Not Found. The job with the specified ID was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: An error message indicating the job was not found.
  *       500:
- *         description: Internal server error.
+ *         description: Internal Server Error. Failed to delete the job.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: An error message indicating the failure to delete the job.
  */
 const deleteJob = async (req, res) => {
-  const { id } = req.body
+  const { id } = req.params
 
   // Confirm that client sent id
   if (!id) {
@@ -442,13 +457,13 @@ const getJobById = async (req, res) => {
  *         schema:
  *           type: string
  *     responses:
- *       200:
+ *       '200':
  *         description: Job results downloaded successfully.
- *       204:
+ *       '204':
  *         description: No job matches the provided ID.
- *       400:
+ *       '400':
  *         description: Bad request. Job ID required.
- *       500:
+ *       '500':
  *         description: Internal server error.
  */
 const downloadJobResults = async (req, res) => {
@@ -506,7 +521,7 @@ const createNewJobObject = (fields, files, UUID, user) => {
  *   post:
  *     summary: Calculate AutoRg for uploaded data.
  *     tags:
- *       - AutoRg Calculation
+ *       - Utilities
  *     requestBody:
  *       required: true
  *       content:
