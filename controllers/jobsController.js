@@ -5,7 +5,7 @@ const path = require('path')
 const { v4: uuid } = require('uuid')
 const spawn = require('child_process').spawn
 const { queueJob, getJobByUUID, getPositionOfJob } = require('../queues/jobQueue')
-const Job = require('../model/Job')
+const { Job, BilboMdJob, BilboMdAutoJob } = require('../model/Job')
 const User = require('../model/User')
 
 const uploadFolder = path.join(process.env.DATA_VOL)
@@ -138,7 +138,7 @@ const getAllJobs = async (req, res) => {
 const createNewJob = async (req, res) => {
   const form = formidable({
     keepExtensions: true,
-    maxFileSize: 500 * 1024 * 1024, //5MB
+    maxFileSize: 100 * 1024 * 1024, //100MB
     uploadDir: uploadFolder
   })
 
@@ -186,23 +186,38 @@ const createNewJob = async (req, res) => {
 
       await renameAndSaveFiles(files)
 
-      const newJob = createNewJobObject(fields, files, UUID, user)
-      await newJob.save()
+      let jobType
+      let newJob
 
-      logger.info('Save new job to MongoDB %s', newJob.id)
+      if (req.originalUrl === '/v1/jobs') {
+        jobType = 'BilboMD'
+        logger.info('create new BilboMD Job')
+        newJob = createNewJobObject(fields, files, UUID, user)
+      } else if (req.originalUrl === '/v1/jobs/bilbomd-auto') {
+        logger.info('create new BilboMD Auto Job')
+        jobType = 'BilboMDAuto'
+        newJob = createNewAutoJobObject(fields, files, UUID, user)
+      } else {
+        return res
+          .status(400)
+          .json({ message: 'Invalid job type', path: req.originalUrl })
+      }
+
+      await newJob.save()
+      logger.info('Saved new job to MongoDB %s', newJob.id)
 
       const BullId = await queueJob({
-        type: 'BilboMD',
+        type: jobType,
         title: newJob.title,
         uuid: newJob.uuid,
         jobid: newJob.id
       })
 
-      logger.info('Bilbomd Job assigned UUID: %s', newJob.uuid)
-      logger.info('BilboMD Job assigned BullMQ ID: %s', BullId)
+      logger.info(`${jobType} Job assigned UUID: %s`, newJob.uuid)
+      logger.info(`${jobType} Job assigned BullMQ ID: %s`, BullId)
 
       res.status(200).json({
-        message: 'New BilboMD Job successfully created',
+        message: `New ${jobType} Job successfully created`,
         jobid: newJob.id,
         uuid: newJob.uuid
       })
@@ -499,7 +514,7 @@ const createNewJobObject = (fields, files, UUID, user) => {
     data_file: files.expdata.originalFilename.toLowerCase()
   }
 
-  return new Job({
+  return new BilboMdJob({
     title: fields.title,
     uuid: UUID,
     psf_file: fileInformation.psf_file,
@@ -509,6 +524,30 @@ const createNewJobObject = (fields, files, UUID, user) => {
     conformational_sampling: fields.num_conf,
     rg_min: fields.rg_min,
     rg_max: fields.rg_max,
+    status: 'Submitted',
+    time_submitted: now,
+    user: user
+  })
+}
+
+const createNewAutoJobObject = (fields, files, UUID, user) => {
+  const now = new Date()
+  // console.log(files.psf_file)
+  // Create an object to store the file information with lowercase filenames
+  const fileInformation = {
+    psf_file: files.psf_file.originalFilename.toLowerCase(),
+    crd_file: files.crd_file.originalFilename.toLowerCase(),
+    pae_file: files.pae_file.originalFilename.toLowerCase(),
+    dat_file: files.dat_file.originalFilename.toLowerCase()
+  }
+
+  return new BilboMdAutoJob({
+    title: fields.title,
+    uuid: UUID,
+    psf_file: fileInformation.psf_file,
+    crd_file: fileInformation.crd_file,
+    pae_file: fileInformation.pae_file,
+    data_file: fileInformation.dat_file,
     status: 'Submitted',
     time_submitted: now,
     user: user
@@ -572,7 +611,7 @@ const getAutoRg = async (req, res) => {
   const form = formidable({
     keepExtensions: true,
     allowEmptyFiles: false,
-    maxFileSize: 250 * 1024 * 1024,
+    maxFileSize: 250 * 1024 * 1024, //250MB
     uploadDir: jobDir
   })
 

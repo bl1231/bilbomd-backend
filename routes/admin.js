@@ -5,7 +5,7 @@ const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter')
 const { ExpressAdapter } = require('@bull-board/express')
 const { Queue: QueueMQ } = require('bullmq')
 
-const basePath = '/admin/queues'
+const basePath = '/v1/admin/queues'
 
 const redisOptions = {
   port: process.env.REDIS_PORT,

@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "BilboMD Backend",
-    "version": "0.0.14",
+    "version": "1.0.0",
     "description": "API documentation for bilbomd-backend"
   },
   "servers": [
@@ -1409,90 +1409,6 @@
           },
           "_id": {
             "type": "string"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Job": {
-        "title": "Job",
-        "required": [
-          "title",
-          "uuid",
-          "psf_file",
-          "crd_file",
-          "data_file",
-          "rg_min",
-          "rg_max",
-          "user"
-        ],
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "uuid": {
-            "type": "string"
-          },
-          "psf_file": {
-            "type": "string"
-          },
-          "crd_file": {
-            "type": "string"
-          },
-          "const_inp_file": {
-            "type": "string"
-          },
-          "data_file": {
-            "type": "string"
-          },
-          "conformational_sampling": {
-            "type": "number",
-            "enum": [
-              1,
-              2,
-              3,
-              4
-            ]
-          },
-          "rg_min": {
-            "type": "number"
-          },
-          "rg_max": {
-            "type": "number"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "Submitted",
-              "Pending",
-              "Running",
-              "Completed",
-              "Error"
-            ]
-          },
-          "time_submitted": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "time_started": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "time_completed": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "user": {
-            "type": "string"
-          },
-          "_id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
           },
           "updatedAt": {
             "type": "string",

@@ -14,5 +14,6 @@ router
 router.route('/:id').get(jobController.getJobById)
 router.route('/:id').delete(jobController.deleteJob)
 router.route('/:id/results').get(jobController.downloadJobResults)
+router.route('/bilbomd-auto').post(jobController.createNewJob)
 
 module.exports = router
