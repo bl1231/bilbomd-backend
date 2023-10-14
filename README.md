@@ -60,6 +60,10 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 1.0.1
+  - Adjust admin route for new `v1` API
+  - Adjust formidable maxFileSize
+  - Some swagger config changes
 - 1.0.0
   - Implement versioned API (start with `v1`)
   - Start out with a new major package version (`1.0.0`)
