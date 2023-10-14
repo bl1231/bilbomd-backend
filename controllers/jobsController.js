@@ -138,7 +138,7 @@ const getAllJobs = async (req, res) => {
 const createNewJob = async (req, res) => {
   const form = formidable({
     keepExtensions: true,
-    maxFileSize: 500 * 1024 * 1024, //5MB
+    maxFileSize: 100 * 1024 * 1024, //100MB
     uploadDir: uploadFolder
   })
 
@@ -532,7 +532,7 @@ const createNewJobObject = (fields, files, UUID, user) => {
 
 const createNewAutoJobObject = (fields, files, UUID, user) => {
   const now = new Date()
-
+  // console.log(files.psf_file)
   // Create an object to store the file information with lowercase filenames
   const fileInformation = {
     psf_file: files.psf_file.originalFilename.toLowerCase(),
@@ -611,7 +611,7 @@ const getAutoRg = async (req, res) => {
   const form = formidable({
     keepExtensions: true,
     allowEmptyFiles: false,
-    maxFileSize: 250 * 1024 * 1024,
+    maxFileSize: 250 * 1024 * 1024, //250MB
     uploadDir: jobDir
   })
 
