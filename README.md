@@ -60,6 +60,9 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 1.1.0
+  - Add Job step details for new BilboMD Auto job type
+  - update npm dependencies
 - 1.0.1
   - Adjust admin route for new `v1` API
   - Adjust formidable maxFileSize
