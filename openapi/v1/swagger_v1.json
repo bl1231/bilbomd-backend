@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "BilboMD Backend",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "API documentation for bilbomd-backend"
   },
   "servers": [
