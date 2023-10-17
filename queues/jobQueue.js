@@ -79,18 +79,44 @@ const getJobByUUID = async (UUID) => {
   logger.info('no job')
 }
 
+const bilboMDRegSteps = {
+  minimize: 'no',
+  heat: 'no',
+  md: 'no',
+  foxs: 'no',
+  multifoxs: 'no',
+  results: 'no',
+  email: 'no'
+}
+
+const bilboMDAutoSteps = {
+  pae: 'no',
+  autorg: 'no',
+  minimize: 'no',
+  heat: 'no',
+  md: 'no',
+  foxs: 'no',
+  multifoxs: 'no',
+  results: 'no',
+  email: 'no'
+}
+
+// Create a function to get the step configuration based on job type
+function getStepConfiguration(jobType) {
+  if (jobType === 'BilboMD') {
+    return bilboMDRegSteps
+  } else if (jobType === 'BilboMDAuto') {
+    return bilboMDAutoSteps
+  }
+}
+
 const parseJobLogs = async (job) => {
+  // console.log(job)
   const logData = await bilbomdQueue.getJobLogs(job.id, 0, -1, 'asc')
   const logEntries = logData.logs
-  const bilboMDSteps = {
-    minimize: 'no',
-    heat: 'no',
-    md: 'no',
-    foxs: 'no',
-    multifoxs: 'no',
-    results: 'no',
-    email: 'no'
-  }
+  const jobType = job.data.type
+  // console.log('jobType: ', jobType)
+  const bilboMDSteps = getStepConfiguration(jobType)
   const stepStatus = updateStepStatus(logEntries, bilboMDSteps)
   const lastLogMessage = logEntries.at(-1)
   job.bilbomdStep = stepStatus
@@ -103,7 +129,11 @@ const updateStepStatus = (jobLogs, steps) => {
   const updatedSteps = { ...steps } // Create a copy of the original steps object
 
   jobLogs.forEach((logLine) => {
-    if (logLine.includes('start minimization')) {
+    if (logLine.includes('start pae')) {
+      updatedSteps.pae = 'start'
+    } else if (logLine.includes('start autorg')) {
+      updatedSteps.autorg = 'start'
+    } else if (logLine.includes('start minimization')) {
       updatedSteps.minimize = 'start'
     } else if (logLine.includes('start heating')) {
       updatedSteps.heat = 'start'
@@ -115,6 +145,10 @@ const updateStepStatus = (jobLogs, steps) => {
       updatedSteps.multifoxs = 'start'
     } else if (logLine.includes('start gather results')) {
       updatedSteps.results = 'start'
+    } else if (logLine.includes('end pae')) {
+      updatedSteps.pae = 'end'
+    } else if (logLine.includes('end autorg')) {
+      updatedSteps.autorg = 'end'
     } else if (logLine.includes('end minimization')) {
       updatedSteps.minimize = 'end'
     } else if (logLine.includes('end heating')) {
