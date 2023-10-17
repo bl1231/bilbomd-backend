@@ -52,7 +52,7 @@ const getAllJobs = async (req, res) => {
   const jobs = await Job.find().lean()
   // If no jobs
   if (!jobs?.length) {
-    return res.status(400).json({ message: 'No jobs found' })
+    return res.status(404).json({ message: 'No BilboMD Jobs Found' })
   }
 
   // Add username to each job before sending the response
