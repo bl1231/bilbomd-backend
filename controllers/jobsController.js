@@ -1,4 +1,5 @@
 const { logger } = require('../middleware/loggers')
+const mongoose = require('mongoose')
 const formidable = require('formidable')
 const fs = require('fs-extra')
 const path = require('path')
@@ -503,6 +504,42 @@ const downloadJobResults = async (req, res) => {
   }
 }
 
+const getLogForStep = async (req, res) => {
+  if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
+  // Check if req.params.id is a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ message: 'Invalid Job ID format.' })
+  }
+  const job = await Job.findOne({ _id: req.params.id }).exec()
+  if (!job) {
+    return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+  }
+  const step = req.query.step
+  let logFile
+  switch (step) {
+    case 'minimize':
+      logFile = path.join(process.env.DATA_VOL, job.uuid, 'minimize.out')
+      break
+    case 'heat':
+      logFile = path.join(process.env.DATA_VOL, job.uuid, 'heat.out')
+      break
+    default:
+      res.status(200).json({
+        logContent: `Cannot retrieve error logs for ${step}\n please contact SIBYLS staff\n`
+      })
+  }
+
+  fs.readFile(logFile, 'utf8', (err, data) => {
+    if (err) {
+      // Handle any errors that occurred while reading the file
+      return res.status(500).json({ message: 'Error reading log file' })
+    }
+
+    // Send the log file content in a JSON response
+    res.status(200).json({ logContent: data })
+  })
+}
+
 const createNewJobObject = (fields, files, UUID, user) => {
   const now = new Date()
 
@@ -728,5 +765,6 @@ module.exports = {
   deleteJob,
   getJobById,
   downloadJobResults,
+  getLogForStep,
   getAutoRg
 }
