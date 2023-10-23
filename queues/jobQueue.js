@@ -163,6 +163,22 @@ const updateStepStatus = (jobLogs, steps) => {
       updatedSteps.results = 'end'
     } else if (logLine.includes('email notification sent to')) {
       updatedSteps.email = 'end'
+    } else if (logLine.includes('error pae')) {
+      updatedSteps.pae = 'error'
+    } else if (logLine.includes('error autorg')) {
+      updatedSteps.autorg = 'error'
+    } else if (logLine.includes('error minimization')) {
+      updatedSteps.minimize = 'error'
+    } else if (logLine.includes('error heating')) {
+      updatedSteps.heat = 'error'
+    } else if (logLine.includes('error molecular dynamics')) {
+      updatedSteps.md = 'error'
+    } else if (logLine.includes('error FoXS')) {
+      updatedSteps.foxs = 'error'
+    } else if (logLine.includes('error MultiFoXS')) {
+      updatedSteps.multifoxs = 'error'
+    } else if (logLine.includes('error gather results')) {
+      updatedSteps.results = 'error'
     }
   })
 
