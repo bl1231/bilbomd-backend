@@ -60,6 +60,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 1.2.0
+  - Add new route for retrieving Log information
 - 1.1.0
   - Add Job step details for new BilboMD Auto job type
   - update npm dependencies
