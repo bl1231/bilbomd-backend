@@ -11,7 +11,7 @@
 /charmm
 
 # production
-/build
+/dist
 
 # misc
 .env
