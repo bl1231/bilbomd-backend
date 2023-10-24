@@ -1,4 +1,6 @@
 {
+  "root": true,
+  "parser": "@typescript-eslint/parser",
   "env": {
     "browser": true,
     "commonjs": true,
@@ -10,7 +12,7 @@
   "extends": "eslint:recommended",
   "overrides": [],
   "parserOptions": {
-    "ecmaVersion": "latest"
+    "sourceType": "module"
   },
   "plugins": ["jest"],
   "rules": {
