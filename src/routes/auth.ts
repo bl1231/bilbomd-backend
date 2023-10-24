@@ -1,7 +1,7 @@
-const express = require('express')
+import express from 'express'
 const router = express.Router()
-const authController = require('../controllers/authController')
-const loginLimiter = require('../middleware/loginLimiter')
+import authController from '../controllers/authController'
+import loginLimiter from '../middleware/loginLimiter'
 
 router.route('/otp').post(loginLimiter, authController.otp)
 router.route('/refresh').get(authController.refresh)

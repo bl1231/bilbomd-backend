@@ -1,9 +1,6 @@
-const express = require('express')
+import express from 'express'
 const router = express.Router()
-const {
-  verifyNewUser,
-  resendVerificationCode
-} = require('../controllers/verifyController')
+import { verifyNewUser, resendVerificationCode } from '../controllers/verifyController'
 
 router.route('/').post(verifyNewUser)
 router.route('/resend').post(resendVerificationCode)

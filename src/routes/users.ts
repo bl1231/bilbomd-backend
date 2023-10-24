@@ -1,7 +1,7 @@
-const express = require('express')
+import express from 'express'
 const router = express.Router()
-const usersController = require('../controllers/usersController')
-const verifyJWT = require('../middleware/verifyJWT')
+import usersController from '../controllers/usersController'
+import verifyJWT from '../middleware/verifyJWT'
 
 router.use(verifyJWT)
 

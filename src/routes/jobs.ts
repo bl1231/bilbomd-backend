@@ -1,7 +1,7 @@
-const express = require('express')
+import express from 'express'
 const router = express.Router()
-const jobController = require('../controllers/jobsController')
-const verifyJWT = require('../middleware/verifyJWT')
+import jobController from '../controllers/jobsController'
+import verifyJWT from '../middleware/verifyJWT'
 
 router.use(verifyJWT)
 
