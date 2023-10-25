@@ -1,5 +1,5 @@
-const rateLimit = require('express-rate-limit')
-// const { logEvents } = require('./logger')
+import rateLimit, { Options } from 'express-rate-limit'
+import { Request, Response, NextFunction } from 'express'
 
 const loginLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -8,7 +8,7 @@ const loginLimiter = rateLimit({
     message:
       'Too many login attempts from this IP, please try again after a 60 second pause'
   },
-  handler: (req, res, next, options) => {
+  handler: (req: Request, res: Response, next: NextFunction, options: Options) => {
     // logEvents(`Too Many Requests: ${options.message.message}\t${req.method}\t${req.url}\t${req.headers.origin}`, 'errLog.log')
     res.status(options.statusCode).send(options.message)
   },
@@ -16,4 +16,4 @@ const loginLimiter = rateLimit({
   legacyHeaders: false // Disable the `X-RateLimit-*` headers
 })
 
-module.exports = loginLimiter
+export default loginLimiter

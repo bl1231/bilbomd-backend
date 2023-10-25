@@ -1,7 +1,8 @@
-const { createLogger, transports, format } = require('winston')
-const { splat, combine, timestamp, label, colorize, json, printf, prettyPrint } = format
-const moment = require('moment-timezone')
+import { createLogger, transports, format } from 'winston'
+import { Request, Response, NextFunction } from 'express'
+import moment from 'moment-timezone'
 
+const { splat, combine, timestamp, label, colorize, json, printf, prettyPrint } = format
 const localTimezone = 'America/Los_Angeles'
 const customTimestamp = () => {
   return moment().tz(localTimezone).format('YYYY-MM-DD HH:mm:ss')
@@ -76,7 +77,7 @@ const reqLogger = createLogger({
 })
 
 // Define a middleware function for request logging
-const requestLogger = (req, res, next) => {
+const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   reqLogger.info(`${req.method} ${req.url}`)
   next()
 }
@@ -93,8 +94,4 @@ const requestLogger = (req, res, next) => {
 //   )
 // }
 
-module.exports = {
-  logger,
-  requestLogger,
-  logsFolder
-}
+export { logger, requestLogger, logsFolder }
