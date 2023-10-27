@@ -7,7 +7,13 @@ import { v4 as uuid } from 'uuid'
 // import { Date } from 'mongoose'
 // const spawn = require('child_process').spawn
 import { queueJob, getBullMQJob } from '../queues/jobQueue'
-import { Job, BilboMdJob, BilboMdAutoJob } from '../model/Job'
+import {
+  Job,
+  BilboMdJob,
+  IBilboMDJob,
+  BilboMdAutoJob,
+  IBilboMDAutoJob
+} from '../model/Job'
 
 import { User, IUser } from '../model/User'
 import { Express, Request, Response } from 'express'
@@ -115,6 +121,8 @@ const createNewJob = async (req: Request, res: Response) => {
       { name: 'psf_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
       { name: 'constinp', maxCount: 1 },
+      { name: 'const_file', maxCount: 1 },
+      { name: 'inp_file', maxCount: 1 },
       { name: 'expdata', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
       { name: 'pae_file', maxCount: 1 }
@@ -141,11 +149,9 @@ const createNewJob = async (req: Request, res: Response) => {
         } else if (job_type === 'BilboMDAuto') {
           await handleBilboMDAutoJob(req, res, user, UUID)
         } else {
-          // Handle invalid job types or other cases
           res.status(400).json({ message: 'Invalid job type' })
         }
       } catch (error) {
-        // Handle any internal errors that occur while processing the uploaded data
         logger.error(error)
         res.status(500).json({ message: 'Internal server error' })
       }
@@ -158,38 +164,44 @@ const createNewJob = async (req: Request, res: Response) => {
 }
 
 async function handleBilboMDJob(req: Request, res: Response, user: IUser, UUID: string) {
-  const { job_type: jobType } = req.body
-  const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-  const now = new Date()
-  const newJob = new BilboMdJob({
-    title: req.body.title,
-    uuid: UUID,
-    psf_file: files['psf_file'][0].originalname.toLowerCase(),
-    crd_file: files['crd_file'][0].originalname.toLowerCase(),
-    const_inp_file: files['constinp'][0].originalname.toLowerCase(),
-    data_file: files['expdata'][0].originalname.toLowerCase(),
-    conformational_sampling: req.body.num_conf,
-    rg_min: req.body.rg_min,
-    rg_max: req.body.rg_max,
-    status: 'Submitted',
-    time_submitted: now,
-    user: user
-  })
-  await newJob.save()
-  logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
-  const BullId = await queueJob({
-    type: 'BilboMD',
-    title: newJob.title,
-    uuid: newJob.uuid
-  })
+  try {
+    const { job_type: jobType } = req.body
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    const now = new Date()
+    const newJob: IBilboMDJob = new BilboMdJob({
+      title: req.body.title,
+      uuid: UUID,
+      psf_file: files['psf_file'][0].originalname.toLowerCase(),
+      crd_file: files['crd_file'][0].originalname.toLowerCase(),
+      const_inp_file: files['constinp'][0].originalname.toLowerCase(),
+      data_file: files['expdata'][0].originalname.toLowerCase(),
+      conformational_sampling: req.body.num_conf,
+      rg_min: req.body.rg_min,
+      rg_max: req.body.rg_max,
+      status: 'Submitted',
+      time_submitted: now,
+      user: user
+    })
+    await newJob.save()
+    logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+    const BullId = await queueJob({
+      type: 'BilboMD',
+      title: newJob.title,
+      uuid: newJob.uuid,
+      jobid: newJob.id
+    })
 
-  logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
-  logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
-  res.status(200).json({
-    message: `New ${jobType} Job successfully created`,
-    jobid: newJob.id,
-    uuid: newJob.uuid
-  })
+    logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+    res.status(200).json({
+      message: `New ${jobType} Job successfully created`,
+      jobid: newJob.id,
+      uuid: newJob.uuid
+    })
+  } catch (error) {
+    logger.error(error)
+    res.status(500).json({ message: 'Failed to create handleBilboMDJob job' })
+  }
 }
 
 async function handleBilboMDAutoJob(
@@ -198,38 +210,46 @@ async function handleBilboMDAutoJob(
   user: IUser,
   UUID: string
 ) {
-  const { job_type: jobType } = req.body
-  const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-  const now = new Date()
-  const newJob = new BilboMdAutoJob({
-    title: req.body.title,
-    uuid: UUID,
-    psf_file: files['psf_file'][0].originalname.toLowerCase(),
-    crd_file: files['crd_file'][0].originalname.toLowerCase(),
-    const_inp_file: files['constinp'][0].originalname.toLowerCase(),
-    data_file: files['expdata'][0].originalname.toLowerCase(),
-    conformational_sampling: req.body.num_conf,
-    rg_min: req.body.rg_min,
-    rg_max: req.body.rg_max,
-    status: 'Submitted',
-    time_submitted: now,
-    user: user
-  })
-  await newJob.save()
-  logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
-  const BullId = await queueJob({
-    type: 'BilboMD',
-    title: newJob.title,
-    uuid: newJob.uuid
-  })
+  try {
+    const { job_type: jobType } = req.body
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    const now = new Date()
+    const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
+      title: req.body.title,
+      uuid: UUID,
+      psf_file: files['psf_file'][0].originalname.toLowerCase(),
+      crd_file: files['crd_file'][0].originalname.toLowerCase(),
+      pae_file: files['pae_file'][0].originalname.toLowerCase(),
+      data_file: files['dat_file'][0].originalname.toLowerCase(),
+      status: 'Submitted',
+      time_submitted: now,
+      user: user
+    })
 
-  logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
-  logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
-  res.status(200).json({
-    message: `New ${jobType} Job successfully created`,
-    jobid: newJob.id,
-    uuid: newJob.uuid
-  })
+    // Save the job to the database
+    await newJob.save()
+    logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+
+    // Queue the job
+    const BullId = await queueJob({
+      type: jobType, // Corrected job type
+      title: newJob.title,
+      uuid: newJob.uuid,
+      jobid: newJob.id
+    })
+
+    logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+    res.status(200).json({
+      message: `New ${jobType} Job successfully created`,
+      jobid: newJob.id,
+      uuid: newJob.uuid
+    })
+  } catch (error) {
+    // Handle any errors and send an appropriate response to the client
+    logger.error(error)
+    res.status(500).json({ message: 'Failed to create handleBilboMDAutoJob job' })
+  }
 }
 
 /**
