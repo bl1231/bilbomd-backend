@@ -1,5 +1,4 @@
 import express from 'express'
-const router = express.Router()
 import {
   getAllJobs,
   createNewJob,
@@ -9,6 +8,7 @@ import {
   getJobById,
   getLogForStep
 } from '../controllers/jobsController'
+const router = express.Router()
 // import verifyJWT from '../middleware/verifyJWT'
 
 // router.use(verifyJWT)

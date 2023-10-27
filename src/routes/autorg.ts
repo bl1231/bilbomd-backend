@@ -1,10 +1,10 @@
 import express from 'express'
 const router = express.Router()
-import jobController from '../controllers/jobsController'
+import { getAutoRg } from '../controllers/jobsController'
 import verifyJWT from '../middleware/verifyJWT'
 
 router.use(verifyJWT)
 
-router.route('/').post(jobController.getAutoRg)
+router.route('/').post(getAutoRg)
 
 module.exports = router
