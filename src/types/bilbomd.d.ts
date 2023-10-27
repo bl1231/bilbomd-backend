@@ -21,7 +21,7 @@ export type BullMQData = {
 }
 
 export type BilboMDBullMQ = {
-  position: number
+  position: number | string
   queuePosition: string
   bilbomdStep: BilboMDSteps
   bilbomdLastStep: string
