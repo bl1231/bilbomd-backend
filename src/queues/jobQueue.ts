@@ -1,6 +1,5 @@
 import IORedis, { RedisOptions } from 'ioredis'
 import { Job as BullMQJob, Queue } from 'bullmq'
-// import { IJob } from 'model/Job'
 import { logger } from '../middleware/loggers'
 import { BilboMDBullMQ, BullMQData, BilboMDSteps } from '../types/bilbomd'
 
@@ -49,31 +48,41 @@ const getAllBullMQJobs = async (): Promise<BullMQJob[]> => {
 
 const getWaitingJobs = async (): Promise<BullMQJob[]> => {
   const waitingJobs = await bilbomdQueue.getJobs(['waiting'], 0, -1, true)
+  // logger.info(`waiting jobs ${JSON.stringify(waitingJobs)}`)
+
+  // waitingJobs.forEach((job) => {
+  //   console.log('WAITING: ', job.name, job.data.uuid)
+  // })
   return waitingJobs
 }
 
-// const calculateJobPositions = async (): Promise<BilboMDJob[]> => {
-//   const waitingJobs = await getWaitingJobs()
+const getWaitingPosition = async (bullmq: BullMQJob): Promise<number> => {
+  const waitingJobs = await getWaitingJobs()
+  // logger.info(`number of waiting jobs is: ${waitingJobs.length}`)
+  // logger.info(`checking job UUID: ${bullmq.data.uuid}`)
+  let position = 0
 
-//   // Calculate and add position to each job
-//   const myJobs: BilboMDJob[] = waitingJobs.map((job: BullMQJob, index: number) => ({
-//     bullmq: job,
-//     position: index + 1
-//   }))
+  for (let i = 0; i < waitingJobs.length; i++) {
+    if (waitingJobs[i].data.uuid === bullmq.data.uuid) {
+      position = i + 1
+      // console.log('waiting: ', waitingJobs[i].name, position)
+      break
+    } else {
+      // console.log('not waiting: ', waitingJobs[i].name)
+    }
+  }
 
-//   return myJobs
-// }
+  return position
+}
 
-// const getTextPositionOfJob = async (DBJob: IJob): Promise<string> => {
-//   const waitingJobs = await calculateJobPositions()
-//   const job = waitingJobs.find((job) => job.mongo.uuid === DBJob.uuid)
-//   if (job) {
-//     const position = job.position
-//     const totalNumberWaiting = waitingJobs.length
-//     return `${position} out of ${totalNumberWaiting}`
-//   }
-//   return ''
-// }
+const getWaitingPositionText = async (bullmq: BullMQJob): Promise<string> => {
+  const position = await getWaitingPosition(bullmq)
+  const totalNumberWaiting = await getWaitingCount()
+  if (position === 0) {
+    return ''
+  }
+  return `${position} out of ${totalNumberWaiting}`
+}
 
 const getBullMQJob = async (UUID: string): Promise<BilboMDBullMQ | undefined> => {
   const allJobs: BullMQJob[] = await getAllBullMQJobs()
@@ -83,16 +92,18 @@ const getBullMQJob = async (UUID: string): Promise<BilboMDBullMQ | undefined> =>
   })
 
   if (bulljob) {
-    // calculate position number
-    // calculate queuePosition text
+    // calculate position as a number
+    const position = await getWaitingPosition(bulljob)
+    // calculate queuePosition as a text string
+    const quePosition = await getWaitingPositionText(bulljob)
     // append bilbomdStep
     const steps = await updateBilboMDSteps(bulljob)
     // append bilbomdLastStep
     const msg = await updateBilboMDInfo(bulljob)
     // Put it all together
     const bilboMDBullMQJob: BilboMDBullMQ = {
-      position: 1,
-      queuePosition: '1 of 1111',
+      position: position,
+      queuePosition: quePosition,
       bilbomdStep: steps,
       bilbomdLastStep: msg,
       bullmq: bulljob
@@ -100,6 +111,7 @@ const getBullMQJob = async (UUID: string): Promise<BilboMDBullMQ | undefined> =>
     // logger.info(bilboMDBullMQJob)
     return bilboMDBullMQJob
   }
+
   return undefined
 }
 
@@ -156,7 +168,10 @@ const updateBilboMDInfo = async (bullmq: BullMQJob): Promise<string> => {
   return lastLogMessage
 }
 
-const updateStepStatus = (jobLogs: string[], steps: BilboMDSteps): BilboMDSteps => {
+const updateStepStatus = async (
+  jobLogs: string[],
+  steps: BilboMDSteps
+): Promise<BilboMDSteps> => {
   const updatedSteps = { ...steps } // Create a copy of the original steps object
 
   jobLogs.forEach((logLine) => {
