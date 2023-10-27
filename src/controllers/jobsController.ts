@@ -655,14 +655,14 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
         try {
           // Parse the stdout data as JSON
           const analysisResults = JSON.parse(autoRg_json)
-          logger.info('spawnAutoRgCalculator close success exit code:', code)
+          logger.info(`spawnAutoRgCalculator close success exit code: ${code}`)
           resolve(analysisResults)
         } catch (parseError) {
-          logger.error('Error parsing analysis results:', parseError)
+          logger.error(`Error parsing analysis results: ${parseError}`)
           reject(parseError)
         }
       } else {
-        logger.error('spawnAutoRgCalculator close error exit code:', code)
+        logger.error(`spawnAutoRgCalculator close error exit code: ${code}`)
         reject(`spawnAutoRgCalculator on close reject`)
       }
     })
