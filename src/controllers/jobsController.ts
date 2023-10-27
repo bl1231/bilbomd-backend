@@ -7,7 +7,7 @@ import { v4 as uuid } from 'uuid'
 // import { Date } from 'mongoose'
 // const spawn = require('child_process').spawn
 import { queueJob, getBullMQJob } from '../queues/jobQueue'
-import { Job, BilboMdJob } from '../model/Job'
+import { Job, BilboMdJob, BilboMdAutoJob } from '../model/Job'
 
 import { User, IUser } from '../model/User'
 import { Express, Request, Response } from 'express'
@@ -20,21 +20,6 @@ const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 //   rg: number
 //   rg_min: number
 //   rg_max: number
-// }
-
-// interface IBilboMDJob {
-//   title: string
-//   uuid: string
-//   status: string
-//   psf_file: string
-//   crd_file: string
-//   data_file: string
-//   const_inp_file: string
-//   conformational_sampling: number
-//   rg_min: number
-//   rg_max: number
-//   time_submitted: Date
-//   user: IUser
 // }
 
 /**
@@ -109,130 +94,143 @@ const createNewJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, UUID)
   let user: IUser
+
   try {
     await fs.mkdir(jobDir, { recursive: true })
     logger.info('Created directory: %s', jobDir)
+
+    const storage = multer.diskStorage({
+      destination: function (req, file, cb) {
+        cb(null, jobDir)
+      },
+      filename: function (req, file, cb) {
+        cb(null, file.originalname.toLowerCase())
+      }
+    })
+
+    const upload = multer({ storage: storage })
+
+    // Use `upload.fields()` to handle multiple files and fields
+    upload.fields([
+      { name: 'psf_file', maxCount: 1 },
+      { name: 'crd_file', maxCount: 1 },
+      { name: 'constinp', maxCount: 1 },
+      { name: 'expdata', maxCount: 1 },
+      { name: 'dat_file', maxCount: 1 },
+      { name: 'pae_file', maxCount: 1 }
+    ])(req, res, async (err) => {
+      if (err) {
+        logger.error(err)
+        return res.status(500).json({ message: 'Failed to upload one or more files' })
+      }
+
+      try {
+        const { email, job_type } = req.body
+        logger.info(`job type in req ${job_type}`)
+        const foundUser = await User.findOne({ email }).exec()
+        if (!foundUser) {
+          return res.status(401).json({ message: 'No user found with that email' })
+        }
+        if (!job_type) {
+          return res.status(400).json({ message: 'No job type provided' })
+        }
+        user = foundUser
+
+        if (job_type === 'BilboMD') {
+          await handleBilboMDJob(req, res, user, UUID)
+        } else if (job_type === 'BilboMDAuto') {
+          await handleBilboMDAutoJob(req, res, user, UUID)
+        } else {
+          // Handle invalid job types or other cases
+          res.status(400).json({ message: 'Invalid job type' })
+        }
+      } catch (error) {
+        // Handle any internal errors that occur while processing the uploaded data
+        logger.error(error)
+        res.status(500).json({ message: 'Internal server error' })
+      }
+    })
   } catch (error) {
+    // Handle errors related to directory creation
     logger.error(error)
-    return res.status(500).json({ message: 'Failed to create job directory' })
+    res.status(500).json({ message: 'Failed to create job directory' })
   }
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, jobDir)
-    },
-    filename: function (req, file, cb) {
-      // const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-      // cb(null, file.fieldname + '-' + uniqueSuffix + '-' + file.originalname)
-      cb(null, file.originalname.toLowerCase())
-    }
+}
+
+async function handleBilboMDJob(req: Request, res: Response, user: IUser, UUID: string) {
+  const { job_type: jobType } = req.body
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+  const now = new Date()
+  const newJob = new BilboMdJob({
+    title: req.body.title,
+    uuid: UUID,
+    psf_file: files['psf_file'][0].originalname.toLowerCase(),
+    crd_file: files['crd_file'][0].originalname.toLowerCase(),
+    const_inp_file: files['constinp'][0].originalname.toLowerCase(),
+    data_file: files['expdata'][0].originalname.toLowerCase(),
+    conformational_sampling: req.body.num_conf,
+    rg_min: req.body.rg_min,
+    rg_max: req.body.rg_max,
+    status: 'Submitted',
+    time_submitted: now,
+    user: user
+  })
+  await newJob.save()
+  logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+  const BullId = await queueJob({
+    type: 'BilboMD',
+    title: newJob.title,
+    uuid: newJob.uuid
   })
 
-  const upload = multer({ storage: storage })
-
-  // Use `upload.fields()` to handle multiple files and fields
-  upload.fields([
-    { name: 'psf_file', maxCount: 1 },
-    { name: 'crd_file', maxCount: 1 },
-    { name: 'constinp', maxCount: 1 },
-    { name: 'expdata', maxCount: 1 }
-  ])(req, res, async (err) => {
-    if (err) {
-      logger.error(err)
-      return res.status(500).json({ message: 'Failed to upload one or more files' })
-    }
-
-    // All files have been successfully uploaded, and you can access them in `req.files`.
-
-    // Access other fields from the request body
-    // const { title, num_conf, rg_min, rg_max, email } = req.body
-    const { email } = req.body
-
-    // Handle the rest of your logic, such as saving field values or processing the uploaded files.
-    // logger.info(`${title}, ${num_conf}, ${rg_min}, ${rg_max}, ${email}`)
-    const foundUser = await User.findOne({ email }).exec()
-    if (!foundUser) {
-      return res.status(401).json({ message: 'No user found with that email' })
-    }
-    user = foundUser
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-
-    const now = new Date()
-    const jobType = 'BilboMD'
-    const newJob = new BilboMdJob({
-      title: req.body.title,
-      uuid: UUID,
-      psf_file: files['psf_file'][0].originalname.toLowerCase(),
-      crd_file: files['crd_file'][0].originalname.toLowerCase(),
-      const_inp_file: files['constinp'][0].originalname.toLowerCase(),
-      data_file: files['expdata'][0].originalname.toLowerCase(),
-      conformational_sampling: req.body.num_conf,
-      rg_min: req.body.rg_min,
-      rg_max: req.body.rg_max,
-      status: 'Submitted',
-      time_submitted: now,
-      user: user
-    })
-    await newJob.save()
-    logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
-    const BullId = await queueJob({
-      type: jobType,
-      title: newJob.title,
-      uuid: newJob.uuid
-    })
-    logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
-    logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
-    res.status(200).json({
-      message: `New ${jobType} Job successfully created`,
-      jobid: newJob.id,
-      uuid: newJob.uuid
-    })
+  logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
+  logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+  res.status(200).json({
+    message: `New ${jobType} Job successfully created`,
+    jobid: newJob.id,
+    uuid: newJob.uuid
   })
 }
-// let jobType: string
 
-// let requestFiles: RequestFiles = {}
+async function handleBilboMDAutoJob(
+  req: Request,
+  res: Response,
+  user: IUser,
+  UUID: string
+) {
+  const { job_type: jobType } = req.body
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+  const now = new Date()
+  const newJob = new BilboMdAutoJob({
+    title: req.body.title,
+    uuid: UUID,
+    psf_file: files['psf_file'][0].originalname.toLowerCase(),
+    crd_file: files['crd_file'][0].originalname.toLowerCase(),
+    const_inp_file: files['constinp'][0].originalname.toLowerCase(),
+    data_file: files['expdata'][0].originalname.toLowerCase(),
+    conformational_sampling: req.body.num_conf,
+    rg_min: req.body.rg_min,
+    rg_max: req.body.rg_max,
+    status: 'Submitted',
+    time_submitted: now,
+    user: user
+  })
+  await newJob.save()
+  logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+  const BullId = await queueJob({
+    type: 'BilboMD',
+    title: newJob.title,
+    uuid: newJob.uuid
+  })
 
-// if (req.originalUrl === '/v1/jobs') {
-// jobType = 'BilboMD'
-
-// logger.info(`create new ${jobType} Job`)
-
-// } else if (req.originalUrl === '/v1/jobs/bilbomd-auto') {
-//   logger.info('create new BilboMD Auto Job')
-//   // jobType = 'BilboMDAuto'
-//   // newJob = createNewAutoJobObject(fields, files, UUID, user)
-// } else {
-//   return res.status(400).json({ message: 'Invalid job type', path: req.originalUrl })
-// }
-
-// await newJob.save()
-// logger.info('Saved new job to MongoDB %s', newJob.id)
-
-//     // const BullId = await queueJob({
-//     //   type: jobType,
-//     //   title: newJob.title,
-//     //   uuid: newJob.uuid
-//     //   // jobid: newJob.id
-//     // })
-
-//     // logger.info(`${jobType} Job assigned UUID: %s`, newJob.uuid)
-//     // logger.info(`${jobType} Job assigned BullMQ ID: %s`, BullId)
-
-//     res.status(200).json({
-//       message: `New ${jobType} Job successfully created`,
-//       jobid: 1234,
-//       uuid: '1q2w3e'
-//     })
-//     // res.status(200).json({
-//     //   message: `New ${jobType} Job successfully created`,
-//     //   jobid: newJob.id,
-//     //   uuid: newJob.uuid
-//     // })
-//   } catch (err) {
-//     logger.error('Error creating new job:', err)
-//     res.status(500).json({ message: 'Failed to create new job' })
-//   }
-// })
+  logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
+  logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+  res.status(200).json({
+    message: `New ${jobType} Job successfully created`,
+    jobid: newJob.id,
+    uuid: newJob.uuid
+  })
+}
 
 /**
  * @openapi
