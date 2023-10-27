@@ -4,8 +4,7 @@ import multer from 'multer'
 import fs from 'fs-extra'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
-// import { Date } from 'mongoose'
-// const spawn = require('child_process').spawn
+const spawn = require('child_process').spawn
 import { queueJob, getBullMQJob } from '../queues/jobQueue'
 import {
   Job,
@@ -17,16 +16,16 @@ import {
 
 import { User, IUser } from '../model/User'
 import { Express, Request, Response } from 'express'
-// import { ChildProcess } from 'child_process'
+import { ChildProcess } from 'child_process'
 // import { BilboMDJob } from 'types/bilbomd'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
-// type AutoRgResults = {
-//   rg: number
-//   rg_min: number
-//   rg_max: number
-// }
+type AutoRgResults = {
+  rg: number
+  rg_min: number
+  rg_max: number
+}
 
 /**
  * @openapi
@@ -163,7 +162,12 @@ const createNewJob = async (req: Request, res: Response) => {
   }
 }
 
-async function handleBilboMDJob(req: Request, res: Response, user: IUser, UUID: string) {
+const handleBilboMDJob = async (
+  req: Request,
+  res: Response,
+  user: IUser,
+  UUID: string
+) => {
   try {
     const { job_type: jobType } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
@@ -204,12 +208,12 @@ async function handleBilboMDJob(req: Request, res: Response, user: IUser, UUID: 
   }
 }
 
-async function handleBilboMDAutoJob(
+const handleBilboMDAutoJob = async (
   req: Request,
   res: Response,
   user: IUser,
   UUID: string
-) {
+) => {
   try {
     const { job_type: jobType } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
@@ -563,240 +567,107 @@ const getLogForStep = async (req: Request, res: Response) => {
   })
 }
 
-// const createNewJobObject = (fields, files, UUID: string, user: string) => {
-//   const now = new Date()
-
-//   // Create an object to store the file information with lowercase filenames
-//   const fileInformation = {
-//     psf_file: files.psf_file?.originalFilename?.toLowerCase(),
-//     crd_file: files.crd_file?.originalFilename?.toLowerCase(),
-//     const_inp_file: files.constinp?.originalFilename?.toLowerCase(),
-//     data_file: files.expdata?.originalFilename?.toLowerCase()
-//   }
-
-//   return new BilboMdJob({
-//     title: fields.title,
-//     uuid: UUID,
-//     psf_file: fileInformation.psf_file,
-//     crd_file: fileInformation.crd_file,
-//     const_inp_file: fileInformation.const_inp_file,
-//     data_file: fileInformation.data_file,
-//     conformational_sampling: fields.num_conf,
-//     rg_min: fields.rg_min,
-//     rg_max: fields.rg_max,
-//     status: 'Submitted',
-//     time_submitted: now,
-//     user: user
-//   })
-// }
-
-// const createNewAutoJobObject = (
-//   fields: Record<string, formidable.Fields>,
-//   files: Record<string, formidable.Files>,
-//   UUID: string,
-//   user: string
-// ) => {
-//   const now = new Date()
-//   // console.log(files.psf_file)
-//   // Create an object to store the file information with lowercase filenames
-//   const fileInformation = {
-//     psf_file: files.psf_file.originalFilename.toLowerCase(),
-//     crd_file: files.crd_file.originalFilename.toLowerCase(),
-//     pae_file: files.pae_file.originalFilename.toLowerCase(),
-//     dat_file: files.dat_file.originalFilename.toLowerCase()
-//   }
-
-//   return new BilboMdAutoJob({
-//     title: fields.title,
-//     uuid: UUID,
-//     psf_file: fileInformation.psf_file,
-//     crd_file: fileInformation.crd_file,
-//     pae_file: fileInformation.pae_file,
-//     data_file: fileInformation.dat_file,
-//     status: 'Submitted',
-//     time_submitted: now,
-//     user: user
-//   })
-// }
-
-/**
- * @openapi
- * /autorg:
- *   post:
- *     summary: Calculate AutoRg for uploaded data.
- *     tags:
- *       - Utilities
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 description: The email address of the user.
- *               file:
- *                 type: string
- *                 format: binary
- *                 description: The data file to calculate AutoRg from.
- *     responses:
- *       200:
- *         description: AutoRg calculation successful.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: A success message.
- *                 uuid:
- *                   type: string
- *                   description: The UUID of the AutoRg calculation.
- *                 rg:
- *                   type: number
- *                   description: The calculated Rg value.
- *                 rg_min:
- *                   type: number
- *                   description: The minimum Rg value.
- *                 rg_max:
- *                   type: number
- *                   description: The maximum Rg value.
- *       400:
- *         description: Bad request. Missing email or file.
- *       401:
- *         description: Unauthorized. No user found with the provided email.
- *       500:
- *         description: Internal server error.
- */
 const getAutoRg = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, 'autorg_uploads', UUID)
-  console.log(jobDir)
-  console.log(req)
-  // const form = formidable({
-  //   keepExtensions: true,
-  //   allowEmptyFiles: false,
-  //   maxFileSize: 250 * 1024 * 1024, //250MB
-  //   uploadDir: jobDir
-  // })
+  try {
+    await fs.mkdir(jobDir, { recursive: true })
+    logger.info('Create temporary AutoRg directory: %s', jobDir)
 
-  // try {
-  //   await fs.mkdir(jobDir, { recursive: true })
-  //   logger.info('Create temporary AutoRg directory: %s', jobDir)
-  // } catch (error) {
-  //   logger.error(error)
-  //   return res.status(500).json({ message: 'Failed to create AutoRg job directory' })
-  // }
+    const storage = multer.diskStorage({
+      destination: function (req, file, cb) {
+        cb(null, jobDir)
+      },
+      filename: function (req, file, cb) {
+        cb(null, 'expdata.dat')
+      }
+    })
+    const upload = multer({ storage: storage })
+    upload.single('expdata')(req, res, async (err) => {
+      if (err) {
+        logger.error(err)
+        return res.status(500).json({ message: 'Failed to upload expdata file' })
+      }
 
-  // // const saveFile = async (files: Record<string, formidable.File[]>, jobDir: string) => {
-  // //   const promises: Promise<void>[] = []
+      try {
+        const { email } = req.body
+        const foundUser = await User.findOne({ email }).exec()
+        if (!foundUser) {
+          return res.status(401).json({ message: 'No user found with that email' })
+        }
 
-  // //   // Iterate through each field name
-  // //   for (const fieldName in files) {
-  // //     const fileArray = files[fieldName]
+        const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
+        logger.info(`autorgResults: ${autorgResults}`)
 
-  // //     for (const file of fileArray) {
-  // //       const newFilePath = path.join(jobDir, 'expdata.dat')
-  // //       const promise = fs.promises.rename(file.filepath, newFilePath)
-  // //       promises.push(promise)
-  // //     }
-  // //   }
-
-  // //   // Wait for all promises to resolve
-  // //   await Promise.all(promises)
-  // // }
-
-  // form.parse(req, async (err, fields, files) => {
-  //   if (err) {
-  //     logger.error('Error parsing files %s', err)
-  //     return res.status(400).json({
-  //       status: 'Fail',
-  //       message: 'There was a problem parsing the uploaded files',
-  //       error: err
-  //     })
-  //   }
-
-  //   try {
-  //     const { email } = fields
-  //     const user = await User.findOne({ email }).exec()
-  //     if (!user) {
-  //       return res.status(401).json({ message: 'No user found with that email' })
-  //     }
-  //     console.log(files)
-  //     // await saveFile(files, jobDir)
-
-  //     const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
-
-  //     logger.info('autorgResults: %s', autorgResults)
-
-  //     res.status(200).json({
-  //       message: 'AutoRg Success',
-  //       uuid: UUID,
-  //       rg: autorgResults.rg,
-  //       rg_min: autorgResults.rg_min,
-  //       rg_max: autorgResults.rg_max
-  //     })
-  //     // remove the uploaded files.
-  //     // comment out for debugging I suppose.
-  //     try {
-  //       await fs.remove(jobDir)
-  //       logger.info(`Deleted upload folder: ${jobDir}`)
-  //     } catch (error) {
-  //       logger.error(`Error deleting upload folder: ${jobDir}`, error)
-  //     }
-  //   } catch (error) {
-  //     logger.error('Error calculatign AutoRg', error)
-  //     res.status(500).json({ message: 'Failed to calculate AutoRg', error: error })
-  //   }
-  // })
-  res.json({ m: 'ok' })
+        res.status(200).json({
+          message: 'AutoRg Success',
+          uuid: UUID,
+          rg: autorgResults.rg,
+          rg_min: autorgResults.rg_min,
+          rg_max: autorgResults.rg_max
+        })
+        // remove the uploaded files.
+        // comment out for debugging I suppose.
+        try {
+          await fs.remove(jobDir)
+          logger.info(`Deleted upload folder: ${jobDir}`)
+        } catch (error) {
+          logger.error(`Error deleting upload folder: ${jobDir} ERROR - ${error}`)
+        }
+      } catch (error) {
+        logger.error('Error calculatign AutoRg', error)
+        res.status(500).json({ message: 'Failed to calculate AutoRg', error: error })
+      }
+    })
+  } catch (error) {
+    logger.error(error)
+    res.status(500).json({ message: 'Failed to create AutoRg job directory' })
+  }
 }
 
-// const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
-//   const logFile = path.join(dir, 'autoRg.log')
-//   const errorFile = path.join(dir, 'autoRg_error.log')
-//   const logStream = fs.createWriteStream(logFile)
-//   const errorStream = fs.createWriteStream(errorFile)
-//   const autoRg_script = '/app/scripts/autorg.py'
-//   const args = [autoRg_script, 'expdata.dat']
+const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
+  const logFile = path.join(dir, 'autoRg.log')
+  const errorFile = path.join(dir, 'autoRg_error.log')
+  const logStream = fs.createWriteStream(logFile)
+  const errorStream = fs.createWriteStream(errorFile)
+  const autoRg_script = '/app/scripts/autorg.py'
+  const args = [autoRg_script, 'expdata.dat']
 
-//   return new Promise<AutoRgResults>((resolve, reject) => {
-//     const autoRg: ChildProcess = spawn('python', args, { cwd: dir })
-//     let autoRg_json = ''
-//     autoRg.stdout?.on('data', (data: Buffer) => {
-//       logger.info('spawnAutoRgCalculator stdout %s', data.toString())
-//       logStream.write(data.toString())
-//       autoRg_json += data.toString()
-//     })
-//     autoRg.stderr?.on('data', (data: Buffer) => {
-//       logger.error('spawnAutoRgCalculator stderr', data.toString())
-//       console.log(data)
-//       errorStream.write(data.toString())
-//     })
-//     autoRg.on('error', (error) => {
-//       logger.error('spawnAutoRgCalculator error:', error)
-//       reject(error)
-//     })
-//     autoRg.on('exit', (code) => {
-//       if (code === 0) {
-//         try {
-//           // Parse the stdout data as JSON
-//           const analysisResults = JSON.parse(autoRg_json)
-//           logger.info('spawnAutoRgCalculator close success exit code:', code)
-//           resolve(analysisResults)
-//         } catch (parseError) {
-//           logger.error('Error parsing analysis results:', parseError)
-//           reject(parseError)
-//         }
-//       } else {
-//         logger.error('spawnAutoRgCalculator close error exit code:', code)
-//         reject(`spawnAutoRgCalculator on close reject`)
-//       }
-//     })
-//   })
-// }
+  return new Promise<AutoRgResults>((resolve, reject) => {
+    const autoRg: ChildProcess = spawn('python', args, { cwd: dir })
+    let autoRg_json = ''
+    autoRg.stdout?.on('data', (data: Buffer) => {
+      logger.info(`spawnAutoRgCalculator stdout ${data.toString()}`)
+      logStream.write(data.toString())
+      autoRg_json += data.toString()
+    })
+    autoRg.stderr?.on('data', (data: Buffer) => {
+      logger.error('spawnAutoRgCalculator stderr', data.toString())
+      console.log(data)
+      errorStream.write(data.toString())
+    })
+    autoRg.on('error', (error) => {
+      logger.error('spawnAutoRgCalculator error:', error)
+      reject(error)
+    })
+    autoRg.on('exit', (code) => {
+      if (code === 0) {
+        try {
+          // Parse the stdout data as JSON
+          const analysisResults = JSON.parse(autoRg_json)
+          logger.info('spawnAutoRgCalculator close success exit code:', code)
+          resolve(analysisResults)
+        } catch (parseError) {
+          logger.error('Error parsing analysis results:', parseError)
+          reject(parseError)
+        }
+      } else {
+        logger.error('spawnAutoRgCalculator close error exit code:', code)
+        reject(`spawnAutoRgCalculator on close reject`)
+      }
+    })
+  })
+}
 
 export {
   getAllJobs,
