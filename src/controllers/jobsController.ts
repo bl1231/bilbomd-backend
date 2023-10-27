@@ -70,9 +70,9 @@ const getAllJobs = async (req: Request, res: Response) => {
     const DBjobs = await Job.find().lean()
 
     if (!DBjobs?.length) {
-      return res.status(404).json({ message: 'No BilboMD Jobs Found' })
+      return res.status(204).json({ message: 'No BilboMD Jobs Found' })
     }
-    // logger.info(DBjobs)
+
     const bilboMDJobs = await Promise.all(
       DBjobs.map(async (mongo) => {
         const user = await User.findById(mongo.user).lean().exec()
@@ -81,9 +81,7 @@ const getAllJobs = async (req: Request, res: Response) => {
           mongo,
           bullmq,
           username: user?.username
-          // bullmq: bullmqJob
         }
-        // logger.info(bilboMDJob)
         return bilboMDJobtest
       })
     )
