@@ -1,5 +1,10 @@
 import { Document, Schema, ObjectId, model } from 'mongoose'
 
+interface IOtp {
+  code: string
+  expiresAt: Date
+}
+
 interface IUser extends Document {
   username: string
   roles: Schema.Types.Array
@@ -8,7 +13,7 @@ interface IUser extends Document {
   status: string
   active: boolean
   confirmationCode: string
-  otp: string
+  otp: IOtp | null
   UUID: string
   createdAt: Date
   last_access: Date
