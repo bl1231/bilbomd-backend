@@ -1,6 +1,5 @@
 import express from 'express'
 const router = express.Router()
-// const af2paeController = require('../controllers/af2paeController')
 import { createNewConstFile, downloadConstFile } from '../controllers/af2paeController'
 import verifyJWT from '../middleware/verifyJWT'
 

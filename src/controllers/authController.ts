@@ -1,6 +1,6 @@
 import { logger } from '../middleware/loggers'
 import { User, IUser } from '../model/User'
-import { Schema } from 'mongoose'
+// import { Schema } from 'mongoose'
 import jwt from 'jsonwebtoken'
 import { Request, Response } from 'express'
 
@@ -13,7 +13,7 @@ interface JwtPayload {
 
 interface BilboMDJwtPayload {
   username: string
-  roles: Schema.Types.Array
+  roles: string[]
   email: string
 }
 

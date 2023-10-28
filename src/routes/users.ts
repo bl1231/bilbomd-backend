@@ -1,17 +1,22 @@
 import express from 'express'
 const router = express.Router()
-import usersController from '../controllers/usersController'
+import {
+  getAllUsers,
+  updateUser,
+  deleteUser,
+  getUser
+} from '../controllers/usersController'
 import verifyJWT from '../middleware/verifyJWT'
 
 router.use(verifyJWT)
 
 router
   .route('/')
-  .get(usersController.getAllUsers)
-  //.post(usersController.createNewUser)
-  .patch(usersController.updateUser)
-  .delete(usersController.deleteUser)
+  .get(getAllUsers)
+  //.post(createNewUser)
+  .patch(updateUser)
+  .delete(deleteUser)
 
-router.route('/:id').get(usersController.getUser)
+router.route('/:id').get(getUser)
 
 module.exports = router

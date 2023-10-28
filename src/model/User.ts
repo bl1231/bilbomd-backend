@@ -5,14 +5,19 @@ interface IOtp {
   expiresAt: Date
 }
 
+interface IConfirmationCode {
+  code: string
+  expiresAt: Date
+}
+
 interface IUser extends Document {
   username: string
-  roles: Schema.Types.Array
+  roles: string[]
   refreshToken: Schema.Types.Array
   email: string
   status: string
   active: boolean
-  confirmationCode: string
+  confirmationCode: IConfirmationCode | null
   otp: IOtp | null
   UUID: string
   createdAt: Date
