@@ -4,8 +4,7 @@ import { v4 as uuid } from 'uuid'
 import { Request, Response } from 'express'
 import { sendVerificationEmail } from '../config/nodemailerConfig'
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-const { BILBOMD_URL } = process.env
+const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
 /**
  * @openapi
@@ -118,7 +117,7 @@ const handleNewUser = async (req: Request, res: Response) => {
     logger.info(newUser)
 
     //send Verification email
-    sendVerificationEmail(email, BILBOMD_URL, code)
+    sendVerificationEmail(email, bilboMdUrl, code)
 
     res.status(201).json({ success: `New user ${user} created!`, code: code })
   } catch (err) {

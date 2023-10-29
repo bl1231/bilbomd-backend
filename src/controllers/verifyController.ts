@@ -3,7 +3,8 @@ import { User } from '../model/User'
 import { Request, Response } from 'express'
 import { sendVerificationEmail } from '../config/nodemailerConfig'
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-const { BILBOMD_URL } = process.env
+// const { BILBOMD_URL } = process.env
+const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
 /**
  * @openapi
@@ -182,7 +183,7 @@ const resendVerificationCode = async (req: Request, res: Response) => {
     )
 
     // Send verification email
-    sendVerificationEmail(email, BILBOMD_URL, code)
+    sendVerificationEmail(email, bilboMdUrl, code)
 
     res.status(201).json({ message: 'OK' })
   } catch (error) {

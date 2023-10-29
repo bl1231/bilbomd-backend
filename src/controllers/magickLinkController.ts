@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { User } from '../model/User'
 import { Request, Response } from 'express'
 import { sendMagickLinkEmail } from '../config/nodemailerConfig'
-const { BILBOMD_URL } = process.env
+const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
 /**
  * @openapi
@@ -77,7 +77,7 @@ const generateMagickLink = async (req: Request, res: Response) => {
     logger.info(message, foundUser.email, passcode)
 
     // Send MagickLink email
-    sendMagickLinkEmail(email, BILBOMD_URL, passcode)
+    sendMagickLinkEmail(email, bilboMdUrl, passcode)
 
     res.status(201).json({ success: `OTP created for ${email}`, otp: passcode })
   } catch (error) {
