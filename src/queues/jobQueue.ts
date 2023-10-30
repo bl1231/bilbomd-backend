@@ -27,7 +27,7 @@ const queueJob = async (data: BullMQData) => {
 
     const bullJob = await bilbomdQueue.add(data.title, data)
 
-    logger.info(`${data.type} Job added with Job ID: ${bullJob.id}`)
+    // logger.info(`${data.type} Job added with Job ID: ${bullJob.id}`)
 
     return bullJob.id
   } catch (error) {

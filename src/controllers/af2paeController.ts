@@ -194,13 +194,14 @@ const spawnAF2PAEInpFileMaker = (af2paeDir: string) => {
 
   return new Promise((resolve, reject) => {
     const af2pae: ChildProcess = spawn('python', args, { cwd: af2paeDir })
-    af2pae.stdout?.on('data', (data) => {
-      logger.info('spawnAF2PAEInpFileMaker stdout %s', data.toString())
-      logStream.write(data.toString())
+    af2pae.stdout?.on('data', (data: Buffer) => {
+      const dataString = data.toString().trim()
+      logger.info(`spawnAF2PAEInpFileMaker stdout ${dataString}`)
+      logStream.write(dataString)
       // const constFileContent = `uuid: ${af2paeDir}`
       // constFileStream.write(constFileContent)
     })
-    af2pae.stderr?.on('data', (data) => {
+    af2pae.stderr?.on('data', (data: Buffer) => {
       logger.error('spawnAF2PAEInpFileMaker stderr', data.toString())
       console.log(data)
       errorStream.write(data.toString())
@@ -214,8 +215,9 @@ const spawnAF2PAEInpFileMaker = (af2paeDir: string) => {
         logger.info('spawnAF2PAEInpFileMaker close success exit code:', code)
         resolve(code.toString())
       } else {
-        logger.error('spawnAF2PAEInpFileMaker close error exit code:', code)
-        reject(`spawnAF2PAEInpFileMaker on close reject`)
+        const errorMessage = `spawnAF2PAEInpFileMaker failed with exit code ${code}`
+        logger.error(errorMessage)
+        reject(errorMessage)
       }
     })
   })

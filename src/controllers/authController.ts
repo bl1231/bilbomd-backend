@@ -234,17 +234,18 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
  */
 const refresh = async (req: Request, res: Response) => {
   const cookies = req.cookies
-  logger.info(`refresh got cookies: ${cookies}`)
+  // logger.info(`refresh got cookies: ${JSON.stringify(cookies)}`)
 
   if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
 
   const refreshToken = cookies.jwt
+  logger.info(`refresh got jwt: ${refreshToken}`)
 
   try {
     const decoded = jwt.verify(refreshToken, refreshTokenSecret, {
       algorithms: ['HS256']
     }) as BilboMDJwtPayload
-    // console.log('decoded --->', decoded.email)
+    // console.log('decoded --->', decoded)
 
     try {
       const foundUser = await User.findOne({ email: decoded.email }).exec()

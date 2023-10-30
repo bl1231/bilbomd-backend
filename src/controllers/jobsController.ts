@@ -595,7 +595,7 @@ const getAutoRg = async (req: Request, res: Response) => {
         }
 
         const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
-        logger.info(`autorgResults: ${autorgResults}`)
+        logger.info(`autorgResults: ${JSON.stringify(autorgResults)}`)
 
         res.status(200).json({
           message: 'AutoRg Success',
@@ -635,9 +635,10 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
     const autoRg: ChildProcess = spawn('python', args, { cwd: dir })
     let autoRg_json = ''
     autoRg.stdout?.on('data', (data: Buffer) => {
-      logger.info(`spawnAutoRgCalculator stdout ${data.toString()}`)
-      logStream.write(data.toString())
-      autoRg_json += data.toString()
+      const dataString = data.toString().trim()
+      logger.info(`spawnAutoRgCalculator stdout: ${dataString}`)
+      logStream.write(dataString)
+      autoRg_json += dataString
     })
     autoRg.stderr?.on('data', (data: Buffer) => {
       logger.error('spawnAutoRgCalculator stderr', data.toString())
