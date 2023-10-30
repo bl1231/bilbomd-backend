@@ -60,6 +60,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 1.3.0
+  - Migrate most Javascript code to Typescript
 - 1.2.0
   - Add new route for retrieving Log information
 - 1.1.0
