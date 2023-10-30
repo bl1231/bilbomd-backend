@@ -71,7 +71,15 @@ const createNewConstFile = async (req: Request, res: Response) => {
         cb(null, jobDir)
       },
       filename: function (req, file, cb) {
-        cb(null, file.originalname.toLowerCase())
+        let newFilename
+        if (file.fieldname === 'crd_file') {
+          newFilename = 'crd_file.crd'
+        } else if (file.fieldname === 'pae_file') {
+          newFilename = 'pae_file.json'
+        } else {
+          newFilename = file.fieldname
+        }
+        cb(null, newFilename)
       }
     })
 
