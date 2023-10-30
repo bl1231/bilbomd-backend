@@ -42,7 +42,7 @@
     "nodemailer": "^6.9.7",
     "nodemailer-express-handlebars": "^6.1.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui": "^5.9.0",
+    "swagger-ui": "^5.9.1",
     "swagger-ui-express": "^5.0.0",
     "uuid": "^9.0.1",
     "winston": "^3.11.0",
