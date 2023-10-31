@@ -64,7 +64,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --omit=dev
+RUN npm ci
 
 COPY --chown=bilbo:bilbomd . .
 
