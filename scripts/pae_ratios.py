@@ -15,7 +15,6 @@ def first_residue_number(crd):
                 line_crd = line.split()
                 if len(line_crd) >= 8:
                     first_resnum = line_crd[1]
-                    # print(f"first residue number: {first_resnum}\n")
                 read_next_line = False
             words = line.split()
             if len(words) >= 2 and words[1] == "EXT":
@@ -29,7 +28,6 @@ def last_residue_number(crd):
         if lines:
             line_crd = lines[-1].split()
             last_resnum = line_crd[1]
-        # print(f"last residue number: {last_resnum}\n")
     return (last_resnum)
 
 
@@ -42,9 +40,8 @@ def segment_id(crd, residue):
     return (segment_id)
 
 
-def define_segments(crd, first_resnum, last_resnum):
+def define_segments(crd):
     differing_pairs = []
-    differing_pairs.append(first_resnum)
     with open(crd, 'r') as infile:
         current_line = infile.readline().split()  # Read the first line
         line_number = 1
@@ -53,10 +50,8 @@ def define_segments(crd, first_resnum, last_resnum):
             next_line = line.split()
 
             if len(current_line) == 10 and len(next_line) == 10 and current_line[7] != next_line[7]:
-                differing_pairs.append(current_line[1])
-                differing_pairs.append(next_line[1])
+                differing_pairs.append(int(current_line[1])-1)
             current_line = next_line  # Move to the next line
-    differing_pairs.append(last_resnum)
     return (differing_pairs)
 
 
@@ -140,12 +135,11 @@ def calculate_average_Bfactor(numbers):
     return sum(numbers) / len(numbers)
 
 
-def separate_into_regions(numbers):
+def separate_into_regions(numbers, chain_segments):
     regions = []
     current_region = [numbers[0]]
-
     for i in range(1, len(numbers)):
-        if numbers[i] == numbers[i - 1] + 1:
+        if (numbers[i] == numbers[i - 1] + 1) and (numbers[i-1] not in  chain_segments):
             current_region.append(numbers[i])
         else:
             regions.append(current_region)
@@ -155,15 +149,14 @@ def separate_into_regions(numbers):
     return regions
 
 
-def define_rigid_clusters(clusters, crd, first_resnum):
+def define_rigid_clusters(clusters, crd, first_resnum, chain_segments):
     #define first residue  number
     rigid_body= []
     for row in clusters:
         pairs= []
-        #non_empty_cluster = [word for word in row if word.strip() != '']
         if len(row) >= 5: 
             numbers = [int(num) for num in row]
-            consecutive_regions = separate_into_regions(numbers)
+            consecutive_regions = separate_into_regions(numbers, chain_segments)
             for region in consecutive_regions:
                 first_resnum_cluster =  region[0]
                 last_resnum_cluster = region[-1]        
@@ -219,7 +212,6 @@ def define_rigid_clusters(clusters, crd, first_resnum):
     for row in rigid_body_optimized:
         if row:
             pass
-            # print (row)
 
     return rigid_body_optimized
 
@@ -286,18 +278,18 @@ if __name__ == '__main__':
 
     first_residue = first_residue_number (args.crd_file)
     last_residues = last_residue_number (args.crd_file)
-    segments = define_segments(args.crd_file, first_residue, last_residues)
-
-    selected_rows_start = str(int(segments[0])-1)
-    selected_rows_end = str(int(segments[-1])-1)
-    selected_cols_start =  str(int(segments[0])-1)
-    selected_cols_end = str(int(segments[-1])-1)
+    chain_segments = define_segments(args.crd_file)
+    selected_rows_start = str(int(first_residue)-1)
+    selected_rows_end = str(int(last_residues)-1)
+    selected_cols_start = selected_rows_start
+    selected_cols_end =  selected_rows_end
     
     corect_first_character(args.pae_file, temp_file_json)
 
     clusters = define_clusters_for_selected_pae(temp_file_json, selected_rows_start, selected_rows_end, selected_cols_start, selected_cols_end)
 
-    rigid_body = define_rigid_clusters(clusters, args.crd_file, int(first_residue))
+    rigid_body = define_rigid_clusters(clusters, args.crd_file, int(first_residue), chain_segments)
+    #print (rigid_body)
 
     const_file = write_const_file(rigid_body, const_file_path)
 
