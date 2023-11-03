@@ -21,8 +21,8 @@ const sendVerificationEmail = (email: string, url: string, code: string) => {
     hbs({
       viewEngine: {
         extname: '.handlebars',
-        defaultLayout: 'false',
         layoutsDir: viewPath,
+        defaultLayout: false,
         partialsDir: partialsPath
       },
       viewPath: viewPath,
@@ -58,8 +58,8 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
     hbs({
       viewEngine: {
         extname: '.handlebars',
-        defaultLayout: 'false',
         layoutsDir: viewPath,
+        defaultLayout: false,
         partialsDir: partialsPath
       },
       viewPath: viewPath,
@@ -95,8 +95,8 @@ const sendJobCompleteEmail = (email: string, url: string, jobid: string) => {
     hbs({
       viewEngine: {
         extname: '.handlebars',
-        defaultLayout: 'false',
         layoutsDir: viewPath,
+        defaultLayout: false,
         partialsDir: partialsPath
       },
       viewPath: viewPath,
