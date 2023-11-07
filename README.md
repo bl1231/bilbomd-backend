@@ -60,6 +60,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 1.3.2
+  - Bug fixes
 - 1.3.1
   - update the `pae_ratios.py` script
 - 1.3.0
