@@ -93,17 +93,17 @@ const getBullMQJob = async (UUID: string): Promise<BilboMDBullMQ | undefined> =>
 
   if (bulljob) {
     // calculate position as a number
-    const position = await getWaitingPosition(bulljob)
+    const position = (await getWaitingPosition(bulljob)) ?? '0'
     // calculate queuePosition as a text string
-    const quePosition = await getWaitingPositionText(bulljob)
+    const queuePosition = (await getWaitingPositionText(bulljob)) ?? '0'
     // append bilbomdStep
-    const steps = await updateBilboMDSteps(bulljob)
+    const steps = (await updateBilboMDSteps(bulljob)) ?? '{}'
     // append bilbomdLastStep
-    const msg = await updateBilboMDInfo(bulljob)
+    const msg = (await updateBilboMDInfo(bulljob)) ?? 'error'
     // Put it all together
     const bilboMDBullMQJob: BilboMDBullMQ = {
       position: position,
-      queuePosition: quePosition,
+      queuePosition: queuePosition,
       bilbomdStep: steps,
       bilbomdLastStep: msg,
       bullmq: bulljob

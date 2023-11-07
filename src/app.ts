@@ -1,7 +1,4 @@
 import 'dotenv/config'
-
-// global.__basedir = __dirname
-// import 'express-async-errors'
 import express, { Express, Request, Response } from 'express'
 import path from 'path'
 import cors from 'cors'
@@ -11,6 +8,9 @@ import cookieParser from 'cookie-parser'
 import { router as adminRoutes } from './routes/admin'
 import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn'
+import { CronJob } from 'cron'
+// import { cronTest } from './middleware/cronTest'
+import { deleteOldJobs } from './middleware/jobCleaner'
 import swaggerUi from 'swagger-ui-express'
 import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
 
@@ -56,6 +56,10 @@ app.use('/v1/admin', adminRoutes)
 // Swagger documentation for Version 1
 app.use('/v1/api-docs', express.static('./openapi/v1/swagger_v1.json'))
 app.use('/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
+
+// cron
+new CronJob('11 1 * * *', deleteOldJobs, null, true, 'America/Los_Angeles')
+// job.start()
 
 app.all('*', (req: Request, res: Response) => {
   res.status(404)
