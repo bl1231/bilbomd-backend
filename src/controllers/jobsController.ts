@@ -223,6 +223,7 @@ const handleBilboMDAutoJob = async (
       crd_file: files['crd_file'][0].originalname.toLowerCase(),
       pae_file: files['pae_file'][0].originalname.toLowerCase(),
       data_file: files['dat_file'][0].originalname.toLowerCase(),
+      conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
       user: user
