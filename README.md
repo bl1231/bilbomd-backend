@@ -60,6 +60,8 @@ Scott Classen [@scott_classen](https://twitter.com/scott_classen)
 
 ## Version History
 
+- 1.3.3
+  - Set defualt `conformational_sampling` to `3`
 - 1.3.2
   - Bug fixes
 - 1.3.1
