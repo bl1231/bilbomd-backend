@@ -9,9 +9,9 @@ import {
   getLogForStep
 } from '../controllers/jobsController'
 const router = express.Router()
-// import verifyJWT from '../middleware/verifyJWT'
+import verifyJWT from '../middleware/verifyJWT'
 
-// router.use(verifyJWT)
+router.use(verifyJWT)
 
 router.route('/').get(getAllJobs).post(createNewJob).patch(updateJobStatus)
 

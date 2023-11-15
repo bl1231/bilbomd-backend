@@ -70,7 +70,7 @@ const getAllJobs = async (req: Request, res: Response) => {
     const DBjobs = await Job.find().lean()
 
     if (!DBjobs?.length) {
-      return res.status(204).json({ message: 'No BilboMD Jobs Found' })
+      return res.status(204).json({})
     }
 
     const bilboMDJobs = await Promise.all(

@@ -1,6 +1,6 @@
 import { User } from '../model/User'
 import { Job } from '../model/Job'
-import { logger } from '../middleware/loggers'
+// import { logger } from '../middleware/loggers'
 import { Request, Response } from 'express'
 
 /**
@@ -112,7 +112,7 @@ const updateUser = async (req: Request, res: Response) => {
 
   // Does the user exist to update?
   const user = await User.findById(id).exec()
-  logger.info('found user: %s', user)
+  // logger.info('found user: %s', user)
 
   if (!user) {
     return res.status(400).json({ message: 'User not found' })
