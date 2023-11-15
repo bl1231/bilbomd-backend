@@ -114,7 +114,7 @@ const handleNewUser = async (req: Request, res: Response) => {
       UUID: UUID,
       createdAt: Date()
     })
-    logger.info(newUser)
+    logger.info(newUser.username)
 
     //send Verification email
     sendVerificationEmail(email, bilboMdUrl, code)

@@ -9,7 +9,7 @@ const redisOptions: RedisOptions = {
       ? parseInt(process.env.REDIS_PORT, 10)
       : 6379,
   host: process.env.REDIS_HOST || 'localhost',
-  password: process.env.REDIS_PASSWORD || '',
+  // password: process.env.REDIS_PASSWORD || '',
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
 const redis = new IORedis(redisOptions)
@@ -20,6 +20,11 @@ const bilbomdQueue = new Queue('bilbomd', {
     attempts: 3
   }
 })
+
+const closeQueue = async () => {
+  await bilbomdQueue.close()
+  await redis.disconnect() // Disconnect from Redis
+}
 
 const queueJob = async (data: BullMQData) => {
   try {
@@ -249,6 +254,7 @@ const getWorkers = async () => {
 export {
   queueJob,
   bilbomdQueue,
+  closeQueue,
   getWaitingJobs,
   getBullMQJob,
   getActiveCount,

@@ -14,6 +14,7 @@
     "dev": "nodemon --watch src -e js,ts,ejs --exec npm run dev:start",
     "start": "npm run build && node dist/server.js",
     "test": "NODE_ENV=test jest --testTimeout=5000 --runInBand --verbose --detectOpenHandles",
+    "test:jobs": "NODE_ENV=test jest --testTimeout=5000 --runInBand --detectOpenHandles test/jobs.test.ts",
     "server": "nodemon .",
     "generate-swagger": "node ./openapi/swagger.js"
   },
