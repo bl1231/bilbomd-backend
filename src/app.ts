@@ -9,7 +9,6 @@ import { router as adminRoutes } from './routes/admin'
 import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn'
 import { CronJob } from 'cron'
-// import { cronTest } from './middleware/cronTest'
 import { deleteOldJobs } from './middleware/jobCleaner'
 import swaggerUi from 'swagger-ui-express'
 import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
@@ -27,10 +26,10 @@ app.use(requestLogger)
 app.use(cors(corsOptions))
 
 // built-in middleware to handle urlencoded FORM data
-app.use(express.urlencoded({ extended: true, limit: '5mb' }))
+app.use(express.urlencoded({ extended: true, limit: '150mb' }))
 
 // built-in middleware for JSON
-app.use(express.json({ limit: '5mb' }))
+app.use(express.json({ limit: '150mb' }))
 
 // middleware for COOKIES
 app.use(cookieParser())
