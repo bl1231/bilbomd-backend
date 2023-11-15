@@ -15,7 +15,7 @@ Provides backend support for bilbomd-ui
 - [![ExpressJS][ExpressJS]][ExpressJS-url]
 - [![Docker][Docker]][Docker-url]
 - [![Redis][Redis]][Redis-url]
-- [BullMQ][BullMQ-url]
+- [![BullMQ][BullMQ]][BullMQ-url]
 
 ### Installing
 
@@ -23,26 +23,47 @@ Provides backend support for bilbomd-ui
 
 ### Instructions for installing a develoment instance of the backend
 
-I guess you should probably start by cloning the repo.
+Clone the repo.
 
 ```
 cd /wherever/this/will/live
 git clone https://github.com/bl1231/bilbomd-backend
 ```
 
-You can install the Node.js dependencies for testing purposes, but keep in mind that these will be installed **inside** the Docker container when you run `docker compose build` from the `bilbomd` [main project](https://github.com/bl1231/bilbomd).
+Install the Node.js dependencies for testing purposes, but keep in mind that these will be installed **inside** the Docker container when you run `docker compose build` from the `bilbomd` [main project](https://github.com/bl1231/bilbomd).
 
 ```
 npm install
 ```
 
-### Executing program
+### Run tests
 
-Production is run via docker compose. However, for interactive local development efforts you probably want to run using `npm`:
+```bash
+npm run test
+```
+
+### Run program
+
+Production is run via docker compose. However, for interactive local development efforts you might be able to:
 
 ```bash
 npm run dev
 ```
+
+However, `bilbomd-backend` needs to communicate with Redis and MongoDB which are typically running in separate Docker images so you would likely have to fiddle with PORT values etc. in order to run in "dev" mode within a local terminal. It will be much easier to use docker compose and develop directly within the `bilbomd-dev` environment. Details can be found in `bilbomd` repo. Briefly, the entry point for the `backend` service in `bilbomd-dev` has been set as:
+
+```
+command: [ "npm", "run", "dev" ]
+```
+
+and the local directory has been mounted inside the docker image:
+
+```
+    volumes:
+      - ./bilbomd-backend:/app
+```
+
+This makes it so that `bilbomd-backend` will automatically restart inside the docker image anytime changes are made to source files.
 
 ## Build docker image
 
@@ -54,12 +75,13 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Authors
 
-Contributors names and contact info
-
-Scott Classen [@scott_classen](https://twitter.com/scott_classen)
+- Scott Classen sclassen at lbl dot gov
+- Michal Hammel mhammel at lbl dot gov
 
 ## Version History
 
+- 1.3.5
+  - Jest test files have been converted to Typescript
 - 1.3.4
   - Remove unused CHARMM handlebars templates
 - 1.3.3
@@ -137,4 +159,5 @@ Inspiration, code snippets, etc.
 [Redis-url]: https://redis.io/
 [Docker]: https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com/
+[BullMQ]: ./public/BullMQ-logo-sm.png
 [BullMQ-url]: https://docs.bullmq.io/
