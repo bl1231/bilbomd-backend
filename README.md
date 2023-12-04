@@ -80,6 +80,8 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.3.6
+  - Upgrade mongoose from 7.6.3 to 8.0.2
 - 1.3.5
   - Jest test files have been converted to Typescript
 - 1.3.4
