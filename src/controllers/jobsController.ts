@@ -402,35 +402,37 @@ const deleteJob = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Job ID required' })
   }
 
-  // Confirm job exists to delete
+  // Find the job to delete
   const job = await Job.findById(id).exec()
 
   if (!job) {
     return res.status(400).json({ message: 'Job not found' })
   }
 
-  // Delete from MongoDB
-  const result = await job.deleteOne()
+  // Delete the job from MongoDB
+  const deleteResult = await job.deleteOne()
 
-  // Remove from disk . Thank you ChatGPT!
+  // Check if a document was actually deleted
+  if (deleteResult.deletedCount === 0) {
+    return res.status(404).json({ message: 'No job was deleted' })
+  }
+
+  // Remove from disk
   const jobDir = path.join(uploadFolder, job.uuid)
-  // console.log('jobDir:', jobDir)
   try {
-    // Check if the directory exists
+    // Check if the directory exists and remove it
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
       return res.status(404).json({ message: 'Directory not found on disk' })
     }
-    // Recursively delete the directory
     await fs.remove(jobDir)
   } catch (error) {
     logger.error('Error deleting directory %s', error)
     res.status(500).send('Error deleting directory')
   }
 
-  // const reply = `Deleted Job: '${result.title}' with ID ${result._id} deleted`
-  const reply =
-    'Deleted Job: ' + result.title + ' with ID: ' + result._id + ' UUID: ' + result.uuid
+  // Create response message
+  const reply = `Deleted Job: '${job.title}' with ID ${job._id} and UUID: ${job.uuid}`
 
   res.status(200).json({ reply })
 }

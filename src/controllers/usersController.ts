@@ -207,9 +207,14 @@ const deleteUser = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'User not found' })
   }
 
-  const result = await user.deleteOne()
+  const deleteResult = await user.deleteOne()
 
-  const reply = `Username ${result.username} with ID ${result._id} deleted`
+  // Check if a document was actually deleted
+  if (deleteResult.deletedCount === 0) {
+    return res.status(404).json({ message: 'No user was deleted' })
+  }
+
+  const reply = `Username ${user.username} with ID ${user._id} deleted`
 
   res.status(200).json({ message: reply })
 }
