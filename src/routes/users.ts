@@ -10,13 +10,8 @@ import verifyJWT from '../middleware/verifyJWT'
 
 router.use(verifyJWT)
 
-router
-  .route('/')
-  .get(getAllUsers)
-  //.post(createNewUser)
-  .patch(updateUser)
-  .delete(deleteUser)
+router.route('/').get(getAllUsers).patch(updateUser)
 
-router.route('/:id').get(getUser)
+router.route('/:id').get(getUser).delete(deleteUser)
 
 module.exports = router
