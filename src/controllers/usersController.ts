@@ -187,14 +187,14 @@ const updateUser = async (req: Request, res: Response) => {
  *                   description: Error message.
  */
 const deleteUser = async (req: Request, res: Response) => {
-  const { id } = req.body
+  const { id } = req.params
 
   // Confirm data
   if (!id) {
     return res.status(400).json({ message: 'User ID Required' })
   }
 
-  // Does the user still have assigned notes?
+  // Does the user still have assigned jobs?
   const job = await Job.findOne({ user: id }).lean().exec()
   if (job) {
     return res.status(400).json({ message: 'User has jobs' })
