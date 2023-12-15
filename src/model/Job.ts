@@ -22,7 +22,13 @@ interface IBilboMDJob extends IJob {
 }
 
 interface IBilboMDAutoJob extends IJob {
+  psf_file: string
+  crd_file: string
   pae_file: string
+  const_inp_file?: string
+  conformational_sampling: number
+  rg_min?: number
+  rg_max?: number
 }
 
 interface IBilboMDScoperJob extends IJob {
@@ -70,7 +76,17 @@ const bilboMdJobSchema = new Schema<IBilboMDJob>({
 })
 
 const bilboMdAutoJobSchema = new Schema<IBilboMDAutoJob>({
-  pae_file: { type: String, required: true }
+  psf_file: { type: String, required: true },
+  crd_file: { type: String, required: true },
+  pae_file: { type: String, required: true },
+  const_inp_file: { type: String, required: false },
+  conformational_sampling: {
+    type: Number,
+    enum: [1, 2, 3, 4],
+    default: 1
+  },
+  rg_min: { type: Number, required: false, min: 10, max: 100 },
+  rg_max: { type: Number, required: false, min: 10, max: 100 }
 })
 
 const bilboMdScoperJobSchema = new Schema<IBilboMDScoperJob>({

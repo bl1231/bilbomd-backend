@@ -134,7 +134,6 @@ const createNewJob = async (req: Request, res: Response) => {
 
       try {
         const { email, job_type } = req.body
-        logger.info(`job type in req ${job_type}`)
         const foundUser = await User.findOne({ email }).exec()
         if (!foundUser) {
           return res.status(401).json({ message: 'No user found with that email' })
@@ -145,8 +144,10 @@ const createNewJob = async (req: Request, res: Response) => {
         user = foundUser
 
         if (job_type === 'BilboMD') {
+          logger.info('about to handleBilboMDJob')
           await handleBilboMDJob(req, res, user, UUID)
         } else if (job_type === 'BilboMDAuto') {
+          logger.info('about to handleBilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, user, UUID)
         } else if (job_type === 'BilboMDScoper') {
           logger.info('about to handleBilboMDScoperJob')
@@ -175,6 +176,7 @@ const handleBilboMDJob = async (
   try {
     const { job_type: jobType } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    // console.log('Received files:', files)
     const now = new Date()
     const newJob: IBilboMDJob = new BilboMdJob({
       title: req.body.title,
@@ -193,7 +195,7 @@ const handleBilboMDJob = async (
     await newJob.save()
     logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
     const BullId = await queueJob({
-      type: 'BilboMD',
+      type: jobType,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
@@ -221,6 +223,11 @@ const handleBilboMDAutoJob = async (
   try {
     const { job_type: jobType } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    logger.info(
+      `CRD File: ${
+        files['crd_file'] ? files['crd_file'][0].originalname.toLowerCase() : 'Not Found'
+      }`
+    )
     const now = new Date()
     // logger.info(`now:  ${now.toDateString()}`)
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
@@ -235,6 +242,7 @@ const handleBilboMDAutoJob = async (
       time_submitted: now,
       user: user
     })
+    // logger.info(`handleBilboMDAutoJob newJob: ${newJob}`)
 
     // Save the job to the database
     await newJob.save()
@@ -242,7 +250,7 @@ const handleBilboMDAutoJob = async (
 
     // Queue the job
     const BullId = await queueJob({
-      type: jobType, // Corrected job type
+      type: jobType,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
@@ -251,7 +259,7 @@ const handleBilboMDAutoJob = async (
     logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
     logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
     res.status(200).json({
-      message: `New ${jobType} Job successfully created`,
+      message: `New ${jobType} Job ${newJob.title} successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
@@ -289,7 +297,7 @@ const handleBilboMDScoperJob = async (
 
     // Queue the job
     const BullId = await queueJob({
-      type: jobType, // Corrected job type
+      type: jobType,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
@@ -298,7 +306,7 @@ const handleBilboMDScoperJob = async (
     logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
     logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
     res.status(200).json({
-      message: `New ${jobType} Job successfully created`,
+      message: `New ${jobType} Job ${newJob.title} successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
