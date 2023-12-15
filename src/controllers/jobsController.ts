@@ -11,7 +11,9 @@ import {
   BilboMdJob,
   IBilboMDJob,
   BilboMdAutoJob,
-  IBilboMDAutoJob
+  IBilboMDAutoJob,
+  BilboMdScoperJob,
+  IBilboMDScoperJob
 } from '../model/Job'
 
 import { User, IUser } from '../model/User'
@@ -116,6 +118,7 @@ const createNewJob = async (req: Request, res: Response) => {
     // Use `upload.fields()` to handle multiple files and fields
     upload.fields([
       { name: 'psf_file', maxCount: 1 },
+      { name: 'pdb_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
       { name: 'constinp', maxCount: 1 },
       { name: 'const_file', maxCount: 1 },
@@ -145,6 +148,9 @@ const createNewJob = async (req: Request, res: Response) => {
           await handleBilboMDJob(req, res, user, UUID)
         } else if (job_type === 'BilboMDAuto') {
           await handleBilboMDAutoJob(req, res, user, UUID)
+        } else if (job_type === 'BilboMDScoper') {
+          logger.info('about to handleBilboMDScoperJob')
+          await handleBilboMDScoperJob(req, res, user, UUID)
         } else {
           res.status(400).json({ message: 'Invalid job type' })
         }
@@ -216,6 +222,7 @@ const handleBilboMDAutoJob = async (
     const { job_type: jobType } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     const now = new Date()
+    // logger.info(`now:  ${now.toDateString()}`)
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
       uuid: UUID,
@@ -252,6 +259,58 @@ const handleBilboMDAutoJob = async (
     // Handle any errors and send an appropriate response to the client
     logger.error(error)
     res.status(500).json({ message: 'Failed to create handleBilboMDAutoJob job' })
+  }
+}
+
+const handleBilboMDScoperJob = async (
+  req: Request,
+  res: Response,
+  user: IUser,
+  UUID: string
+) => {
+  try {
+    const { job_type: jobType } = req.body
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    const now = new Date()
+    // logger.info(`now:  ${now.toDateString()}`)
+    const newJob: IBilboMDScoperJob = new BilboMdScoperJob({
+      title: req.body.title,
+      uuid: UUID,
+      pdb_file: files['pdb_file'][0].originalname.toLowerCase(),
+      data_file: files['dat_file'][0].originalname.toLowerCase(),
+      status: 'Submitted',
+      time_submitted: now,
+      user: user
+    })
+    // logger.info(`in handleBilboMDScoperJob: ${newJob}`)
+    // Save the job to the database
+    await newJob.save()
+    logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+
+    // Queue the job
+    const BullId = await queueJob({
+      type: jobType, // Corrected job type
+      title: newJob.title,
+      uuid: newJob.uuid,
+      jobid: newJob.id
+    })
+
+    logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+    res.status(200).json({
+      message: `New ${jobType} Job successfully created`,
+      jobid: newJob.id,
+      uuid: newJob.uuid
+    })
+  } catch (error) {
+    // Log more detailed information about the error
+    if (error instanceof Error) {
+      logger.error('Error in handleBilboMDScoperJob:', error.message)
+      logger.error('Stack Trace:', error.stack)
+    } else {
+      logger.error('Non-standard error object:', error)
+    }
+    res.status(500).json({ message: 'Failed to create handleBilboMDScoperJob job' })
   }
 }
 
