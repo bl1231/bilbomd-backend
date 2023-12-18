@@ -80,6 +80,9 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.3.7
+  - fix bug when deleting users
+  - adjust the Mongoose schema
 - 1.3.6
   - Upgrade mongoose from 7.6.3 to 8.0.2
 - 1.3.5
