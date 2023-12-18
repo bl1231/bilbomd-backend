@@ -5,7 +5,8 @@ import fs from 'fs-extra'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
 const spawn = require('child_process').spawn
-import { queueJob, getBullMQJob } from '../queues/jobQueue'
+import { queueJob, getBullMQJob } from '../queues/bilbomd'
+import { queueScoperJob } from '../queues/scoper'
 import {
   Job,
   BilboMdJob,
@@ -296,7 +297,7 @@ const handleBilboMDScoperJob = async (
     logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
 
     // Queue the job
-    const BullId = await queueJob({
+    const BullId = await queueScoperJob({
       type: jobType,
       title: newJob.title,
       uuid: newJob.uuid,
