@@ -6,7 +6,7 @@ import path from 'path'
 import { v4 as uuid } from 'uuid'
 const spawn = require('child_process').spawn
 import { queueJob, getBullMQJob } from '../queues/bilbomd'
-import { queueScoperJob } from '../queues/scoper'
+import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper'
 import {
   Job,
   BilboMdJob,
@@ -20,6 +20,7 @@ import {
 import { User, IUser } from '../model/User'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
+import { IJob } from 'types/bilbomd'
 // import { BilboMDJob } from 'types/bilbomd'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
@@ -70,7 +71,7 @@ type AutoRgResults = {
  */
 const getAllJobs = async (req: Request, res: Response) => {
   try {
-    const DBjobs = await Job.find().lean()
+    const DBjobs: Array<IJob> = await Job.find().lean()
 
     if (!DBjobs?.length) {
       return res.status(204).json({})
@@ -79,12 +80,20 @@ const getAllJobs = async (req: Request, res: Response) => {
     const bilboMDJobs = await Promise.all(
       DBjobs.map(async (mongo) => {
         const user = await User.findById(mongo.user).lean().exec()
-        const bullmq = await getBullMQJob(mongo.uuid)
+
+        let bullmq
+        if (['BilboMd', 'BilboMdAuto'].includes(mongo.__t)) {
+          bullmq = await getBullMQJob(mongo.uuid)
+        } else if (mongo.__t === 'BilboMdScoper') {
+          bullmq = await getBullMQScoperJob(mongo.uuid)
+        }
+
         const bilboMDJobtest = {
           mongo,
           bullmq,
           username: user?.username
         }
+        // logger.info(bilboMDJobtest)
         return bilboMDJobtest
       })
     )
@@ -280,6 +289,16 @@ const handleBilboMDScoperJob = async (
   try {
     const { job_type: jobType } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    logger.info(
+      `PDB File: ${
+        files['pdb_file'] ? files['pdb_file'][0].originalname.toLowerCase() : 'Not Found'
+      }`
+    )
+    logger.info(
+      `DAT File: ${
+        files['dat_file'] ? files['dat_file'][0].originalname.toLowerCase() : 'Not Found'
+      }`
+    )
     const now = new Date()
     // logger.info(`now:  ${now.toDateString()}`)
     const newJob: IBilboMDScoperJob = new BilboMdScoperJob({
