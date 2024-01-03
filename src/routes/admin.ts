@@ -14,22 +14,23 @@ const redisOptions: RedisOptions = {
       ? parseInt(process.env.REDIS_PORT, 10)
       : 6379,
   host: process.env.REDIS_HOST || 'localhost',
-  // password: process.env.REDIS_PASSWORD || '',
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
 
 const redis = new IORedis(redisOptions)
 
-const queueMQ = new QueueMQ('bilbomd', { connection: redis })
+// Create instances for both queues
+const bilbomdQueue = new QueueMQ('bilbomd', { connection: redis })
+const bilbomdScoperQueue = new QueueMQ('bilbomd-scoper', { connection: redis })
 
 const serverAdapter = new ExpressAdapter()
 serverAdapter.setBasePath(basePath)
 
 createBullBoard({
-  queues: [new BullMQAdapter(queueMQ)],
+  queues: [new BullMQAdapter(bilbomdQueue), new BullMQAdapter(bilbomdScoperQueue)],
   serverAdapter: serverAdapter
 })
 
 router.use('/queues', serverAdapter.getRouter())
 
-export { router, queueMQ }
+export { router, bilbomdQueue, bilbomdScoperQueue }

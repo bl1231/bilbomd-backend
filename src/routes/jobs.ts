@@ -9,9 +9,9 @@ import {
   getLogForStep
 } from '../controllers/jobsController'
 const router = express.Router()
-import verifyJWT from '../middleware/verifyJWT'
+// import verifyJWT from '../middleware/verifyJWT'
 
-router.use(verifyJWT)
+// router.use(verifyJWT)
 
 router.route('/').get(getAllJobs).post(createNewJob).patch(updateJobStatus)
 
@@ -20,5 +20,6 @@ router.route('/:id').delete(deleteJob)
 router.route('/:id/results').get(downloadJobResults)
 router.route('/:id/logs').get(getLogForStep)
 router.route('/bilbomd-auto').post(createNewJob)
+router.route('/bilbomd-scoper').post(createNewJob)
 
 module.exports = router

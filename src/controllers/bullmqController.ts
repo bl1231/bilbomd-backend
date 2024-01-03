@@ -1,5 +1,5 @@
 // import { logger } from '../middleware/loggers'
-import { getActiveCount, getWaitingCount, getWorkers } from '../queues/jobQueue'
+import { getActiveCount, getWaitingCount, getWorkers } from '../queues/bilbomd'
 import { Request, Response } from 'express'
 
 const getQueueStatus = async (req: Request, res: Response) => {

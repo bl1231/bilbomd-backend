@@ -28,7 +28,9 @@ const closeQueue = async () => {
 
 const queueJob = async (data: BullMQData) => {
   try {
-    logger.info(`${data.type} Job "${data.title}" about to be added to queue`)
+    logger.info(
+      `${data.type} Job ${data.title} about to be added to ${bilbomdQueue.name} queue`
+    )
 
     const bullJob = await bilbomdQueue.add(data.title, data)
 
