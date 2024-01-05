@@ -18,13 +18,13 @@ export type BilboMDScoperSteps = {
   runRNAview: boolean
   KGSConformations: number
   KGSFiles: number
-  FoXS: string
+  FoXS: boolean
   FoXSProgress: number
   FoXSTopFile: string
   FoXSTopScore: number
   createdFeatures: boolean
   predictionThreshold: number
-  MultiFoXS: string
+  MultiFoXS: boolean
   MultiFoXSEnsembleSize: number
   MultiFoXSScore: number
   scoper: string
@@ -46,22 +46,6 @@ export type BilboMDBullMQ = {
   bilbomdLastStep: string
   bullmq: BullMQJob
 }
-
-// export type Scoper = {
-//   addHydrogens: boolean
-//   runRNAview: boolean
-//   KGSConformations: number
-//   KGSFiles: number
-//   FoXSDone: boolean
-//   FoXSProgress: number
-//   FoXSTopFile: string
-//   FoXSTopScore: number
-//   createdFeatures: boolean
-//   predictionThreshold: number
-//   MultiFoXS: string
-//   MultiFoXSEnsembleSize: number
-//   MultiFoXSScore: number
-// }
 
 export type BilboMDJob = {
   mongo: MongoDBJob

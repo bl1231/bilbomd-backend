@@ -509,13 +509,13 @@ const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSte
     runRNAview: false,
     KGSConformations: 0,
     KGSFiles: 0,
-    FoXS: 'no',
+    FoXS: false,
     FoXSProgress: 0,
     FoXSTopFile: '',
     FoXSTopScore: 0,
     createdFeatures: false,
     predictionThreshold: 0,
-    MultiFoXS: 'no',
+    MultiFoXS: false,
     MultiFoXSEnsembleSize: 0,
     MultiFoXSScore: 0,
     scoper: 'no',
@@ -548,11 +548,11 @@ const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSte
       const match = line.match(/Running KGS with (\d+) samples/)
       scoper.KGSConformations = match ? parseInt(match[1], 10) : 0
     } else if (line.match(/Getting FoXS scores for (\d+) structures/)) {
-      scoper.FoXS = 'start'
+      scoper.FoXS = false
     } else if (line.match(/top_k_pdbs: \[\('(.+\.pdb)', (\d+\.\d+)\)\]/)) {
       const match = line.match(/top_k_pdbs: \[\('(.+\.pdb)', (\d+\.\d+)\)\]/)
       if (match) {
-        scoper.FoXS = 'end'
+        scoper.FoXS = true
         scoper.FoXSTopFile = match[1]
         scoper.FoXSTopScore = parseFloat(match[2])
       }
@@ -564,11 +564,11 @@ const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSte
         scoper.predictionThreshold = parseFloat(match[1])
       }
     } else if (line.includes('Running MultiFoXS Combination')) {
-      scoper.MultiFoXS = 'start'
+      scoper.MultiFoXS = false
     } else if (line.includes('predicted ensemble is of size:')) {
       const match = line.match(/predicted ensemble is of size: (\d+)/)
       if (match) {
-        scoper.MultiFoXS = 'end'
+        scoper.MultiFoXS = true
         scoper.MultiFoXSEnsembleSize = parseInt(match[1], 10)
       }
     } else if (line.includes('The lowest scoring ensemble is')) {
