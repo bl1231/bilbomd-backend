@@ -14,6 +14,19 @@ export type BilboMDSteps = {
 }
 
 export type BilboMDScoperSteps = {
+  addHydrogens: boolean
+  runRNAview: boolean
+  KGSConformations: number
+  KGSFiles: number
+  FoXS: boolean
+  FoXSProgress: number
+  FoXSTopFile: string
+  FoXSTopScore: number
+  createdFeatures: boolean
+  predictionThreshold: number
+  MultiFoXS: boolean
+  MultiFoXSEnsembleSize: number
+  MultiFoXSScore: number
   scoper: string
   results: string
   email: string
@@ -38,22 +51,30 @@ export type BilboMDJob = {
   mongo: MongoDBJob
   bullmq?: BilboMDBullMQ
   username?: string
+  scoper?: BilboMDScoperSteps
+  classic?: BilboMDSteps
+  auto?: BilboMDSteps
 }
 
 export interface IJob {
-  _id: string
-  title: string
-  uuid: string
-  data_file: string
-  status: string
-  time_submitted: string // Assuming this is a date in string format
-  user: string // Assuming this is a user ID in string format
-  __t: string
-  pdb_file: string
-  createdAt: string // Assuming date in string format
-  updatedAt: string // Assuming date in string format
-  __v: number
-  time_started: string // Assuming date in string format
-  time_completed: string // Assuming date in string format
   id: string
+  _id: string
+  __t: string
+  conformational_sampling: number
+  const_inp_file: string
+  crd_file: string
+  createdAt: string
+  data_file: string
+  psf_file: string
+  pdb_file: string
+  rg_max: number
+  rg_min: number
+  status: string
+  time_completed: string
+  time_started: string
+  time_submitted: string
+  title: string
+  updatedAt: string
+  user: string
+  uuid: string
 }

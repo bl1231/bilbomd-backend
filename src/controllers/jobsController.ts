@@ -2,6 +2,7 @@ import { logger } from '../middleware/loggers'
 import mongoose from 'mongoose'
 import multer from 'multer'
 import fs from 'fs-extra'
+import readline from 'readline'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
 const spawn = require('child_process').spawn
@@ -20,8 +21,8 @@ import {
 import { User, IUser } from '../model/User'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
-import { IJob } from 'types/bilbomd'
-// import { BilboMDJob } from 'types/bilbomd'
+import { IJob, BilboMDScoperSteps } from 'types/bilbomd'
+import { BilboMDJob } from 'types/bilbomd'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -31,44 +32,6 @@ type AutoRgResults = {
   rg_max: number
 }
 
-/**
- * @openapi
- * /jobs:
- *   get:
- *     summary: Get All Jobs
- *     description: Retrieve a list of all jobs.
- *     tags:
- *       - Job Management
- *     responses:
- *       200:
- *         description: List of jobs retrieved successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Job'
- *       400:
- *         description: Bad request. No jobs found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- */
 const getAllJobs = async (req: Request, res: Response) => {
   try {
     const DBjobs: Array<IJob> = await Job.find().lean()
@@ -342,54 +305,6 @@ const handleBilboMDScoperJob = async (
   }
 }
 
-/**
- * @openapi
- * /jobs:
- *   patch:
- *     summary: Update job status
- *     description: Update the status of a job.
- *     tags:
- *       - Job Management
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id:
- *                 type: string
- *                 description: The ID of the job to update.
- *               email:
- *                 type: string
- *                 description: The email address associated with the job.
- *               status:
- *                 type: string
- *                 description: The new status for the job.
- *     responses:
- *       200:
- *         description: Job status updated successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: A success message indicating the job title that was updated.
- *       400:
- *         description: All fields are required, or job not found, or nothing to do.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *       500:
- *         description: Internal server error.
- */
 const updateJobStatus = async (req: Request, res: Response) => {
   const { id, email, status } = req.body
 
@@ -424,63 +339,6 @@ const updateJobStatus = async (req: Request, res: Response) => {
   res.json(`'${updatedJob.title}' updated`)
 }
 
-/**
- * @openapi
- * /jobs/{id}:
- *   delete:
- *     summary: Delete a Job by ID
- *     description: Delete a job by its unique identifier.
- *     tags:
- *       - Job Management
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The ID of the job to delete.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Job deleted successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 reply:
- *                   type: string
- *                   description: A success message indicating the deleted job.
- *       400:
- *         description: Bad Request. Invalid or missing job ID.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: An error message indicating the invalid or missing ID.
- *       404:
- *         description: Not Found. The job with the specified ID was not found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: An error message indicating the job was not found.
- *       500:
- *         description: Internal Server Error. Failed to delete the job.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: An error message indicating the failure to delete the job.
- */
 const deleteJob = async (req: Request, res: Response) => {
   const { id } = req.params
 
@@ -524,79 +382,44 @@ const deleteJob = async (req: Request, res: Response) => {
   res.status(200).json({ reply })
 }
 
-/**
- * @openapi
- * /jobs/{id}:
- *   get:
- *     summary: Get a job by its ID.
- *     tags:
- *       - Job Management
- *     parameters:
- *       - in: path
- *         name: id
- *         description: ID of the job to retrieve.
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Job retrieved successfully.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Job'
- *       400:
- *         description: Bad request. Job ID required.
- *       404:
- *         description: No job matches the provided ID.
- *       500:
- *         description: Internal server error.
- */
 const getJobById = async (req: Request, res: Response) => {
   const jobId = req.params.id
-
   if (!jobId) {
     return res.status(400).json({ message: 'Job ID required.' })
   }
 
   try {
-    const job = await Job.findOne({ _id: jobId }).exec()
+    // const job = await Job.findOne({ _id: jobId }).exec()
+    const job = (await Job.findOne({ _id: jobId }).exec()) as
+      | IBilboMDJob
+      | IBilboMDAutoJob
+      | IBilboMDScoperJob
 
     if (!job) {
       return res.status(404).json({ message: `No job matches ID ${jobId}.` })
     }
 
-    res.status(200).json(job)
+    let bullmq
+    let bilbomdJob: BilboMDJob = { mongo: job }
+    let scoper: BilboMDScoperSteps
+    if (['BilboMd', 'BilboMdAuto'].includes(job.__t)) {
+      bullmq = await getBullMQJob(job.uuid)
+      bilbomdJob.bullmq = bullmq
+    } else if (job.__t === 'BilboMdScoper') {
+      const scoperJob = job as IBilboMDScoperJob
+      bullmq = await getBullMQScoperJob(job.uuid)
+      scoper = await getScoperStatus(scoperJob)
+      bilbomdJob.bullmq = bullmq
+      bilbomdJob.scoper = scoper
+    }
+
+    res.status(200).json(bilbomdJob)
   } catch (error) {
     logger.error('Error retrieving job:', error)
     res.status(500).json({ message: 'Failed to retrieve job.' })
   }
 }
 
-/**
- * @openapi
- * /jobs/{id}/download:
- *   get:
- *     summary: Download job results by its ID.
- *     tags:
- *       - Job Management
- *     parameters:
- *       - in: path
- *         name: id
- *         description: ID of the job to download results from.
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       '200':
- *         description: Job results downloaded successfully.
- *       '204':
- *         description: No job matches the provided ID.
- *       '400':
- *         description: Bad request. Job ID required.
- *       '500':
- *         description: Internal server error.
- */
 const downloadJobResults = async (req: Request, res: Response) => {
   if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
   const job = await Job.findOne({ _id: req.params.id }).exec()
@@ -653,6 +476,110 @@ const getLogForStep = async (req: Request, res: Response) => {
     // Send the log file content in a JSON response
     res.status(200).json({ logContent: data })
   })
+}
+
+const getKGSrnaProgress = async (directoryPath: string): Promise<number> => {
+  try {
+    const files = await fs.readdir(directoryPath)
+    const pdbNumbers: number[] = files
+      .filter((file) => file.startsWith('newpdb_') && file.endsWith('.pdb'))
+      .map((file) => {
+        const match = file.match(/newpdb_(\d+)\.pdb/)
+        return match ? parseInt(match[1], 10) : 0
+      })
+
+    if (pdbNumbers.length === 0) {
+      return 0 // Or -1, or any other indicator that no files were found
+    }
+
+    return Math.max(...pdbNumbers)
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error reading directory:', error.message)
+    } else {
+      console.error('Unexpected error:', error)
+    }
+    throw error // Rethrow or handle as needed
+  }
+}
+
+const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSteps> => {
+  const scoper: BilboMDScoperSteps = {
+    addHydrogens: false,
+    runRNAview: false,
+    KGSConformations: 0,
+    KGSFiles: 0,
+    FoXS: false,
+    FoXSProgress: 0,
+    FoXSTopFile: '',
+    FoXSTopScore: 0,
+    createdFeatures: false,
+    predictionThreshold: 0,
+    MultiFoXS: false,
+    MultiFoXSEnsembleSize: 0,
+    MultiFoXSScore: 0,
+    scoper: 'no',
+    results: 'no',
+    email: 'no'
+  }
+
+  // scan the KGS output dir to calculate progress of KGS run
+  const KGSOutputDir = path.join(uploadFolder, job.uuid, 'KGSRNA', job.pdb_file, 'output')
+  const KGSFiles = await getKGSrnaProgress(KGSOutputDir)
+  scoper.KGSFiles = KGSFiles
+
+  // Can't scan the FoXS output directory at the moment since those files are
+  // deleted almost immeadiatly.
+
+  // Parse the scoper.log file fora slew of Scoper deets
+  const scoperLogFile = path.join(uploadFolder, job.uuid, 'scoper.log')
+  const fileStream = fs.createReadStream(scoperLogFile)
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity
+  })
+
+  for await (const line of rl) {
+    if (line.includes('Adding hydrogens')) {
+      scoper.addHydrogens = true
+    } else if (line.includes('Running rnaview on input pdb')) {
+      scoper.runRNAview = true
+    } else if (line.match(/Running KGS with (\d+) samples/)) {
+      const match = line.match(/Running KGS with (\d+) samples/)
+      scoper.KGSConformations = match ? parseInt(match[1], 10) : 0
+    } else if (line.match(/Getting FoXS scores for (\d+) structures/)) {
+      scoper.FoXS = false
+    } else if (line.match(/top_k_pdbs: \[\('(.+\.pdb)', (\d+\.\d+)\)\]/)) {
+      const match = line.match(/top_k_pdbs: \[\('(.+\.pdb)', (\d+\.\d+)\)\]/)
+      if (match) {
+        scoper.FoXS = true
+        scoper.FoXSTopFile = match[1]
+        scoper.FoXSTopScore = parseFloat(match[2])
+      }
+    } else if (line.includes('Finished creating raw features')) {
+      scoper.createdFeatures = true
+    } else if (line.includes('Predicting with a threshold value of')) {
+      const match = line.match(/Predicting with a threshold value of (\d+\.\d+)/)
+      if (match) {
+        scoper.predictionThreshold = parseFloat(match[1])
+      }
+    } else if (line.includes('Running MultiFoXS Combination')) {
+      scoper.MultiFoXS = false
+    } else if (line.includes('predicted ensemble is of size:')) {
+      const match = line.match(/predicted ensemble is of size: (\d+)/)
+      if (match) {
+        scoper.MultiFoXS = true
+        scoper.MultiFoXSEnsembleSize = parseInt(match[1], 10)
+      }
+    } else if (line.includes('The lowest scoring ensemble is')) {
+      const match = line.match(/The lowest scoring ensemble is (\d+\.\d+)/)
+      if (match) {
+        scoper.MultiFoXSScore = parseFloat(match[1])
+      }
+    }
+  }
+
+  return scoper
 }
 
 const getAutoRg = async (req: Request, res: Response) => {

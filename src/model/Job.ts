@@ -2,6 +2,7 @@ import { Document, Schema, model } from 'mongoose'
 import { IUser } from './User'
 
 interface IJob extends Document {
+  __t: 'BilboMd' | 'BilboMdAuto' | 'BilboMdScoper'
   title: string
   uuid: string
   status: string
