@@ -80,6 +80,9 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.4.1
+  - Add better status details for Scoper/IonNet jobs
+    This required restructuring the `BilboMDScoperSteps` object type
 - 1.4.0
   - Add new Scoper/IonNet pipeline for RNA
 - 1.3.7
