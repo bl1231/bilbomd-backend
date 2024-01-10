@@ -14,19 +14,21 @@ export type BilboMDSteps = {
 }
 
 export type BilboMDScoperSteps = {
-  addHydrogens: boolean
-  runRNAview: boolean
-  KGSConformations: number
-  KGSFiles: number
-  FoXS: boolean
-  FoXSProgress: number
-  FoXSTopFile: string
-  FoXSTopScore: number
+  reduce: string
+  rnaview: string
+  kgs: string
+  kgsConformations: number
+  kgsFiles: number
+  foxs: string
+  foxsProgress: number
+  foxsTopFile: string
+  foxsTopScore: number
   createdFeatures: boolean
+  IonNet: string
   predictionThreshold: number
-  MultiFoXS: boolean
-  MultiFoXSEnsembleSize: number
-  MultiFoXSScore: number
+  multifoxs: string
+  multifoxsEnsembleSize: number
+  multifoxsScore: number
   scoper: string
   results: string
   email: string

@@ -389,7 +389,6 @@ const getJobById = async (req: Request, res: Response) => {
   }
 
   try {
-    // const job = await Job.findOne({ _id: jobId }).exec()
     const job = (await Job.findOne({ _id: jobId }).exec()) as
       | IBilboMDJob
       | IBilboMDAutoJob
@@ -505,19 +504,21 @@ const getKGSrnaProgress = async (directoryPath: string): Promise<number> => {
 
 const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSteps> => {
   const scoper: BilboMDScoperSteps = {
-    addHydrogens: false,
-    runRNAview: false,
-    KGSConformations: 0,
-    KGSFiles: 0,
-    FoXS: false,
-    FoXSProgress: 0,
-    FoXSTopFile: '',
-    FoXSTopScore: 0,
+    reduce: 'no',
+    rnaview: 'no',
+    kgs: 'no',
+    kgsConformations: 0,
+    kgsFiles: 0,
+    foxs: 'no',
+    foxsProgress: 0,
+    foxsTopFile: '',
+    foxsTopScore: 0,
     createdFeatures: false,
+    IonNet: 'no',
     predictionThreshold: 0,
-    MultiFoXS: false,
-    MultiFoXSEnsembleSize: 0,
-    MultiFoXSScore: 0,
+    multifoxs: 'no',
+    multifoxsEnsembleSize: 0,
+    multifoxsScore: 0,
     scoper: 'no',
     results: 'no',
     email: 'no'
@@ -526,7 +527,7 @@ const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSte
   // scan the KGS output dir to calculate progress of KGS run
   const KGSOutputDir = path.join(uploadFolder, job.uuid, 'KGSRNA', job.pdb_file, 'output')
   const KGSFiles = await getKGSrnaProgress(KGSOutputDir)
-  scoper.KGSFiles = KGSFiles
+  scoper.kgsFiles = KGSFiles
 
   // Can't scan the FoXS output directory at the moment since those files are
   // deleted almost immeadiatly.
@@ -541,20 +542,21 @@ const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSte
 
   for await (const line of rl) {
     if (line.includes('Adding hydrogens')) {
-      scoper.addHydrogens = true
+      scoper.reduce = 'end'
     } else if (line.includes('Running rnaview on input pdb')) {
-      scoper.runRNAview = true
+      scoper.rnaview = 'end'
     } else if (line.match(/Running KGS with (\d+) samples/)) {
       const match = line.match(/Running KGS with (\d+) samples/)
-      scoper.KGSConformations = match ? parseInt(match[1], 10) : 0
+      scoper.kgs = 'start'
+      scoper.kgsConformations = match ? parseInt(match[1], 10) : 0
     } else if (line.match(/Getting FoXS scores for (\d+) structures/)) {
-      scoper.FoXS = false
+      scoper.foxs = 'start'
     } else if (line.match(/top_k_pdbs: \[\('(.+\.pdb)', (\d+\.\d+)\)\]/)) {
       const match = line.match(/top_k_pdbs: \[\('(.+\.pdb)', (\d+\.\d+)\)\]/)
       if (match) {
-        scoper.FoXS = true
-        scoper.FoXSTopFile = match[1]
-        scoper.FoXSTopScore = parseFloat(match[2])
+        scoper.foxs = 'end'
+        scoper.foxsTopFile = match[1]
+        scoper.foxsTopScore = parseFloat(match[2])
       }
     } else if (line.includes('Finished creating raw features')) {
       scoper.createdFeatures = true
@@ -564,21 +566,26 @@ const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSte
         scoper.predictionThreshold = parseFloat(match[1])
       }
     } else if (line.includes('Running MultiFoXS Combination')) {
-      scoper.MultiFoXS = false
+      scoper.IonNet = 'end'
+      scoper.multifoxs = 'start'
     } else if (line.includes('predicted ensemble is of size:')) {
       const match = line.match(/predicted ensemble is of size: (\d+)/)
       if (match) {
-        scoper.MultiFoXS = true
-        scoper.MultiFoXSEnsembleSize = parseInt(match[1], 10)
+        scoper.multifoxs = 'end'
+        scoper.multifoxsEnsembleSize = parseInt(match[1], 10)
       }
     } else if (line.includes('The lowest scoring ensemble is')) {
       const match = line.match(/The lowest scoring ensemble is (\d+\.\d+)/)
       if (match) {
-        scoper.MultiFoXSScore = parseFloat(match[1])
+        scoper.multifoxsScore = parseFloat(match[1])
       }
     }
   }
 
+  // Check if the actual number of KGS files equals our expected number
+  if (scoper.kgsFiles === scoper.kgsConformations) {
+    scoper.kgs = 'end'
+  }
   return scoper
 }
 

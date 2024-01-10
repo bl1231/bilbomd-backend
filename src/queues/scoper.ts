@@ -122,25 +122,22 @@ const getBullMQScoperJob = async (UUID: string): Promise<BilboMDBullMQ | undefin
   return undefined
 }
 
-// const scoperSteps: BilboMDScoperSteps = {
-//   scoper: 'no',
-//   results: 'no',
-//   email: 'no'
-// }
 const scoperSteps: BilboMDScoperSteps = {
-  addHydrogens: false,
-  runRNAview: false,
-  KGSConformations: 1000,
-  KGSFiles: 0,
-  FoXS: false,
-  FoXSProgress: 0,
-  FoXSTopFile: '',
-  FoXSTopScore: 0,
+  reduce: 'no',
+  rnaview: 'no',
+  kgs: 'no',
+  kgsConformations: 0,
+  kgsFiles: 0,
+  foxs: 'no',
+  foxsProgress: 0,
+  foxsTopFile: '',
+  foxsTopScore: 0,
   createdFeatures: false,
+  IonNet: 'no',
   predictionThreshold: 0,
-  MultiFoXS: false,
-  MultiFoXSEnsembleSize: 0,
-  MultiFoXSScore: 0,
+  multifoxs: 'no',
+  multifoxsEnsembleSize: 0,
+  multifoxsScore: 0,
   scoper: 'no',
   results: 'no',
   email: 'no'
