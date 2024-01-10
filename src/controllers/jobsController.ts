@@ -520,6 +520,7 @@ const getScoperStatus = async (job: IBilboMDScoperJob): Promise<BilboMDScoperSte
     multifoxsEnsembleSize: 0,
     multifoxsScore: 0,
     scoper: 'no',
+    scoperPdb: '',
     results: 'no',
     email: 'no'
   }

@@ -139,6 +139,7 @@ const scoperSteps: BilboMDScoperSteps = {
   multifoxsEnsembleSize: 0,
   multifoxsScore: 0,
   scoper: 'no',
+  scoperPdb: '',
   results: 'no',
   email: 'no'
 }
