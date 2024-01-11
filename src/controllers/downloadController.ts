@@ -26,6 +26,8 @@ const downloadPDB = async (req: Request, res: Response) => {
         res.status(500).json({
           message: 'Could not download the file . ' + err
         })
+      } else {
+        logger.info(`File ${pdbFilename} sent successfully.`)
       }
     })
   } catch (error) {
