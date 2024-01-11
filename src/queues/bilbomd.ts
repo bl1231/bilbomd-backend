@@ -122,16 +122,6 @@ const getBullMQJob = async (UUID: string): Promise<BilboMDBullMQ | undefined> =>
   return undefined
 }
 
-// const bilboMDRegSteps: BilboMDSteps = {
-//   minimize: 'no',
-//   heat: 'no',
-//   md: 'no',
-//   foxs: 'no',
-//   multifoxs: 'no',
-//   results: 'no',
-//   email: 'no'
-// }
-
 const bilboSteps: BilboMDSteps = {
   pae: '',
   autorg: '',
@@ -141,7 +131,8 @@ const bilboSteps: BilboMDSteps = {
   foxs: 'no',
   multifoxs: 'no',
   results: 'no',
-  email: 'no'
+  email: 'no',
+  numEnsembles: 0
 }
 
 const updateBilboMDSteps = async (bullmq: BullMQJob): Promise<BilboMDSteps> => {

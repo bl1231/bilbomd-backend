@@ -21,8 +21,8 @@ import {
 import { User, IUser } from '../model/User'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
-import { IJob, BilboMDScoperSteps } from 'types/bilbomd'
-import { BilboMDJob } from 'types/bilbomd'
+import { IJob, BilboMDScoperSteps, BilboMDSteps } from 'types/bilbomd'
+import { BilboMDJob, BilboMDBullMQ } from 'types/bilbomd'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -398,24 +398,67 @@ const getJobById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: `No job matches ID ${jobId}.` })
     }
 
-    let bullmq
-    let bilbomdJob: BilboMDJob = { mongo: job }
-    let scoper: BilboMDScoperSteps
-    if (['BilboMd', 'BilboMdAuto'].includes(job.__t)) {
+    const jobDir = path.join(uploadFolder, job.uuid, 'results')
+
+    let bullmq: BilboMDBullMQ | undefined
+    let bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
+
+    if (job.__t === 'BilboMd') {
       bullmq = await getBullMQJob(job.uuid)
-      bilbomdJob.bullmq = bullmq
+      if (bullmq && 'bilbomdStep' in bullmq) {
+        bilbomdJob.bullmq = bullmq
+        bilbomdJob.classic = await calculateNumEnsembles(
+          bullmq.bilbomdStep as BilboMDSteps,
+          jobDir
+        )
+      }
+    } else if (job.__t === 'BilboMdAuto') {
+      bullmq = await getBullMQJob(job.uuid)
+      if (bullmq && 'bilbomdStep' in bullmq) {
+        bilbomdJob.bullmq = bullmq
+        bilbomdJob.auto = await calculateNumEnsembles(
+          bullmq.bilbomdStep as BilboMDSteps,
+          jobDir
+        )
+      }
     } else if (job.__t === 'BilboMdScoper') {
       const scoperJob = job as IBilboMDScoperJob
       bullmq = await getBullMQScoperJob(job.uuid)
-      scoper = await getScoperStatus(scoperJob)
-      bilbomdJob.bullmq = bullmq
-      bilbomdJob.scoper = scoper
+      if (bullmq) {
+        bilbomdJob.bullmq = bullmq
+        bilbomdJob.scoper = await getScoperStatus(scoperJob)
+      }
     }
 
     res.status(200).json(bilbomdJob)
   } catch (error) {
     logger.error('Error retrieving job:', error)
     res.status(500).json({ message: 'Failed to retrieve job.' })
+  }
+}
+
+const calculateNumEnsembles = async (
+  bilbomdStep: BilboMDSteps,
+  jobDir: string
+): Promise<BilboMDSteps> => {
+  try {
+    const files = await fs.promises.readdir(jobDir)
+    const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
+    const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
+    const numEnsembles = ensembleFiles.length // Get the count of the files
+
+    return {
+      ...bilbomdStep,
+      numEnsembles: numEnsembles // Assign the count to numEnsembles
+    }
+  } catch (error) {
+    console.error('Error reading directory:', error)
+    // Handle the error as appropriate
+    // Returning the original bilbomdStep with numEnsembles as 0
+    return {
+      ...bilbomdStep,
+      numEnsembles: 0
+    }
   }
 }
 
