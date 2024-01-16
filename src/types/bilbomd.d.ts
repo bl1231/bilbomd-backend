@@ -11,6 +11,7 @@ export type BilboMDSteps = {
   multifoxs: string
   results: string
   email: string
+  numEnsembles: number
 }
 
 export type BilboMDScoperSteps = {
@@ -51,9 +52,10 @@ export type BilboMDBullMQ = {
 }
 
 export type BilboMDJob = {
+  id: string
+  username?: string
   mongo: MongoDBJob
   bullmq?: BilboMDBullMQ
-  username?: string
   scoper?: BilboMDScoperSteps
   classic?: BilboMDSteps
   auto?: BilboMDSteps
