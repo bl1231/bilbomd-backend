@@ -165,7 +165,6 @@ const extractC1Values = (fileContent: string) => {
     const c1Match = line.match(/c1\s*=\s*([-\d.]+)/)
 
     if (c1Match && c1Match[1]) {
-      // Assign the first found c1 value to c1FromOrig if it's still null
       if (c1FromOrig === null) {
         c1FromOrig = parseFloat(c1Match[1])
       }
@@ -173,7 +172,7 @@ const extractC1Values = (fileContent: string) => {
       // Check if the line starts with 'scoper_combined_'
       if (line.startsWith('scoper_combined_')) {
         c1FromScop = parseFloat(c1Match[1])
-        break // Stop searching after finding the c1 value in a 'scoper_combined_' line
+        break
       }
     }
   }
@@ -191,7 +190,6 @@ const extractC2Values = (fileContent: string) => {
     const c2Match = line.match(/c2\s*=\s*([-\d.]+)/)
 
     if (c2Match && c2Match[1]) {
-      // Assign the first found c1 value to c2FromOrig if it's still null
       if (c2FromOrig === null) {
         c2FromOrig = parseFloat(c2Match[1])
       }
@@ -199,7 +197,7 @@ const extractC2Values = (fileContent: string) => {
       // Check if the line starts with 'scoper_combined_'
       if (line.startsWith('scoper_combined_')) {
         c2FromScop = parseFloat(c2Match[1])
-        break // Stop searching after finding the c1 value in a 'scoper_combined_' line
+        break
       }
     }
   }
