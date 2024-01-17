@@ -80,6 +80,8 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.5.0
+  - Add new route to retrieve `FoXS` analysis of Scoepr results.
 - 1.4.3
   - Add ability to load multiple models into Molstar viewer.
 - 1.4.2
