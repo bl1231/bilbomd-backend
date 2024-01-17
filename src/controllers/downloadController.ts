@@ -77,7 +77,17 @@ const getFoxsData = async (req: Request, res: Response) => {
     const dataFromOrig = parseFileContent(originalDatContent)
     const dataFromScop = parseFileContent(scoperDatContent)
 
-    const data = [dataFromOrig, dataFromScop]
+    const chisqFromOrig = extractChiSquared(originalDatContent)
+    const chisqFromScop = extractChiSquared(scoperDatContent)
+
+    const data = [
+      { filename: typedJob.pdb_file, chisq: chisqFromOrig, data: dataFromOrig },
+      {
+        filename: `scoper_combined_newpdb_${pdbNumber}.pdb`,
+        chisq: chisqFromScop,
+        data: dataFromScop
+      }
+    ]
     res.json(data)
   }
 }
@@ -85,7 +95,7 @@ const getFoxsData = async (req: Request, res: Response) => {
 const readTopKNum = async (file: string) => {
   try {
     const content = (await fs.readFile(file, 'utf-8')).trim()
-    console.log(content)
+    // console.log(content)
     const match = content.match(/newpdb_(\d+)/)
     const pdbNumber = match ? parseInt(match[1], 10) : null
     return pdbNumber
@@ -108,6 +118,22 @@ const parseFileContent = (fileContent: string) => {
         error: parseFloat(error)
       }
     })
+}
+
+const extractChiSquared = (fileContent: string) => {
+  const lines = fileContent.split('\n')
+  if (lines.length < 2) {
+    return null
+  }
+
+  const chiSquaredLine = lines[1] // Get the second line
+  const chiSquaredMatch = chiSquaredLine.match(/Chi\^2\s*=\s*([\d.]+)/)
+
+  if (chiSquaredMatch && chiSquaredMatch[1]) {
+    return parseFloat(chiSquaredMatch[1])
+  } else {
+    return null // Return null or appropriate default value if Chi^2 value is not found
+  }
 }
 
 export { downloadPDB, getFoxsData }
