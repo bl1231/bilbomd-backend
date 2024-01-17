@@ -59,6 +59,11 @@ const getFoxsData = async (req: Request, res: Response) => {
     const pdbFileBase = typedJob.pdb_file.split('.')[0]
     const topKFile = path.join(uploadFolder, job.uuid, 'top_k_dirname.txt')
     const pdbNumber = await readTopKNum(topKFile)
+    // Check if the directory exists
+    const foxsAnalysisDir = path.join(uploadFolder, job.uuid, 'foxs_analysis')
+    if (!fs.existsSync(foxsAnalysisDir)) {
+      return res.status(404).json({ message: 'FoXS analysis data not found.' })
+    }
     const originalDat = path.join(
       uploadFolder,
       job.uuid,
@@ -71,8 +76,11 @@ const getFoxsData = async (req: Request, res: Response) => {
       'foxs_analysis',
       `scoper_combined_newpdb_${pdbNumber}_${datFileBase}.dat`
     )
+    const foxsLog = path.join(uploadFolder, job.uuid, 'foxs_analysis', 'foxs.log')
+
     const originalDatContent = fs.readFileSync(originalDat, 'utf8')
     const scoperDatContent = fs.readFileSync(scoperDat, 'utf8')
+    const foxsLogContent = fs.readFileSync(foxsLog, 'utf8')
 
     const dataFromOrig = parseFileContent(originalDatContent)
     const dataFromScop = parseFileContent(scoperDatContent)
@@ -80,11 +88,22 @@ const getFoxsData = async (req: Request, res: Response) => {
     const chisqFromOrig = extractChiSquared(originalDatContent)
     const chisqFromScop = extractChiSquared(scoperDatContent)
 
+    const { c1FromOrig, c1FromScop } = extractC1Values(foxsLogContent)
+    const { c2FromOrig, c2FromScop } = extractC2Values(foxsLogContent)
+
     const data = [
-      { filename: typedJob.pdb_file, chisq: chisqFromOrig, data: dataFromOrig },
+      {
+        filename: typedJob.pdb_file,
+        chisq: chisqFromOrig,
+        c1: c1FromOrig,
+        c2: c2FromOrig,
+        data: dataFromOrig
+      },
       {
         filename: `scoper_combined_newpdb_${pdbNumber}.pdb`,
         chisq: chisqFromScop,
+        c1: c1FromScop,
+        c2: c2FromScop,
         data: dataFromScop
       }
     ]
@@ -134,6 +153,58 @@ const extractChiSquared = (fileContent: string) => {
   } else {
     return null // Return null or appropriate default value if Chi^2 value is not found
   }
+}
+
+const extractC1Values = (fileContent: string) => {
+  const lines = fileContent.split('\n')
+  let c1FromOrig = null
+  let c1FromScop = null
+
+  for (const line of lines) {
+    // Match lines containing 'c1 ='
+    const c1Match = line.match(/c1\s*=\s*([-\d.]+)/)
+
+    if (c1Match && c1Match[1]) {
+      // Assign the first found c1 value to c1FromOrig if it's still null
+      if (c1FromOrig === null) {
+        c1FromOrig = parseFloat(c1Match[1])
+      }
+
+      // Check if the line starts with 'scoper_combined_'
+      if (line.startsWith('scoper_combined_')) {
+        c1FromScop = parseFloat(c1Match[1])
+        break // Stop searching after finding the c1 value in a 'scoper_combined_' line
+      }
+    }
+  }
+  // logger.info(`FoXS origC1: ${c1FromOrig} scopC1: ${c1FromScop}`)
+  return { c1FromOrig, c1FromScop }
+}
+
+const extractC2Values = (fileContent: string) => {
+  const lines = fileContent.split('\n')
+  let c2FromOrig = null
+  let c2FromScop = null
+
+  for (const line of lines) {
+    // Match lines containing 'c2 ='
+    const c2Match = line.match(/c2\s*=\s*([-\d.]+)/)
+
+    if (c2Match && c2Match[1]) {
+      // Assign the first found c1 value to c2FromOrig if it's still null
+      if (c2FromOrig === null) {
+        c2FromOrig = parseFloat(c2Match[1])
+      }
+
+      // Check if the line starts with 'scoper_combined_'
+      if (line.startsWith('scoper_combined_')) {
+        c2FromScop = parseFloat(c2Match[1])
+        break // Stop searching after finding the c1 value in a 'scoper_combined_' line
+      }
+    }
+  }
+  // logger.info(`FoXS origC2: ${c2FromOrig} scopC2: ${c2FromScop}`)
+  return { c2FromOrig, c2FromScop }
 }
 
 export { downloadPDB, getFoxsData }
