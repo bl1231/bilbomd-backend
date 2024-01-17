@@ -8,7 +8,7 @@ import {
   getJobById,
   getLogForStep
 } from '../controllers/jobsController'
-import { downloadPDB } from '../controllers/downloadController'
+import { downloadPDB, getFoxsData } from '../controllers/downloadController'
 import verifyJWT from '../middleware/verifyJWT'
 const router = express.Router()
 
@@ -21,6 +21,7 @@ router.route('/').get(getAllJobs).post(createNewJob).patch(updateJobStatus)
 router.route('/:id').get(getJobById)
 router.route('/:id').delete(deleteJob)
 router.route('/:id/results').get(downloadJobResults)
+router.route('/:id/results/foxs').get(getFoxsData)
 router.route('/:id/results/:pdb').get(downloadPDB)
 router.route('/:id/logs').get(getLogForStep)
 router.route('/bilbomd-auto').post(createNewJob)
