@@ -37,7 +37,7 @@
     "ioredis": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
     "moment-timezone": "^0.5.44",
-    "mongoose": "^8.0.4",
+    "mongoose": "^8.1.0",
     "mongoose-sequence": "^6.0.0",
     "mongoose-to-swagger": "^1.5.1",
     "multer": "^1.4.5-lts.1",
