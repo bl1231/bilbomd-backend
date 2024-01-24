@@ -347,39 +347,33 @@ const deleteJob = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Job ID required' })
   }
 
-  // Find the job to delete
-  const job = await Job.findById(id).exec()
-
-  if (!job) {
-    return res.status(400).json({ message: 'Job not found' })
-  }
-
-  // Delete the job from MongoDB
-  const deleteResult = await job.deleteOne()
-
-  // Check if a document was actually deleted
-  if (deleteResult.deletedCount === 0) {
-    return res.status(404).json({ message: 'No job was deleted' })
-  }
-
-  // Remove from disk
-  const jobDir = path.join(uploadFolder, job.uuid)
   try {
+    // Attempt to delete the job by ID
+    const deleteResult = await Job.findByIdAndDelete(id)
+
+    // If no job was found to delete
+    if (!deleteResult) {
+      return res.status(404).json({ message: 'Job not found' })
+    }
+    const jobDir = path.join(uploadFolder, deleteResult.uuid)
     // Check if the directory exists and remove it
     const exists = await fs.pathExists(jobDir)
-    if (!exists) {
-      return res.status(404).json({ message: 'Directory not found on disk' })
+    if (exists) {
+      await fs.remove(jobDir)
+    } else {
+      logger.warn('Directory not found on disk for job %s', deleteResult._id)
     }
-    await fs.remove(jobDir)
+
+    // Create response message
+    const reply = `Deleted Job: '${deleteResult.title}' with ID: ${deleteResult._id} and UUID: ${deleteResult.uuid}`
+    logger.info(
+      `Deleted Job: '${deleteResult.title}' with ID: ${deleteResult._id} and UUID: ${deleteResult.uuid}`
+    )
+    res.status(200).json({ reply })
   } catch (error) {
-    logger.error('Error deleting directory %s', error)
-    res.status(500).send('Error deleting directory')
+    logger.error(`Error deleting directory: ${error}`)
+    res.status(500).send('Error deleting job')
   }
-
-  // Create response message
-  const reply = `Deleted Job: '${job.title}' with ID ${job._id} and UUID: ${job.uuid}`
-
-  res.status(200).json({ reply })
 }
 
 const getJobById = async (req: Request, res: Response) => {
