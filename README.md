@@ -80,6 +80,8 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.5.2
+  - Update dependencies
 - 1.5.1
   - Add `FoXS` C1 and C2 values to teh Scoper plots.
 - 1.5.0
