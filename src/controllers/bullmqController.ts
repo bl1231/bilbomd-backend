@@ -1,17 +1,50 @@
 // import { logger } from '../middleware/loggers'
-import { getActiveCount, getWaitingCount, getWorkers } from '../queues/bilbomd'
+import {
+  getActiveCount as getActiveCountBilbomd,
+  getWaitingCount as getWaitingCountBilbomd,
+  getWorkers as getWorkersBilbomd
+} from '../queues/bilbomd'
+import {
+  getActiveCount as getActiveCountScoper,
+  getWaitingCount as getWaitingCountScoper,
+  getWorkers as getWorkersScoper
+} from '../queues/scoper'
 import { Request, Response } from 'express'
 
-const getQueueStatus = async (req: Request, res: Response) => {
-  const bullmqActiveCount = await getActiveCount()
-  const bullmqWaitCount = await getWaitingCount()
-  const bullmqWorkerCount = (await getWorkers()).length
-  const queueStatus = {
-    name: 'bilbomd',
-    active_count: bullmqActiveCount,
-    waiting_count: bullmqWaitCount,
-    worker_count: bullmqWorkerCount
+interface QueueStatus {
+  bilbomd: {
+    active_count: number
+    waiting_count: number
+    worker_count: number
   }
+  scoper: {
+    active_count: number
+    waiting_count: number
+    worker_count: number
+  }
+}
+
+const getQueueStatus = async (req: Request, res: Response) => {
+  const bilbomdActiveCount = await getActiveCountBilbomd()
+  const bilbomdWaitCount = await getWaitingCountBilbomd()
+  const bilbomdWorkerCount = (await getWorkersBilbomd()).length
+  const scoperActiveCount = await getActiveCountScoper()
+  const scoperWaitCount = await getWaitingCountScoper()
+  const scoperWorkerCount = (await getWorkersScoper()).length
+
+  const queueStatus: QueueStatus = {
+    bilbomd: {
+      active_count: bilbomdActiveCount,
+      waiting_count: bilbomdWaitCount,
+      worker_count: bilbomdWorkerCount
+    },
+    scoper: {
+      active_count: scoperActiveCount,
+      waiting_count: scoperWaitCount,
+      worker_count: scoperWorkerCount
+    }
+  }
+
   // logger.info(queueStatus)
   res.json(queueStatus)
 }
