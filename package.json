@@ -18,7 +18,7 @@
     "generate-swagger": "node ./openapi/swagger.js"
   },
   "dependencies": {
-    "@bull-board/api": "^5.13.0",
+    "@bull-board/api": "^5.14.0",
     "@bull-board/express": "^5.13.0",
     "bullmq": "^5.1.5",
     "cookie-parser": "~1.4.6",
