@@ -202,28 +202,28 @@ const updateStepStatus = async (
   return updatedSteps
 }
 
-// const getActiveCount = async () => {
-//   const num = await scoperQueue.getActiveCount()
-//   return num
-// }
+const getActiveCount = async () => {
+  const num = await scoperQueue.getActiveCount()
+  return num
+}
 
 const getWaitingCount = async () => {
   const num = await scoperQueue.getWaitingCount()
   return num
 }
 
-// const getWorkers = async () => {
-//   const workers = await scoperQueue.getWorkers()
-//   return workers
-// }
+const getWorkers = async () => {
+  const workers = await scoperQueue.getWorkers()
+  return workers
+}
 
 export {
   queueScoperJob,
   scoperQueue,
   closeQueue,
   getWaitingJobs,
-  getBullMQScoperJob
-  // getActiveCount,
-  // getWaitingCount,
-  // getWorkers
+  getBullMQScoperJob,
+  getActiveCount,
+  getWaitingCount,
+  getWorkers
 }
