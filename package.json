@@ -45,7 +45,7 @@
     "nodemailer-express-handlebars": "^6.1.0",
     "npm-check-updates": "^16.14.12",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui": "^5.11.0",
+    "swagger-ui": "^5.11.1",
     "swagger-ui-express": "^5.0.0",
     "typescript": "^5.3.3",
     "uuid": "^9.0.1",
