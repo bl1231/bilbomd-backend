@@ -445,16 +445,14 @@ const calculateNumEnsembles = async (
     const files = await fs.promises.readdir(jobDir)
     const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
     const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
-    const numEnsembles = ensembleFiles.length // Get the count of the files
+    const numEnsembles = ensembleFiles.length
 
     return {
       ...bilbomdStep,
-      numEnsembles: numEnsembles // Assign the count to numEnsembles
+      numEnsembles: numEnsembles
     }
   } catch (error) {
-    console.error('Error reading directory:', error)
-    // Handle the error as appropriate
-    // Returning the original bilbomdStep with numEnsembles as 0
+    logger.info('Error:', error)
     return {
       ...bilbomdStep,
       numEnsembles: 0
