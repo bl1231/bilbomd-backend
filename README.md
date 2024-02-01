@@ -80,6 +80,8 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.5.4
+  - Mainly dependency updates.
 - 1.5.3
   - Add information about the `scoper` queue
 - 1.5.2
