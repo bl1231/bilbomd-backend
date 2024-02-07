@@ -1,6 +1,6 @@
 import { User } from '../model/User'
 import { Job } from '../model/Job'
-// import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers'
 import { Request, Response } from 'express'
 
 /**
@@ -96,8 +96,9 @@ const getAllUsers = async (req: Request, res: Response) => {
  *                   description: Error message.
  */
 const updateUser = async (req: Request, res: Response) => {
-  const { id, username, roles, active, email } = req.body
-
+  const { id } = req.params
+  const { username, roles, active, email } = req.body
+  logger.info(`updateUser ${id} ${username} ${email}`)
   // Confirm data
   if (
     !id ||
@@ -263,10 +264,11 @@ const deleteUser = async (req: Request, res: Response) => {
  *                   description: Error message.
  */
 const getUser = async (req: Request, res: Response) => {
-  if (!req?.params?.id) return res.status(400).json({ message: 'User ID required' })
+  const { id } = req.params
+  if (!id) return res.status(404).json({ message: 'User ID required' })
   const user = await User.findOne({ _id: req.params.id }).lean().exec()
   if (!user) {
-    return res.status(400).json({ message: `User ID ${req.params.id} not found` })
+    return res.status(404).json({ message: `User ID ${req.params.id} not found` })
   }
   res.json(user)
 }

@@ -42,7 +42,7 @@ export const deleteOldJobs = async () => {
     const numOldJobs = oldJobs.length
 
     if (numOldJobs > 0) {
-      logger.warn(`Found ${numOldJobs} jobs older than 1 month.`)
+      logger.warn(`Found ${numOldJobs} jobs older than ${thresholdDate}`)
     }
 
     for (const job of oldJobs) {

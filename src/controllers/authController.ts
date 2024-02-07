@@ -15,6 +15,7 @@ interface BilboMDJwtPayload {
   username: string
   roles: string[]
   email: string
+  id: string
 }
 
 interface AccessToken {
@@ -128,7 +129,8 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
         UserInfo: {
           username: user.username,
           roles: user.roles,
-          email: user.email
+          email: user.email,
+          id: user.id
         }
       }
 
@@ -155,7 +157,8 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
           {
             username: user.username,
             roles: user.roles,
-            email: user.email
+            email: user.email,
+            id: user.id
           },
           refreshTokenSecret,
           { expiresIn: '7d' }
@@ -249,7 +252,7 @@ const refresh = async (req: Request, res: Response) => {
 
     try {
       const foundUser = await User.findOne({ email: decoded.email }).exec()
-      // console.log('foundUser --->', foundUser)
+      // console.log('foundUser --->', foundUser?.id)
       if (!foundUser) {
         return res.status(401).json({ message: 'Unauthorized' })
       }
@@ -259,7 +262,8 @@ const refresh = async (req: Request, res: Response) => {
           UserInfo: {
             username: foundUser.username,
             roles: foundUser.roles,
-            email: foundUser.email
+            email: foundUser.email,
+            id: foundUser.id
           }
         },
         accessTokenSecret,

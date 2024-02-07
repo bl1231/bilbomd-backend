@@ -8,10 +8,12 @@ import {
 } from '../controllers/usersController'
 import verifyJWT from '../middleware/verifyJWT'
 
-router.use(verifyJWT)
+if (process.env.NODE_ENV === 'production') {
+  router.use(verifyJWT)
+}
 
-router.route('/').get(getAllUsers).patch(updateUser)
+router.route('/').get(getAllUsers)
 
-router.route('/:id').get(getUser).delete(deleteUser)
+router.route('/:id').get(getUser).delete(deleteUser).patch(updateUser)
 
 module.exports = router
