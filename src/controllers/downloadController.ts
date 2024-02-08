@@ -45,7 +45,7 @@ const getFoxsData = async (req: Request, res: Response) => {
 
   const job = await Job.findOne({ _id: jobId }).exec()
   if (!job) {
-    return res.status(204).json({ message: `No job matches ID ${jobId}.` })
+    return res.status(404).json({ message: `No job matches ID ${jobId}.` })
   }
 
   // Type assertion based on the __t field
@@ -144,7 +144,10 @@ const getFoxsData = async (req: Request, res: Response) => {
 
       res.json(data)
     } catch (error) {
-      logger.error(error)
+      logger.error(`error getting FoXS analysis data`)
+      return res
+        .status(500)
+        .json({ message: 'Internal server error while processing FoXS analysis data.' })
     }
   }
 }
