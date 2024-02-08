@@ -3,6 +3,7 @@ import fs from 'fs-extra'
 import path from 'path'
 import { Job } from '../model/Job'
 import { IJob, IBilboMDJob, IBilboMDAutoJob, IBilboMDScoperJob } from '../model/Job'
+import { FoxsData, FoxsDataPoint } from 'types/foxs'
 // eslint-disable-next-line no-unused-vars
 import { Express, Request, Response } from 'express'
 
@@ -39,11 +40,14 @@ const downloadPDB = async (req: Request, res: Response) => {
 
 const getFoxsData = async (req: Request, res: Response) => {
   const jobId = req.params.id
+
   if (!jobId) return res.status(400).json({ message: 'Job ID required.' })
+
   const job = await Job.findOne({ _id: jobId }).exec()
   if (!job) {
     return res.status(204).json({ message: `No job matches ID ${jobId}.` })
   }
+
   // Type assertion based on the __t field
   let typedJob: IJob | IBilboMDJob | IBilboMDAutoJob | IBilboMDScoperJob
   if (job.__t === 'BilboMd' || job.__t === 'BilboMdAuto') {
@@ -54,12 +58,13 @@ const getFoxsData = async (req: Request, res: Response) => {
     // eslint-disable-next-line no-unused-vars
     typedJob = job // Default to base IJob if none of the specific types match
   }
+
   if (typedJob.__t === 'BilboMdScoper' && 'pdb_file' in typedJob) {
     const datFileBase = typedJob.data_file.split('.')[0]
     const pdbFileBase = typedJob.pdb_file.split('.')[0]
     const topKFile = path.join(uploadFolder, job.uuid, 'top_k_dirname.txt')
     const pdbNumber = await readTopKNum(topKFile)
-    // Check if the directory exists
+
     const foxsAnalysisDir = path.join(uploadFolder, job.uuid, 'foxs_analysis')
     if (!fs.existsSync(foxsAnalysisDir)) {
       return res.status(404).json({ message: 'FoXS analysis data not found.' })
@@ -109,6 +114,57 @@ const getFoxsData = async (req: Request, res: Response) => {
     ]
     res.json(data)
   }
+
+  if (typedJob.__t === 'BilboMd' || typedJob.__t === 'BilboMdAuto') {
+    try {
+      let data: FoxsData[] = []
+
+      const jobDir = path.join(uploadFolder, job.uuid)
+      const resultsDir = path.join(uploadFolder, job.uuid, 'results')
+
+      if (!fs.existsSync(resultsDir)) {
+        return res.status(404).json({ message: 'results directory unavailable.' })
+      }
+
+      const datFileBase = typedJob.data_file.split('.')[0]
+      const originalDat = path.join(jobDir, `minimization_output_${datFileBase}.dat`)
+
+      data.push(await createDataObject(originalDat))
+
+      const files = await fs.readdir(resultsDir)
+      const filePattern = /^multi_state_model_\d+_1_1\.dat$/
+
+      for (const file of files) {
+        if (filePattern.test(file)) {
+          logger.info(`getFoXSData ${file}`)
+          const filename = path.join(resultsDir, file)
+          data.push(await createDataObject(filename))
+        }
+      }
+
+      res.json(data)
+    } catch (error) {
+      logger.error(error)
+    }
+  }
+}
+
+const createDataObject = async (file: string): Promise<FoxsData> => {
+  // const foxsLog = path.join(uploadFolder, job.uuid, 'foxs_analysis', 'foxs.log')
+  const fileContent = await fs.readFile(file, 'utf8')
+  const filename = path.basename(file)
+  const data: FoxsDataPoint[] = parseFileContent(fileContent)
+  const chisq: number = extractChiSquared(fileContent)
+  const c1 = parseFloat('1.234') // replace with actual function
+  const c2 = parseFloat('4.321') // replace with actual function
+  const foxsData: FoxsData = {
+    filename: filename,
+    chisq: chisq,
+    c1: c1,
+    c2: c2,
+    data: data
+  }
+  return foxsData
 }
 
 const readTopKNum = async (file: string) => {
@@ -123,7 +179,7 @@ const readTopKNum = async (file: string) => {
   }
 }
 
-const parseFileContent = (fileContent: string) => {
+const parseFileContent = (fileContent: string): FoxsDataPoint[] => {
   return fileContent
     .trim()
     .split('\n')
@@ -139,10 +195,10 @@ const parseFileContent = (fileContent: string) => {
     })
 }
 
-const extractChiSquared = (fileContent: string) => {
+const extractChiSquared = (fileContent: string): number => {
   const lines = fileContent.split('\n')
   if (lines.length < 2) {
-    return null
+    return 0.0
   }
 
   const chiSquaredLine = lines[1] // Get the second line
@@ -151,7 +207,7 @@ const extractChiSquared = (fileContent: string) => {
   if (chiSquaredMatch && chiSquaredMatch[1]) {
     return parseFloat(chiSquaredMatch[1])
   } else {
-    return null // Return null or appropriate default value if Chi^2 value is not found
+    return 0.0 // Return null or appropriate default value if Chi^2 value is not found
   }
 }
 
