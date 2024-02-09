@@ -80,6 +80,8 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.6.1
+  - Make Job deletion more robust to NFS lock files.
 - 1.6.0
   - Add routes for getting `FoXS` analysis results for BilboMD auto/classic
 - 1.5.4
