@@ -44,7 +44,7 @@ const consoleFormat = combine(
   timestamp({
     format: customTimestamp
   }),
-  label({ label: 'test' }),
+  label({ label: 'bilbomd-backend' }),
   customFormat
 )
 
