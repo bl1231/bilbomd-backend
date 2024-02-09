@@ -370,7 +370,42 @@ const deleteJob = async (req: Request, res: Response) => {
     if (!exists) {
       return res.status(404).json({ message: 'Directory not found on disk' })
     }
-    await fs.remove(jobDir)
+    // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
+    // because there are dangles NFS lock files present.
+    // This complicated bit of code is an attempt to make the job deletion function more robust.
+    const maxAttempts = 5
+    let attempt = 0
+    while (attempt < maxAttempts) {
+      try {
+        logger.info(`Call fs.remove on ${jobDir}`)
+        await fs.remove(jobDir)
+        logger.info(`Removed ${jobDir}`)
+        break // Exit loop if successful
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error
+        ) {
+          if (error.code === 'ENOTEMPTY' || error.code === 'EBUSY') {
+            // Log and wait before retrying
+            logger.warn(
+              `Attempt ${attempt + 1} to remove directory failed ${
+                error.code
+              }, retrying...`
+            )
+            await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1))) // Exponential back-off could be considered
+            attempt++
+          } else {
+            // Re-throw if it's an unexpected error
+            throw error
+          }
+        } else {
+          console.log(error)
+        }
+      }
+    }
   } catch (error) {
     logger.error('Error deleting directory %s', error)
     res.status(500).send('Error deleting directory')
@@ -401,6 +436,7 @@ const getJobById = async (req: Request, res: Response) => {
     const jobDir = path.join(uploadFolder, job.uuid, 'results')
 
     let bullmq: BilboMDBullMQ | undefined
+    // Instantiate a bilbomdJob object with id and MongoDB info
     let bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
     if (job.__t === 'BilboMd') {
@@ -429,7 +465,7 @@ const getJobById = async (req: Request, res: Response) => {
         bilbomdJob.scoper = await getScoperStatus(scoperJob)
       }
     }
-
+    logger.info(bilbomdJob)
     res.status(200).json(bilbomdJob)
   } catch (error) {
     logger.error('Error retrieving job:', error)
@@ -452,7 +488,7 @@ const calculateNumEnsembles = async (
       numEnsembles: numEnsembles
     }
   } catch (error) {
-    logger.info('Error:', error)
+    logger.info('calculateNumEnsembles Error:', error)
     return {
       ...bilbomdStep,
       numEnsembles: 0
@@ -670,16 +706,48 @@ const getAutoRg = async (req: Request, res: Response) => {
           rg_min: autorgResults.rg_min,
           rg_max: autorgResults.rg_max
         })
-        // remove the uploaded files.
-        // comment out for debugging I suppose.
-        try {
-          await fs.remove(jobDir)
-          logger.info(`Deleted upload folder: ${jobDir}`)
-        } catch (error) {
-          logger.error(`Error deleting upload folder: ${jobDir} ERROR - ${error}`)
+        // await new Promise((resolve) => setTimeout(resolve, 5000))
+        // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
+        // because there are dangling NFS lock files present.
+        // This complicated bit of code is an attempt to make fs.remove more robust.
+        const maxAttempts = 10
+        let attempt = 0
+        const baseDelay = 1000
+        while (attempt < maxAttempts) {
+          try {
+            logger.info(`Call fs.remove on ${jobDir}`)
+            await fs.remove(jobDir)
+            logger.info(`Removed ${jobDir}`)
+            break // Exit loop if successful
+          } catch (error) {
+            if (
+              error instanceof Error &&
+              typeof error === 'object' &&
+              error !== null &&
+              'code' in error
+            ) {
+              if (error.code === 'ENOTEMPTY' || error.code === 'EBUSY') {
+                // Calculate the delay for the current attempt, doubling it each time
+                const delay = baseDelay * Math.pow(2, attempt)
+                logger.warn(
+                  `Attempt ${attempt + 1} to remove directory failed ${
+                    error.code
+                  }, retrying...`
+                )
+                // Wait for the calculated delay before the next attempt
+                await new Promise((resolve) => setTimeout(resolve, delay))
+                attempt++
+              } else {
+                // Re-throw if it's an unexpected error
+                throw error
+              }
+            } else {
+              logger.error(error)
+            }
+          }
         }
       } catch (error) {
-        logger.error('Error calculatign AutoRg', error)
+        logger.error('Error calculating AutoRg', error)
         res.status(500).json({ message: 'Failed to calculate AutoRg', error: error })
       }
     })
@@ -716,20 +784,33 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
       reject(error)
     })
     autoRg.on('exit', (code) => {
-      if (code === 0) {
-        try {
-          // Parse the stdout data as JSON
-          const analysisResults = JSON.parse(autoRg_json)
-          logger.info(`spawnAutoRgCalculator close success exit code: ${code}`)
-          resolve(analysisResults)
-        } catch (parseError) {
-          logger.error(`Error parsing analysis results: ${parseError}`)
-          reject(parseError)
-        }
-      } else {
-        logger.error(`spawnAutoRgCalculator close error exit code: ${code}`)
-        reject(`spawnAutoRgCalculator on close reject`)
-      }
+      // Close streams explicitly once the process exits
+      const closeStreamsPromises = [
+        new Promise((resolveStream) => logStream.end(resolveStream)),
+        new Promise((resolveStream) => errorStream.end(resolveStream))
+      ]
+
+      Promise.all(closeStreamsPromises)
+        .then(() => {
+          // Only proceed once all streams are closed
+          if (code === 0) {
+            try {
+              const analysisResults = JSON.parse(autoRg_json)
+              logger.info(`spawnAutoRgCalculator success with exit code: ${code}`)
+              resolve(analysisResults)
+            } catch (parseError) {
+              logger.error(`Error parsing analysis results: ${parseError}`)
+              reject(parseError)
+            }
+          } else {
+            logger.error(`spawnAutoRgCalculator error with exit code: ${code}`)
+            reject(new Error(`spawnAutoRgCalculator error with exit code: ${code}`))
+          }
+        })
+        .catch((streamError) => {
+          logger.error(`Error closing file streams: ${streamError}`)
+          reject(streamError)
+        })
     })
   })
 }
