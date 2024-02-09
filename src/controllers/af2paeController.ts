@@ -13,54 +13,9 @@ const uploadFolder: string = process.env.DATA_VOL ?? '/'
 
 const af2paeUploads = path.join(uploadFolder, 'af2pae_uploads')
 
-/**
- * @openapi
- * /af2pae:
- *   post:
- *     summary: Create a new const file from PAE matrix.
- *     tags:
- *       - Utilities
- *     description: Endpoint for creating a new const file.
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 description: The email associated with the user.
- *               crd_file:
- *                 type: string
- *                 format: binary
- *                 description: The CRD file to upload.
- *               pae_file:
- *                 type: string
- *                 format: binary
- *                 description: The PAE file to upload.
- *     responses:
- *       '200':
- *         description: Const file created successfully.
- *       '400':
- *         description: Invalid form data.
- */
 const createNewConstFile = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(af2paeUploads, UUID)
-
-  // const form = formidable({
-  //   keepExtensions: false,
-  //   allowEmptyFiles: false,
-  //   maxFiles: 2,
-  //   maxFileSize: 2500 * 1024 * 1024, //25MB
-  //   uploadDir: af2paeUploads,
-  //   filename: (name, ext, part, form) => {
-  //     logger.info('form from host: %s', form.headers.host)
-  //     if (part.name == 'crd_file') return path.join(UUID, part.name + '.crd')
-  //     if (part.name == 'pae_file') return path.join(UUID, part.name + '.json')
-  //   }
-  // })
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
@@ -198,8 +153,6 @@ const spawnAF2PAEInpFileMaker = (af2paeDir: string) => {
       const dataString = data.toString().trim()
       logger.info(`spawnAF2PAEInpFileMaker stdout ${dataString}`)
       logStream.write(dataString)
-      // const constFileContent = `uuid: ${af2paeDir}`
-      // constFileStream.write(constFileContent)
     })
     af2pae.stderr?.on('data', (data: Buffer) => {
       logger.error('spawnAF2PAEInpFileMaker stderr', data.toString())
@@ -211,14 +164,26 @@ const spawnAF2PAEInpFileMaker = (af2paeDir: string) => {
       reject(error)
     })
     af2pae.on('exit', (code) => {
-      if (code === 0) {
-        logger.info('spawnAF2PAEInpFileMaker close success exit code:', code)
-        resolve(code.toString())
-      } else {
-        const errorMessage = `spawnAF2PAEInpFileMaker failed with exit code ${code}`
-        logger.error(errorMessage)
-        reject(errorMessage)
-      }
+      // Close streams explicitly once the process exits
+      const closeStreamsPromises = [
+        new Promise((resolveStream) => logStream.end(resolveStream)),
+        new Promise((resolveStream) => errorStream.end(resolveStream))
+      ]
+      Promise.all(closeStreamsPromises)
+        .then(() => {
+          // Only proceed once all streams are closed
+          if (code === 0) {
+            logger.info(`spawnAF2PAEInpFileMaker success with exit code: ${code}`)
+            resolve(code.toString())
+          } else {
+            logger.error(`spawnAF2PAEInpFileMaker error with exit code: ${code}`)
+            reject(new Error(`spawnAF2PAEInpFileMaker error with exit code: ${code}`))
+          }
+        })
+        .catch((streamError) => {
+          logger.error(`Error closing file streams: ${streamError}`)
+          reject(streamError)
+        })
     })
   })
 }
