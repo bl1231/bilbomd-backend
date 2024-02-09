@@ -373,14 +373,15 @@ const deleteJob = async (req: Request, res: Response) => {
     // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
     // because there are dangles NFS lock files present.
     // This complicated bit of code is an attempt to make the job deletion function more robust.
-    const maxAttempts = 5
+    const maxAttempts = 10
     let attempt = 0
+    const start = Date.now()
     while (attempt < maxAttempts) {
       try {
-        logger.info(`Call fs.remove on ${jobDir}`)
+        logger.info(`Attempt ${attempt + 1} to remove ${jobDir}`)
         await fs.remove(jobDir)
         logger.info(`Removed ${jobDir}`)
-        break // Exit loop if successful
+        break
       } catch (error) {
         if (
           error instanceof Error &&
@@ -406,6 +407,9 @@ const deleteJob = async (req: Request, res: Response) => {
         }
       }
     }
+    const end = Date.now() // Get end time in milliseconds
+    const duration = end - start // Calculate the duration in milliseconds
+    logger.info(`Total time to attempt removal of ${jobDir}: ${duration} milliseconds.`)
   } catch (error) {
     logger.error('Error deleting directory %s', error)
     res.status(500).send('Error deleting directory')
@@ -465,7 +469,7 @@ const getJobById = async (req: Request, res: Response) => {
         bilbomdJob.scoper = await getScoperStatus(scoperJob)
       }
     }
-    logger.info(bilbomdJob)
+    // logger.info(bilbomdJob)
     res.status(200).json(bilbomdJob)
   } catch (error) {
     logger.error('Error retrieving job:', error)
