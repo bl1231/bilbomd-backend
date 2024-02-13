@@ -9,8 +9,13 @@ from collections import defaultdict
 import igraph
 import numpy
 
+B_THRESHOLD = 50.00
+CONST_FILE_PATH = "const.inp"
+CLUSTER_FILE = "clusters.csv"
+TEMP_FILE_JSON = "temp.json"
 
-def first_residue_number(crd):
+
+def first_residue_number(crd) -> int:
     """
     Returns the first residue from CRD file
     """
@@ -29,7 +34,7 @@ def first_residue_number(crd):
     return int(first_resnum)
 
 
-def last_residue_number(crd):
+def last_residue_number(crd) -> int:
     """
     Returns the last residue from CRD file
     """
@@ -41,18 +46,18 @@ def last_residue_number(crd):
     return int(last_resnum)
 
 
-def segment_id(crd, residue):
-    """
-    Returns segment ID
-    """
-    seg_id = None
-    with open(file=crd, mode="r", encoding="utf8") as infile:
-        for line in infile:
-            words = line.split()
-            if len(words) == 10 and words[1] == residue:
-                seg_id = words[7]
-                break
-    return seg_id
+# def segment_id(crd, residue):
+#     """
+#     Returns segment ID
+#     """
+#     seg_id = None
+#     with open(file=crd, mode="r", encoding="utf8") as infile:
+#         for line in infile:
+#             words = line.split()
+#             if len(words) == 10 and words[1] == residue:
+#                 seg_id = words[7]
+#                 break
+#     return seg_id
 
 
 def define_segments(crd_file: str):
@@ -98,11 +103,13 @@ def correct_json_brackets(pae, output_file_path):
             output_file_handle.write(json_content)
 
 
-def define_clusters_for_selected_pae(pae, row_start, row_end, col_start, col_end):
+def define_clusters_for_selected_pae(
+    pae_file: str, row_start: int, row_end: int, col_start: int, col_end: int
+):
     """
     Define PAE clusters
     """
-    with open(file=pae, mode="r", encoding="utf8") as json_file:
+    with open(file=pae_file, mode="r", encoding="utf8") as json_file:
         data = json.load(json_file)
 
     if "pae" in data:
@@ -115,9 +122,9 @@ def define_clusters_for_selected_pae(pae, row_start, row_end, col_start, col_end
     selected_matrix = []
 
     for i, row in enumerate(matrix):
-        if int(row_start) <= i <= int(row_end):
+        if row_start <= i <= row_end:
             new_row = [
-                value if int(col_start) <= j <= int(col_end) else 30.0
+                value if col_start <= j <= col_end else 30.0
                 for j, value in enumerate(row)
             ]
             selected_matrix.append(new_row)
@@ -160,24 +167,15 @@ def define_clusters_for_selected_pae(pae, row_start, row_end, col_start, col_end
     return sorted_clusters
 
 
-def is_float(s):
+def is_float(arg):
     """
     Returns Boolean if arg is a float
     """
     try:
-        float(s)
+        float(arg)
         return True
     except ValueError:
         return False
-
-
-def calculate_average_bfactor(numbers):
-    """
-    Calculates numerical average
-    """
-    if not numbers:
-        return None
-    return sum(numbers) / len(numbers)
 
 
 def separate_into_regions(numbers):
@@ -207,7 +205,7 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
         pairs = []
         if len(row) >= 5:
             numbers = [int(num) for num in row]
-            print(f"{len(row)} - {numbers}")
+            # print(f"{len(row)} - {numbers}")
             # consecutive_regions = separate_into_regions(numbers, chain_segment_list)
             consecutive_regions = separate_into_regions(numbers)
             for region in consecutive_regions:
@@ -215,7 +213,7 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
                 last_resnum_cluster = region[-1]
                 # check which rigid domains  are rigid and
                 # which are flexbible based on avearge Bfactor
-                average_bfactor = []
+                bfactors = []
                 with open(file=crd_file, mode="r", encoding="utf8") as infile:
                     for line in infile:
                         words = line.split()
@@ -239,10 +237,11 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
                                         <= last_resnum_cluster + first_resnum
                                     )
                                 ):
-                                    average_bfactor.append(float(bfactor))
-                average = calculate_average_bfactor(average_bfactor)
+                                    bfactors.append(float(bfactor))
+                # print(f"bfactor list is {len(bfactors)}")
+                bfactor_avg = sum(bfactors) / len(bfactors)
 
-                if average > B_THRESHOLD:
+                if bfactor_avg > B_THRESHOLD:
                     with open(file=crd_file, mode="r", encoding="utf8") as infile:
                         for line in infile:
                             words = line.split()
@@ -263,6 +262,7 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
                     pairs.append(new_pair)
             rb.append(pairs)
     # increase the gap between rigid bodies
+    # why? what is this doing?
     rigid_body_optimized = []
     for row in rb:
         pairs_optimized = []
@@ -286,60 +286,55 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
     for row in rigid_body_optimized:
         if row:
             pass
-
+    # print(f"rigid body list: {rigid_body_optimized}")
     return rigid_body_optimized
 
 
-def write_const_file(rigid_body, output_file):
+def write_const_file(rigid_body_list: list, output_file):
     """
     Write const.inp file
     """
     dock_count = 0
     rigid_body_count = 0
-
-    with open(file=output_file, mode="w", encoding="utf8") as outfile:
-        for row in rigid_body:
+    # print(f"rigid body list: {rigid_body_list}")
+    with open(file=output_file, mode="w", encoding="utf8") as const_file:
+        for rigid_body in rigid_body_list:
+            print(f"rigid_body: {rigid_body}")
             rigid_body_count += 1
             p = 0
             n = 0
-            for pair in row:
-                first_residue = pair[0]
-                second_residue = pair[1]
-                segment = pair[2]
+            for rigid_domain in rigid_body:
+                start_residue = rigid_domain[0]
+                end_residue = rigid_domain[1]
+                segment = rigid_domain[2]
                 if rigid_body_count == 1:
                     p += 1
-                    outfile.write(
-                        f"define fixed{p} sele ( resid {first_residue}:{second_residue}"
+                    const_file.write(
+                        f"define fixed{p} sele ( resid {start_residue}:{end_residue}"
                         f" .and. segid {segment} ) end\n"
                     )
-                    if p == len(row):
-                        outfile.write("cons fix sele ")
+                    if p == len(rigid_body):
+                        const_file.write("cons fix sele ")
                         for number in range(1, p):
-                            outfile.write(f"fixed{number} .or. ")
-                        outfile.write(f"fixed{p} end \n")
-                        outfile.write("\n")
+                            const_file.write(f"fixed{number} .or. ")
+                        const_file.write(f"fixed{p} end \n")
+                        const_file.write("\n")
                 elif rigid_body_count > 1:
                     n += 1
-                    outfile.write(
-                        f"define rigid{n} sele ( resid {first_residue}:{second_residue}"
+                    const_file.write(
+                        f"define rigid{n} sele ( resid {start_residue}:{end_residue}"
                         f" .and. segid {segment} ) end\n"
                     )
-                    if n == len(row):
+                    if n == len(rigid_body):
                         dock_count += 1
-                        outfile.write(f"shape desc dock{dock_count} rigid sele ")
+                        const_file.write(f"shape desc dock{dock_count} rigid sele ")
                         for number in range(1, n):
-                            outfile.write(f"rigid{number} .or. ")
-                        outfile.write(f"rigid{n} end \n")
-                        outfile.write("\n")
+                            const_file.write(f"rigid{number} .or. ")
+                        const_file.write(f"rigid{n} end \n")
+                        const_file.write("\n")
+        const_file.write("return \n")
+        const_file.write("\n")
 
-        outfile.write("return \n")
-        outfile.write("\n")
-
-
-B_THRESHOLD = 50.00
-CONST_FILE_PATH = "const.inp"
-CLUSTER_FILE = "clusters.csv"
-TEMP_FILE_JSON = "temp.json"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -355,8 +350,8 @@ if __name__ == "__main__":
     # this doesn't appear to be actually doing anything...
     # chain_segments = define_segments(args.crd_file)
     # print(f"here in main - {chain_segments}")
-    SELECTED_ROWS_START = str(int(first_residue) - 1)
-    SELECTED_ROWS_END = str(int(last_residues) - 1)
+    SELECTED_ROWS_START = int(first_residue) - 1
+    SELECTED_ROWS_END = int(last_residues) - 1
     SELECTED_COLS_START = SELECTED_ROWS_START
     SELECTED_COLS_END = SELECTED_ROWS_END
 
@@ -373,9 +368,11 @@ if __name__ == "__main__":
     # rigid_body = define_rigid_clusters(
     #     pae_clusters, args.crd_file, first_residue, chain_segments
     # )
-    rigid_body = define_rigid_clusters(pae_clusters, args.crd_file, first_residue)
+    rigid_body_clusters = define_rigid_clusters(
+        pae_clusters, args.crd_file, first_residue
+    )
 
-    write_const_file(rigid_body, CONST_FILE_PATH)
+    write_const_file(rigid_body_clusters, CONST_FILE_PATH)
 
     max_len = max(len(c) for c in pae_clusters)
     pae_clusters = [
