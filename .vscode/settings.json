@@ -1,11 +1,12 @@
 {
   "editor.showUnused": true,
   "[python]": {
-    "editor.defaultFormatter": "ms-python.autopep8",
+    "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
-    "editor.detectIndentation": false
+    "editor.detectIndentation": false,
+    "editor.rulers": [88]
   },
   "[typescript]": {
     "editor.tabSize": 2,
