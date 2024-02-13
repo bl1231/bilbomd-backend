@@ -9,12 +9,18 @@ import bioxtasraw.RAWAPI as raw
 
 
 def parse_args():
+    """
+    Arg parser for authrog jiffy
+    """
     parser = argparse.ArgumentParser(description="Calculate min and max Rg values")
     parser.add_argument("file_path", type=str, help="Path to the data file")
     return parser.parse_args()
 
 
 def calculate_rg(file_path):
+    """
+    Calculate Radius of Gyration (Rg)
+    """
     profiles = raw.load_profiles(file_path)
     gi_profile = profiles[0]
     guinier_results = raw.auto_guinier(gi_profile)
