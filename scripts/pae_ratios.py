@@ -5,7 +5,7 @@ Provides functions to create const.inp file from PAE and CRD files
 import argparse
 import json
 from collections import defaultdict
-
+from typing import Tuple, Optional
 import igraph
 import numpy
 
@@ -15,35 +15,77 @@ CLUSTER_FILE = "clusters.csv"
 TEMP_FILE_JSON = "temp.json"
 
 
-def first_residue_number(crd) -> int:
+# def first_residue_number(crd) -> int:
+#     """
+#     Returns the first residue from CRD file
+#     """
+#     first_resnum = None
+#     with open(file=crd, mode="r", encoding="utf8") as infile:
+#         read_next_line = False
+#         for line in infile:
+#             if read_next_line:
+#                 line_crd = line.split()
+#                 if len(line_crd) >= 8:
+#                     first_resnum = line_crd[1]
+#                 read_next_line = False
+#             words = line.split()
+#             if len(words) >= 2 and words[1] == "EXT":
+#                 read_next_line = True
+#     return int(first_resnum)
+
+
+# def last_residue_number(crd) -> int:
+#     """
+#     Returns the last residue from CRD file
+#     """
+#     with open(file=crd, mode="r", encoding="utf8") as infile:
+#         lines = infile.readlines()
+#         if lines:
+#             line_crd = lines[-1].split()
+#             last_resnum = line_crd[1]
+#     return int(last_resnum)
+
+
+def get_first_and_last_residue_numbers(
+    crd_file: str,
+) -> Tuple[Optional[int], Optional[int]]:
     """
-    Returns the first residue from CRD file
+    Returns the first and last residue numbers from a CRD file. Ignores initial comment
+    lines starting with '*', starts processing lines after a line ending in 'EXT'.
+
+    :param crd_file: Path to the CRD file.
+    :return: A tuple containing the first and last residue numbers. Returns None for
+            each if not found.
     """
     first_resnum = None
-    with open(file=crd, mode="r", encoding="utf8") as infile:
-        read_next_line = False
+    last_resnum = None
+    start_processing = False  # Flag to indicate when to start processing lines
+
+    with open(file=crd_file, mode="r", encoding="utf8") as infile:
         for line in infile:
-            if read_next_line:
-                line_crd = line.split()
-                if len(line_crd) >= 8:
-                    first_resnum = line_crd[1]
-                read_next_line = False
+            # Skip all lines until we find the line ending with 'EXT'
+            # I hope this is univeral to all CRD files.
+            if not start_processing:
+                if line.strip().endswith("EXT"):
+                    start_processing = True
+                continue  # Skip current iteration and proceed to the next line
+
             words = line.split()
-            if len(words) >= 2 and words[1] == "EXT":
-                read_next_line = True
-    return int(first_resnum)
+            # Start processing lines to find first and last residue numbers
+            if start_processing and words:
+                if first_resnum is None:
+                    try:
+                        first_resnum = int(
+                            words[8]
+                        )  # Assuming col 9 has the residue numbers
+                    except ValueError:
+                        continue  # Skip lines that do not start with an integer
+                try:
+                    last_resnum = int(words[8])  # Continuously update last_resnum
+                except ValueError:
+                    pass  # Ignore lines that do not start with an integer
 
-
-def last_residue_number(crd) -> int:
-    """
-    Returns the last residue from CRD file
-    """
-    with open(file=crd, mode="r", encoding="utf8") as infile:
-        lines = infile.readlines()
-        if lines:
-            line_crd = lines[-1].split()
-            last_resnum = line_crd[1]
-    return int(last_resnum)
+    return first_resnum, last_resnum
 
 
 # def segment_id(crd, residue):
@@ -344,14 +386,14 @@ if __name__ == "__main__":
     parser.add_argument("crd_file", type=str, help="Name of the CRD file.")
     args = parser.parse_args()
 
-    first_residue = first_residue_number(args.crd_file)  # pylint: disable=invalid-name
-    last_residues = last_residue_number(args.crd_file)
+    first_residue, last_residue = get_first_and_last_residue_numbers(args.crd_file)
+    # print(f"first_residue: {first_residue} last_residues: {last_residue}")
 
     # this doesn't appear to be actually doing anything...
     # chain_segments = define_segments(args.crd_file)
     # print(f"here in main - {chain_segments}")
-    SELECTED_ROWS_START = int(first_residue) - 1
-    SELECTED_ROWS_END = int(last_residues) - 1
+    SELECTED_ROWS_START = first_residue - 1
+    SELECTED_ROWS_END = last_residue - 1
     SELECTED_COLS_START = SELECTED_ROWS_START
     SELECTED_COLS_END = SELECTED_ROWS_END
 
