@@ -180,16 +180,14 @@ def calculate_average_bfactor(numbers):
     return sum(numbers) / len(numbers)
 
 
-def separate_into_regions(numbers, chain_segments):
+def separate_into_regions(numbers):
     """
     Seprates into regions
     """
     regions = []
     current_region = [numbers[0]]
     for i in range(1, len(numbers)):
-        if (numbers[i] == numbers[i - 1] + 1) and (
-            numbers[i - 1] not in chain_segments
-        ):
+        if numbers[i] == numbers[i - 1] + 1:
             current_region.append(numbers[i])
         else:
             regions.append(current_region)
@@ -199,20 +197,19 @@ def separate_into_regions(numbers, chain_segments):
     return regions
 
 
-def define_rigid_clusters(
-    cluster_list: list, crd_file: str, first_resnum: int, chain_segment_list: list
-) -> list:
+def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) -> list:
     """
     Define a rigid cluster
     """
-    print(chain_segment_list)
+    # print(chain_segment_list)
     rb = []
     for row in cluster_list:
         pairs = []
         if len(row) >= 5:
             numbers = [int(num) for num in row]
             print(f"{len(row)} - {numbers}")
-            consecutive_regions = separate_into_regions(numbers, chain_segment_list)
+            # consecutive_regions = separate_into_regions(numbers, chain_segment_list)
+            consecutive_regions = separate_into_regions(numbers)
             for region in consecutive_regions:
                 first_resnum_cluster = region[0]
                 last_resnum_cluster = region[-1]
@@ -356,8 +353,8 @@ if __name__ == "__main__":
     last_residues = last_residue_number(args.crd_file)
 
     # this doesn't appear to be actually doing anything...
-    chain_segments = define_segments(args.crd_file)
-    print(f"here in main - {chain_segments}")
+    # chain_segments = define_segments(args.crd_file)
+    # print(f"here in main - {chain_segments}")
     SELECTED_ROWS_START = str(int(first_residue) - 1)
     SELECTED_ROWS_END = str(int(last_residues) - 1)
     SELECTED_COLS_START = SELECTED_ROWS_START
@@ -373,9 +370,10 @@ if __name__ == "__main__":
         SELECTED_COLS_END,
     )
 
-    rigid_body = define_rigid_clusters(
-        pae_clusters, args.crd_file, first_residue, chain_segments
-    )
+    # rigid_body = define_rigid_clusters(
+    #     pae_clusters, args.crd_file, first_residue, chain_segments
+    # )
+    rigid_body = define_rigid_clusters(pae_clusters, args.crd_file, first_residue)
 
     write_const_file(rigid_body, CONST_FILE_PATH)
 
