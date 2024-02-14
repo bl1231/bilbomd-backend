@@ -15,37 +15,6 @@ CLUSTER_FILE = "clusters.csv"
 TEMP_FILE_JSON = "temp.json"
 
 
-# def first_residue_number(crd) -> int:
-#     """
-#     Returns the first residue from CRD file
-#     """
-#     first_resnum = None
-#     with open(file=crd, mode="r", encoding="utf8") as infile:
-#         read_next_line = False
-#         for line in infile:
-#             if read_next_line:
-#                 line_crd = line.split()
-#                 if len(line_crd) >= 8:
-#                     first_resnum = line_crd[1]
-#                 read_next_line = False
-#             words = line.split()
-#             if len(words) >= 2 and words[1] == "EXT":
-#                 read_next_line = True
-#     return int(first_resnum)
-
-
-# def last_residue_number(crd) -> int:
-#     """
-#     Returns the last residue from CRD file
-#     """
-#     with open(file=crd, mode="r", encoding="utf8") as infile:
-#         lines = infile.readlines()
-#         if lines:
-#             line_crd = lines[-1].split()
-#             last_resnum = line_crd[1]
-#     return int(last_resnum)
-
-
 def get_first_and_last_residue_numbers(
     crd_file: str,
 ) -> Tuple[Optional[int], Optional[int]]:
