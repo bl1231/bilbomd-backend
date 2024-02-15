@@ -43,6 +43,12 @@ export type BullMQData = {
   jobid: string
 }
 
+export type BullMQPdb2Crd = {
+  type: string
+  title: string
+  uuid: string
+}
+
 export type BilboMDBullMQ = {
   position: number | string
   queuePosition: string
