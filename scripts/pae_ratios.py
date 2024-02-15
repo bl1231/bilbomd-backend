@@ -310,7 +310,7 @@ def write_const_file(rigid_body_list: list, output_file):
     # print(f"rigid body list: {rigid_body_list}")
     with open(file=output_file, mode="w", encoding="utf8") as const_file:
         for rigid_body in rigid_body_list:
-            print(f"rigid_body: {rigid_body}")
+            # print(f"rigid_body: {rigid_body}")
             rigid_body_count += 1
             p = 0
             n = 0
@@ -398,5 +398,3 @@ if __name__ == "__main__":
         f"Wrote {len(pae_clusters)} clusters to {CLUSTER_FILE}. "
         f"The largest cluster contains {max_len} residues."
     )
-    print(f"Wrote const.inp for  {args.crd_file}\n")
-    print("done")
