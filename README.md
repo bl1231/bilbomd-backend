@@ -80,6 +80,10 @@ docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
 
 ## Version History
 
+- 1.7.0
+  - Enforce PEP8 Python guidelines. Set default formatter to Black.
+  - Refactor `pae_ratios.py` script.
+  - Add new dedicated `pdb2crd` BullMQ queue.
 - 1.6.1
   - Make Job deletion more robust to NFS lock files.
 - 1.6.0
