@@ -23,7 +23,7 @@ const bilbomdQueue = new Queue('bilbomd', {
 
 const closeQueue = async () => {
   await bilbomdQueue.close()
-  await redis.disconnect() // Disconnect from Redis
+  await redis.quit() // Disconnect from Redis
 }
 
 const queueJob = async (data: BullMQData) => {

@@ -1,16 +1,14 @@
 import { logger } from '../middleware/loggers'
-// import formidable from 'formidable'
 import multer from 'multer'
 import fs from 'fs-extra'
 import path from 'path'
 import { Request, Response } from 'express'
 import { v4 as uuid } from 'uuid'
-// const spawn = require('child_process').spawn
-
 import { spawn, ChildProcess } from 'node:child_process'
 import { User } from '../model/User'
-const uploadFolder: string = process.env.DATA_VOL ?? '/'
+import { queueJob, waitForJobCompletion, pdb2crdQueueEvents } from '../queues/pdb2crd'
 
+const uploadFolder: string = process.env.DATA_VOL ?? '/'
 const af2paeUploads = path.join(uploadFolder, 'af2pae_uploads')
 
 const createNewConstFile = async (req: Request, res: Response) => {
@@ -27,8 +25,8 @@ const createNewConstFile = async (req: Request, res: Response) => {
       },
       filename: function (req, file, cb) {
         let newFilename
-        if (file.fieldname === 'crd_file') {
-          newFilename = 'crd_file.crd'
+        if (file.fieldname === 'pdb_file') {
+          newFilename = 'pdb_file.pdb'
         } else if (file.fieldname === 'pae_file') {
           newFilename = 'pae_file.json'
         } else {
@@ -41,7 +39,7 @@ const createNewConstFile = async (req: Request, res: Response) => {
     const upload = multer({ storage: storage })
 
     upload.fields([
-      { name: 'crd_file', maxCount: 1 },
+      { name: 'pdb_file', maxCount: 1 },
       { name: 'pae_file', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
@@ -54,19 +52,26 @@ const createNewConstFile = async (req: Request, res: Response) => {
         if (!user) {
           return res.status(401).json({ message: 'No user found with that email' })
         }
+        const BullId = await queueJob({
+          type: 'Pdb2Crd',
+          title: 'convert PDB to CRD',
+          uuid: UUID
+        })
+        logger.info(`PDB 2 CRD Job assigned UUID: ${UUID}`)
+        logger.info(`PDB 2 CRD Job assigned BullMQ ID: ${BullId}`)
+
+        // Need to wait here until the BullMQ job is finished
+        await waitForJobCompletion(BullId, pdb2crdQueueEvents)
 
         await spawnAF2PAEInpFileMaker(jobDir)
 
-        const downloadableConstFile = path.join(UUID, 'const.inp')
-
         res.status(200).json({
           message: 'New const.inp file successfully created',
-          uuid: UUID,
-          const_file: downloadableConstFile
+          uuid: UUID
         })
       } catch (error) {
-        logger.error(`Error creating AF2PAE const.inp file: ${error}`)
-        res.status(500).json({ message: 'Error creating AF2PAE const.inp file' })
+        logger.error(`Error queueing PDB2CRD conversion: ${error}`)
+        res.status(500).json({ message: 'Error queueing PDB2CRD conversion' })
       }
     })
   } catch (error) {
@@ -75,50 +80,6 @@ const createNewConstFile = async (req: Request, res: Response) => {
   }
 }
 
-/**
- * @openapi
- * /af2pae:
- *   get:
- *     summary: Download Const File
- *     tags:
- *      - Utilities
- *     description: Download the const.inp file associated with a job by its UUID.
- *     parameters:
- *       - in: query
- *         name: uuid
- *         required: true
- *         description: The UUID of the job for which to download the const.inp file.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Const file downloaded successfully.
- *         content:
- *           application/octet-stream:
- *             schema:
- *               type: string
- *               format: binary
- *       400:
- *         description: Bad Request. The UUID parameter is missing or invalid.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: The error message indicating the missing or invalid UUID.
- *       500:
- *         description: Internal Server Error. Failed to download the const.inp file.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: The error message indicating the failure to download the file.
- */
 const downloadConstFile = async (req: Request, res: Response) => {
   const { uuid } = req.query
   if (!uuid) return res.status(400).json({ message: 'Job UUID required.' })
@@ -140,12 +101,13 @@ const downloadConstFile = async (req: Request, res: Response) => {
 }
 
 const spawnAF2PAEInpFileMaker = (af2paeDir: string) => {
+  logger.info(`spawnAF2PAEInpFileMaker af2paeDir ${af2paeDir}`)
   const logFile = path.join(af2paeDir, 'af2pae.log')
   const errorFile = path.join(af2paeDir, 'af2pae_error.log')
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const af2pae_script = '/app/scripts/pae_ratios.py'
-  const args = [af2pae_script, 'pae_file.json', 'crd_file.crd']
+  const args = [af2pae_script, 'pae_file.json', 'bilbomd_pdb2crd.crd']
 
   return new Promise((resolve, reject) => {
     const af2pae: ChildProcess = spawn('python', args, { cwd: af2paeDir })
