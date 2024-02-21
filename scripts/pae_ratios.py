@@ -45,12 +45,12 @@ def get_first_and_last_residue_numbers(
                 if first_resnum is None:
                     try:
                         first_resnum = int(
-                            words[8]
-                        )  # Assuming col 9 has the residue numbers
+                            words[1]
+                        )  # Assuming col 1 has the residue numbers
                     except ValueError:
                         continue  # Skip lines that do not start with an integer
                 try:
-                    last_resnum = int(words[8])  # Continuously update last_resnum
+                    last_resnum = int(words[1])  # Continuously update last_resnum
                 except ValueError:
                     pass  # Ignore lines that do not start with an integer
 
@@ -349,7 +349,7 @@ def write_const_file(rigid_body_list: list, output_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Extract pAE matrix for interacxtive region from an AlphaFold PAE matrix."
+        description="Extract PAE matrix for interacxtive region from an AlphaFold PAE matrix."
     )
     parser.add_argument("pae_file", type=str, help="Name of the PAE JSON file.")
     parser.add_argument("crd_file", type=str, help="Name of the CRD file.")
@@ -368,6 +368,12 @@ if __name__ == "__main__":
 
     correct_json_brackets(args.pae_file, TEMP_FILE_JSON)
 
+    print(
+        f"row_start: {SELECTED_ROWS_START}\n"
+        f"row_end:{SELECTED_ROWS_END}\n"
+        f"col_start:{SELECTED_COLS_START}\n"
+        f"col_end:{SELECTED_COLS_END}\n"
+    )
     pae_clusters = define_clusters_for_selected_pae(
         TEMP_FILE_JSON,
         SELECTED_ROWS_START,
@@ -375,6 +381,7 @@ if __name__ == "__main__":
         SELECTED_COLS_START,
         SELECTED_COLS_END,
     )
+    print(f"pae_clusters: {pae_clusters}")
 
     # rigid_body = define_rigid_clusters(
     #     pae_clusters, args.crd_file, first_residue, chain_segments
@@ -382,6 +389,7 @@ if __name__ == "__main__":
     rigid_body_clusters = define_rigid_clusters(
         pae_clusters, args.crd_file, first_residue
     )
+    print(f"rigid_body_clusters: {rigid_body_clusters}")
 
     write_const_file(rigid_body_clusters, CONST_FILE_PATH)
 
