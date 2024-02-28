@@ -1,24 +1,65 @@
-FROM continuumio/miniconda3 as bilbomd-backend
+# -----------------------------------------------------------------------------
+# Build stage 1 - Install Miniforge3
+FROM node:20.11.1-slim as bilbomd-backend-step1
 ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG NODE_MAJOR=20
 
-RUN apt-get update
-RUN apt-get install -y \
-    ncat \
-    ca-certificates \
-    curl \
-    gnupg \
-    zip
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && \
+    apt-get install -y ncat ca-certificates wget libgl1-mesa-dev
 
-RUN mkdir -p /etc/apt/keyrings
-RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+# # Install Miniconda3
+# RUN wget "https://repo.anaconda.com/miniconda/Miniconda3-latest-$(uname)-$(uname -m).sh" -O /miniconda.sh && \
+#     bash /miniconda.sh -b -p /miniconda && \
+#     rm /miniconda.sh
 
-RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+# # Add Conda to PATH
+# ENV PATH="/miniconda/bin/:${PATH}"
 
-RUN apt-get update
-RUN apt-get install nodejs -y
+# Download and install Miniforge3
+RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
+    bash Miniforge3-$(uname)-$(uname -m).sh -b -p "/miniforge3" && \
+    rm Miniforge3-$(uname)-$(uname -m).sh
 
+# Add Conda to PATH
+ENV PATH="/miniforge3/bin/:${PATH}"
+
+# Update conda
+RUN conda update -n base -c conda-forge conda
+RUN conda update -n base -c defaults conda
+
+# Verify Miniconda3 installation
+RUN conda --version
+
+# Copy in the environment.yml file
+COPY environment.yml /tmp/environment.yml
+
+# Update existing conda base env from environment.yml
+RUN conda env update -f /tmp/environment.yml && \
+    rm /tmp/environment.yml
+
+# -----------------------------------------------------------------------------
+# Build stage 2 - Install BioXTAS
+FROM bilbomd-backend-step1 AS bilbomd-backend-step2
+
+# install deps
+RUN apt-get update && \
+    apt-get install -y zip build-essential libarchive13 git
+
+# Install BioXYAS from source
+WORKDIR /tmp
+RUN git clone https://github.com/jbhopkins/bioxtasraw.git
+
+# Install BioXTAS RAW from source
+WORKDIR /tmp/bioxtasraw
+RUN python3 setup.py build_ext --inplace && \
+    pip3 install .
+
+# -----------------------------------------------------------------------------
+# Build stage 3 - Install backend app
+FROM bilbomd-backend-step2 AS bilbomd-backend
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 VOLUME [ "/bilbomd/uploads" ]
@@ -30,30 +71,6 @@ RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/b
 
 # Change ownership of directories to the user and group
 RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
-
-# install Python packages needed for the PAE const.inp script
-# and BioXTAS 
-RUN conda install pillow six wheel numpy=1.24.3 scipy=1.10.1 matplotlib numba h5py cython numexpr reportlab
-RUN conda install -c conda-forge python-igraph=0.10.4 dbus-python fabio pyfai hdf5plugin mmcif_pdbx svglib
-
-# install BioXTAS
-RUN apt-get install -y build-essential
-
-# Create a directory for BioXTAS and copy the source ZIP file
-RUN mkdir /BioXTAS
-COPY RAW-2.2.1-source.zip /BioXTAS/
-
-# Change the working directory to BioXTAS
-WORKDIR /BioXTAS
-
-# Unzip the source ZIP file
-RUN unzip RAW-2.2.1-source.zip
-
-# Build BioXTAS using Python setup.py
-RUN python setup.py build_ext --inplace
-
-# Install BioXTAS using pip
-RUN pip install .
 
 # Switch to the non-root user
 USER bilbo:bilbomd
