@@ -101,7 +101,7 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
     if (user) {
       logger.debug('Found User: %s', user)
       // logger.info({ level: 'info', message: 'hello' })
-      logger.info('OTP login for user: %s email: %s', user.username, user.email)
+      logger.info(`OTP login for user: ${user.username} email: ${user.email}`)
 
       // Check if OTP has expired
       const currentTimestamp = Date.now()
@@ -109,19 +109,6 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
         logger.warn('OTP has expired')
         return res.status(401).json({ error: 'OTP has expired' })
       }
-
-      // accessToken - memory only, short lived, allows access to protected routes
-      // const accessToken = jwt.sign(
-      //   {
-      //     UserInfo: {
-      //       username: user.username,
-      //       roles: user.roles,
-      //       email: user.email
-      //     }
-      //   },
-      //   accessTokenSecret,
-      //   { expiresIn: '15m' }
-      // )
 
       // Generating an access token
       const accessTokenPayload: JwtPayload = {
@@ -140,16 +127,6 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
         accessToken
       }
 
-      // refreshToken - http only, secure, allows for refresh of expired accessTokens
-      // const refreshToken = jwt.sign(
-      //   {
-      //     username: user.username,
-      //     roles: user.roles,
-      //     email: user.email
-      //   },
-      //   refreshTokenSecret,
-      //   { expiresIn: '7d' }
-      // )
       const refreshTokenPayload: RefreshToken = {
         refreshToken: jwt.sign(
           {
@@ -161,19 +138,22 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
           { expiresIn: '7d' }
         )
       }
+
       // Creates Secure Cookie with our refreshToken
       // logger.info('about to set cookie')
+      const isProduction = process.env.NODE_ENV === 'production'
       res.cookie('jwt', refreshTokenPayload.refreshToken, {
-        httpOnly: true, //accessible only by web server
-        sameSite: 'none', //cross-site cookie
-        secure: true, //https
-        maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
+        httpOnly: true, // Accessible only by web server
+        sameSite: isProduction ? 'none' : 'lax', // Use 'none' for cross-site cookie in prod, 'lax' in dev
+        secure: isProduction, // Use HTTPS for prod, allow HTTP for dev
+        maxAge: 7 * 24 * 60 * 60 * 1000 // Cookie expiry: set to match refreshToken
       })
       // logger.info('about to remove OTP ')
       user.otp = null
       await user.save()
 
       // Send the accessToken back to client
+      // logger.info(`Sending jwt: ${JSON.stringify(accessTokenData)}`)
       return res.json({ accessTokenData })
     } else {
       logger.warn('Invalid OTP')
@@ -236,10 +216,10 @@ const refresh = async (req: Request, res: Response) => {
   const cookies = req.cookies
   // logger.info(`refresh got cookies: ${JSON.stringify(cookies)}`)
 
-  if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
+  if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized - no token' })
 
   const refreshToken = cookies.jwt
-  logger.info(`refresh got jwt: ${refreshToken}`)
+  // logger.info(`refresh got jwt: ${refreshToken}`)
 
   try {
     const decoded = jwt.verify(refreshToken, refreshTokenSecret, {
