@@ -17,11 +17,11 @@ const allowedOrigins: AllowedOrigin[] = [
   'http://192.168.1.7:3001',
   'http://192.168.1.7:3500',
   'http://192.168.1.104:80',
-  'http://192.168.1.104:80',
-  'https://192.168.1.104:443',
   'https://192.168.1.104:443',
   'https://bl1231.als.lbl.gov',
-  'https://bilbomd.bl1231.als.lbl.gov'
+  'https://bilbomd.bl1231.als.lbl.gov',
+  'http://ingress.bilbomd.development.svc.spin.nersc.org',
+  'https://bilbomd-nersc.bl1231.als.lbl.gov'
 ]
 
 export { allowedOrigins }
