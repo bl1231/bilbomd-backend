@@ -8,12 +8,21 @@ const viewPath = path.resolve(__dirname, '../templates/views/')
 const partialsPath = path.resolve(__dirname, '../templates/partials')
 
 const transporter = nodemailer.createTransport({
-  name: 'bl1231-local.als.lbl.gov',
+  name: 'bilbomd.bl1231.als.lbl.gov',
   host: 'smtp-relay.gmail.com',
   port: 25,
   secure: false
 })
-
+// const transporter = nodemailer.createTransport({
+//   service: 'gmail',
+//   auth: {
+//     type: 'OAuth2',
+//     user: 'bilbomd@lbl.gov',
+//     clientId: 'CLIENTID',
+//     clientSecret: 'SECRET',
+//     refreshToken: ''
+//   }
+// })
 const sendVerificationEmail = (email: string, url: string, code: string) => {
   logger.info(`send verification email to ${email}`)
   transporter.use(
