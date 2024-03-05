@@ -6,7 +6,7 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = (req.headers.authorization || req.headers.Authorization) as string
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Unauthorized' })
+    return res.status(401).json({ message: 'Unauthorized - no auth header' })
   }
 
   const token = authHeader.split(' ')[1]
@@ -27,7 +27,7 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
         req.roles = userInfo.roles
         next()
       } else {
-        return res.status(403).json({ message: 'Forbidden' })
+        return res.status(403).json({ message: 'Forbidden - no userInfo' })
       }
     }
   )
