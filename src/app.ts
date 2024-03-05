@@ -15,8 +15,18 @@ import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
 
 const app: Express = express()
 
+// Trust the first proxy in front of the app
+// ChatGPT suggested this
+app.set('trust proxy', 1)
+
 // Connect to MongoDB
 connectDB()
+
+// Temprarily log headers - DEBUG
+// app.use((req, res, next) => {
+//   console.log(req.headers)
+//   next()
+// })
 
 // custom middleware logger
 app.use(requestLogger)
@@ -40,21 +50,30 @@ app.use('/', express.static('public'))
 // Root routes (no version)
 app.use('/', require('./routes/root'))
 
-// Version 1 routes
-app.use('/v1/register', require('./routes/register'))
-app.use('/v1/verify', require('./routes/verify'))
-app.use('/v1/magicklink', require('./routes/magicklink'))
-app.use('/v1/auth', require('./routes/auth'))
-app.use('/v1/jobs', require('./routes/jobs'))
-app.use('/v1/users', require('./routes/users'))
-app.use('/v1/af2pae', require('./routes/af2pae'))
-app.use('/v1/autorg', require('./routes/autorg'))
-app.use('/v1/bullmq', require('./routes/bullmq'))
-app.use('/v1/admin', adminRoutes)
+// Group version 1 routes under /api/v1
+const v1Router = express.Router()
+
+// Register v1 routes
+v1Router.use('/register', require('./routes/register'))
+v1Router.use('/verify', require('./routes/verify'))
+v1Router.use('/magicklink', require('./routes/magicklink'))
+v1Router.use('/auth', require('./routes/auth'))
+v1Router.use('/jobs', require('./routes/jobs'))
+v1Router.use('/users', require('./routes/users'))
+v1Router.use('/af2pae', require('./routes/af2pae'))
+v1Router.use('/autorg', require('./routes/autorg'))
+v1Router.use('/bullmq', require('./routes/bullmq'))
+v1Router.use('/admin', adminRoutes)
+
+// Apply v1Router under /api/v1
+app.use('/api/v1', v1Router)
 
 // Swagger documentation for Version 1
-app.use('/v1/api-docs', express.static('./openapi/v1/swagger_v1.json'))
-app.use('/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
+// Adjust Swagger documentation path
+app.use('/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
+
+// app.use('/v1/api-docs', express.static('./openapi/v1/swagger_v1.json'))
+// app.use('/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
 
 // cron
 new CronJob('11 1 * * *', deleteOldJobs, null, true, 'America/Los_Angeles')
