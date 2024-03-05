@@ -1,4 +1,5 @@
 import { logger } from '../middleware/loggers'
+import { config } from '../config/config'
 import { User } from '../model/User'
 import { v4 as uuid } from 'uuid'
 import { Request, Response } from 'express'
@@ -116,8 +117,9 @@ const handleNewUser = async (req: Request, res: Response) => {
     })
     logger.info(newUser.username)
 
-    //send Verification email
-    sendVerificationEmail(email, bilboMdUrl, code)
+    if (config.sendEmailNotifications) {
+      sendVerificationEmail(email, bilboMdUrl, code)
+    }
 
     res.status(201).json({ success: `New user ${user} created!`, code: code })
   } catch (err) {

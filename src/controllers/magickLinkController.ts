@@ -1,4 +1,5 @@
 import { logger } from '../middleware/loggers'
+import { config } from '../config/config'
 import crypto from 'crypto'
 import { User } from '../model/User'
 import { Request, Response } from 'express'
@@ -76,8 +77,9 @@ const generateMagickLink = async (req: Request, res: Response) => {
     const message = 'magicklink requested by %s send OTP: %s'
     logger.info(message, foundUser.email, passcode)
 
-    // Send MagickLink email
-    sendMagickLinkEmail(email, bilboMdUrl, passcode)
+    if (config.sendEmailNotifications) {
+      sendMagickLinkEmail(email, bilboMdUrl, passcode)
+    }
 
     res.status(201).json({ success: `OTP created for ${email}`, otp: passcode })
   } catch (error) {
