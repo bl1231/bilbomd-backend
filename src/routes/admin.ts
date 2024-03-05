@@ -6,7 +6,7 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
 import { Queue as QueueMQ } from 'bullmq'
 
-const basePath = '/v1/admin/queues'
+const basePath = '/api/v1/admin/queues'
 
 const redisOptions: RedisOptions = {
   port:
