@@ -54,8 +54,8 @@ RUN git clone https://github.com/jbhopkins/bioxtasraw.git
 
 # Install BioXTAS RAW from source
 WORKDIR /tmp/bioxtasraw
-RUN python3 setup.py build_ext --inplace && \
-    pip3 install .
+RUN python setup.py build_ext --inplace && \
+    pip install .
 
 # -----------------------------------------------------------------------------
 # Build stage 3 - Install backend app
