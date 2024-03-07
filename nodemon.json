@@ -1,4 +1,8 @@
 {
-  "verbose": false,
-  "ignore": ["logs/**", "uploads/**"]
+  "verbose": true,
+  "ignore": ["logs/**", "uploads/**"],
+  "watch": ["dist/"],
+  "ext": "js,ts,ejs",
+  "exec": "node dist/server.js",
+  "delay": "500"
 }
