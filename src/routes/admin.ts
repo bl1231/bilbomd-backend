@@ -5,8 +5,10 @@ import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
 import { Queue as QueueMQ } from 'bullmq'
+import { logger } from '../middleware/loggers'
+// import verifyJWT from '../middleware/verifyJWT'
 
-const basePath = '/api/v1/admin/queues'
+const basePath = '/admin/bullmq'
 
 const redisOptions: RedisOptions = {
   port:
@@ -36,6 +38,10 @@ createBullBoard({
   serverAdapter: serverAdapter
 })
 
-router.use('/queues', serverAdapter.getRouter())
+// if (process.env.NODE_ENV === 'production1') {
+//   router.use(verifyJWT)
+// }
+logger.info('here1')
+router.use('/', serverAdapter.getRouter())
 
 export { router, bilbomdQueue, bilbomdScoperQueue }

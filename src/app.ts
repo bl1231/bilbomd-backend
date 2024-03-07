@@ -15,6 +15,8 @@ import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
 
 const app: Express = express()
 
+logger.info(`Starting in ${process.env.NODE_ENV} mode`)
+
 // Trust the first proxy in front of the app
 // ChatGPT suggested this
 app.set('trust proxy', 1)
@@ -27,6 +29,12 @@ connectDB()
 //   console.log(req.headers)
 //   next()
 // })
+app.use((req, res, next) => {
+  const protocol = req.get('X-Forwarded-Proto') || req.protocol
+  const host = req.get('X-Forwarded-Host') || req.get('Host')
+  logger.info(`${req.method} ${protocol}://${host}${req.originalUrl}`)
+  next()
+})
 
 // custom middleware logger
 app.use(requestLogger)
@@ -50,6 +58,8 @@ app.use('/', express.static('public'))
 // Root routes (no version)
 app.use('/', require('./routes/root'))
 
+app.use('/admin/bullmq', adminRoutes)
+
 // Group version 1 routes under /api/v1
 const v1Router = express.Router()
 
@@ -63,7 +73,6 @@ v1Router.use('/users', require('./routes/users'))
 v1Router.use('/af2pae', require('./routes/af2pae'))
 v1Router.use('/autorg', require('./routes/autorg'))
 v1Router.use('/bullmq', require('./routes/bullmq'))
-v1Router.use('/admin', adminRoutes)
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
@@ -82,6 +91,7 @@ new CronJob('11 1 * * *', deleteOldJobs, null, true, 'America/Los_Angeles')
 app.all('*', (req: Request, res: Response) => {
   res.status(404)
   if (req.accepts('html')) {
+    console.log('__dirname:', __dirname)
     res.sendFile(path.join(__dirname, 'views', '404.html'))
   } else if (req.accepts('json')) {
     res.json({ error: '404 Not Found' })
