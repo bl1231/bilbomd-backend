@@ -3,26 +3,18 @@ import nodemailer from 'nodemailer'
 import hbs from 'nodemailer-express-handlebars'
 import path from 'path'
 
-const user = process.env.SENDMAIL_USER
+const user = process.env.SEND_EMAIL_USER
+const name = process.env.BILBOMD_FQDN
 const viewPath = path.resolve(__dirname, '../templates/views/')
 const partialsPath = path.resolve(__dirname, '../templates/partials')
 
 const transporter = nodemailer.createTransport({
-  name: 'bilbomd.bl1231.als.lbl.gov',
+  name: name,
   host: 'smtp-relay.gmail.com',
   port: 25,
   secure: false
 })
-// const transporter = nodemailer.createTransport({
-//   service: 'gmail',
-//   auth: {
-//     type: 'OAuth2',
-//     user: 'bilbomd@lbl.gov',
-//     clientId: 'CLIENTID',
-//     clientSecret: 'SECRET',
-//     refreshToken: ''
-//   }
-// })
+
 const sendVerificationEmail = (email: string, url: string, code: string) => {
   logger.info(`send verification email to ${email}`)
   transporter.use(
