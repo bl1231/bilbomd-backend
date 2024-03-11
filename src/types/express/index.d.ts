@@ -7,6 +7,7 @@ declare global {
       user?: string
       roles?: string[]
       email?: string
+      sfApiToken?: string
     }
   }
 }

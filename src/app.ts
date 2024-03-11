@@ -10,36 +10,11 @@ import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn'
 import { CronJob } from 'cron'
 import { deleteOldJobs } from './middleware/jobCleaner'
-import { fetchAndStoreToken, getToken } from './middleware/tokenManager'
 import swaggerUi from 'swagger-ui-express'
 import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
 
-// Instantiate th app
+// Instantiate the app
 const app: Express = express()
-
-// Grab client ID and secret from environment variables
-const clientId = process.env.CLIENT_ID
-const clientSecret = process.env.CLIENT_SECRET
-
-if (!clientId || !clientSecret) {
-  logger.error(
-    'CLIENT_ID or CLIENT_SECRET is undefined. Please check your environment variables.'
-  )
-  process.exit(1) // Exit the process with an error code
-}
-
-// Fetch and store the SF API token on application start
-fetchAndStoreToken(clientId, clientSecret).catch(console.error)
-
-// Endpoint for the frontend to get the current access token
-app.get('/api/token', (req, res) => {
-  const token = getToken()
-  if (token) {
-    res.json({ accessToken: token })
-  } else {
-    res.status(500).json({ error: 'Failed to retrieve access token' })
-  }
-})
 
 logger.info(`Starting in ${process.env.NODE_ENV} mode`)
 
@@ -86,6 +61,8 @@ app.use('/', express.static('public'))
 app.use('/', require('./routes/root'))
 
 app.use('/admin/bullmq', adminRoutes)
+
+app.use('/sfapi', require('./routes/sfapi'))
 
 // Group version 1 routes under /api/v1
 const v1Router = express.Router()

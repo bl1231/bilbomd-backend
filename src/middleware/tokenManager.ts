@@ -1,49 +1,104 @@
 import axios from 'axios'
+import jwt from 'jsonwebtoken'
+import fs from 'fs'
+import { logger } from '../middleware/loggers'
+import { Request, Response, NextFunction } from 'express'
 
 const tokenUrl = 'https://oidc.nersc.gov/c2id/token'
-let accessToken: string | null = null
-let fetchTokenTimeout: ReturnType<typeof setTimeout> | null = null
+const clientId = process.env.SFAPI_CLIENT_ID as string // Assert non-null with 'as string'
+const privateKeyPath = '/secrets/priv_key.pem'
 
-interface TokenResponse {
+let cachedToken: string | null = null
+let tokenExpiry: number | null = null
+
+interface AccessTokenResponse {
   access_token: string
+  scope: string
+  token_bearer: string
   expires_in: number
-  token_type: string
-  // Include other fields from the token response if necessary
 }
 
-async function fetchAndStoreToken(
-  clientId: string,
-  clientSecret: string
-): Promise<string> {
+interface AccessToken {
+  accessToken: string
+  expiresIn: number
+}
+
+// Function to generate a JWT for client assertion
+function generateClientAssertion(clientId: string, privateKeyPath: string): string {
+  const privateKey = fs.readFileSync(privateKeyPath, 'utf8')
+
+  // Prepare the payload
+  const payload = {
+    iss: clientId,
+    sub: clientId,
+    aud: tokenUrl,
+    exp: Math.floor(Date.now() / 1000) + 5 * 60 // Current time + 5 minutes
+  }
+
+  // Sign the JWT
+  const assertion = jwt.sign(payload, privateKey, { algorithm: 'RS256' })
+  // logger.info(`client assertion: ${assertion}`)
+  return assertion
+}
+
+async function getAccessToken(clientAssertion: string): Promise<AccessToken> {
   const params = new URLSearchParams()
   params.append('grant_type', 'client_credentials')
+  params.append(
+    'client_assertion_type',
+    'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+  )
+  params.append('client_assertion', clientAssertion)
 
   try {
-    const { data } = await axios.post<TokenResponse>(tokenUrl, params, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      auth: { username: clientId, password: clientSecret }
+    logger.info(`getting new accessToken`)
+    const response = await axios.post<AccessTokenResponse>(tokenUrl, params, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     })
-
-    accessToken = data.access_token
-    // Refresh token a bit before it expires (e.g., 1 minute before)
-    const expiresInMs = (data.expires_in - 60) * 1000
-    if (fetchTokenTimeout) {
-      clearTimeout(fetchTokenTimeout)
+    // logger.info(`accessToken: ${JSON.stringify(response.data)}`)
+    logger.info(`scope: ${response.data.scope}`)
+    return {
+      accessToken: response.data.access_token,
+      expiresIn: Math.floor(Date.now() / 1000) + response.data.expires_in - 10
     }
-    fetchTokenTimeout = setTimeout(
-      () => fetchAndStoreToken(clientId, clientSecret),
-      expiresInMs
-    )
-
-    return accessToken
   } catch (error) {
-    console.error('Error fetching token:', error)
+    console.error('Error fetching access token:', error)
     throw error
   }
 }
 
-function getToken(): string | null {
-  return accessToken
+const ensureSFAuthenticated = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Check if a valid token is already cached and not about to expire
+    if (!cachedToken || !tokenExpiry || tokenExpiry <= Math.floor(Date.now() / 1000)) {
+      const clientAssertion = generateClientAssertion(clientId, privateKeyPath)
+      const { accessToken, expiresIn } = await getAccessToken(clientAssertion)
+
+      // Cache the new token and its expiry time
+      cachedToken = accessToken
+      tokenExpiry = expiresIn
+
+      // Log the new token's expiry time in seconds from now
+      const secondsUntilExpiry = expiresIn - Math.floor(Date.now() / 1000)
+      logger.info(`New token acquired. Seconds until expiry: ${secondsUntilExpiry}`)
+    } else {
+      // For an existing token, calculate and log the remaining time until expiry
+      const secondsUntilExpiry = tokenExpiry - Math.floor(Date.now() / 1000)
+      logger.info(
+        `Existing token being used. Seconds until expiry: ${secondsUntilExpiry}`
+      )
+    }
+
+    req.sfApiToken = cachedToken
+    next()
+  } catch (error) {
+    console.error('Error ensuring SF API authentication:', error)
+    res.status(500).send('Failed to authenticate with SF API')
+  }
 }
 
-export { fetchAndStoreToken, getToken }
+export { ensureSFAuthenticated }
