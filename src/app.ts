@@ -10,10 +10,36 @@ import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn'
 import { CronJob } from 'cron'
 import { deleteOldJobs } from './middleware/jobCleaner'
+import { fetchAndStoreToken, getToken } from './middleware/tokenManager'
 import swaggerUi from 'swagger-ui-express'
 import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
 
+// Instantiate th app
 const app: Express = express()
+
+// Grab client ID and secret from environment variables
+const clientId = process.env.CLIENT_ID
+const clientSecret = process.env.CLIENT_SECRET
+
+if (!clientId || !clientSecret) {
+  logger.error(
+    'CLIENT_ID or CLIENT_SECRET is undefined. Please check your environment variables.'
+  )
+  process.exit(1) // Exit the process with an error code
+}
+
+// Fetch and store the SF API token on application start
+fetchAndStoreToken(clientId, clientSecret).catch(console.error)
+
+// Endpoint for the frontend to get the current access token
+app.get('/api/token', (req, res) => {
+  const token = getToken()
+  if (token) {
+    res.json({ accessToken: token })
+  } else {
+    res.status(500).json({ error: 'Failed to retrieve access token' })
+  }
+})
 
 logger.info(`Starting in ${process.env.NODE_ENV} mode`)
 
@@ -29,6 +55,7 @@ connectDB()
 //   console.log(req.headers)
 //   next()
 // })
+// Debug - this should be logged by teh requestLogger below.
 app.use((req, res, next) => {
   const protocol = req.get('X-Forwarded-Proto') || req.protocol
   const host = req.get('X-Forwarded-Host') || req.get('Host')
