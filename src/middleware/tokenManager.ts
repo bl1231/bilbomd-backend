@@ -92,7 +92,9 @@ const ensureSFAuthenticated = async (
         `Existing token being used. Seconds until expiry: ${secondsUntilExpiry}`
       )
     }
-
+    if (process.env.BILBOMD_ENV === 'development') {
+      logger.info(cachedToken)
+    }
     req.sfApiToken = cachedToken
     next()
   } catch (error) {
