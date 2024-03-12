@@ -1,59 +1,166 @@
 // eslint-disable-next-line no-unused-vars
 import { Express, Request, Response } from 'express'
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
+import { logger } from '../middleware/loggers'
 
 const baseURL = 'https://api.nersc.gov/api/v1.2'
 
-const getStatus = async (req: Request, res: Response) => {
+// Define interfaces for the request and response structures
+interface RequestConfig {
+  endpoint: string
+  token: string
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  data?: Record<string, unknown>
+  params?: Record<string, string | number | boolean>
+}
+
+interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  error?: string
+}
+
+interface StorageStats {
+  name: string
+  bytes_given: number
+  bytes_used: number
+  bytes_given_human: string
+  bytes_used_human: string
+  files_given: number
+  files_used: number
+}
+
+interface ProjectStats {
+  id: number
+  description: string
+  repo_name: string
+  iris_role?: string
+  hours_given: number
+  hours_used: number
+  project_hours_given: number
+  project_hours_used: number
+  projdir_usage: StorageStats[]
+  project_projdir_usage: StorageStats
+  hpss_usage?: StorageStats[] // Assuming this can be optional
+}
+
+type NerscProjectsArray = ProjectStats[]
+
+async function makeSFApiRequest<T>({
+  endpoint,
+  token,
+  method = 'GET',
+  data = {},
+  params = {}
+}: RequestConfig): Promise<ApiResponse<T>> {
   try {
-    // Assuming req.sfApiToken is the OAuth2 token added by your authentication middleware
-    const sfApiToken = req.sfApiToken
-    if (!sfApiToken) {
-      // If the token isn't present, respond with an unauthorized status
-      return res.status(401).json({ error: 'Unauthorized: No SF API token provided.' })
+    if (!token) {
+      throw new Error('Unauthorized: No SF API token provided.')
     }
 
-    const response = await axios.get(`${baseURL}/status`, {
-      headers: {
-        Authorization: `Bearer ${sfApiToken}`
-      }
-    })
+    const config = {
+      method,
+      url: `${baseURL}${endpoint}`,
+      headers: { Authorization: `Bearer ${token}` },
+      params,
+      ...(Object.keys(data).length > 0 && { data }) // Include data if it's not empty
+    }
 
-    // Send back the API response
-    res.json(response.data)
-  } catch (error) {
-    console.error('Error fetching SF API status:', error)
-    // Respond with a 500 internal server error status
-    // Adjust the error handling as appropriate for your use case
-    res.status(500).json({ error: 'Failed to fetch status from SF API.' })
+    const response: AxiosResponse<T> = await axios(config)
+    return { success: true, data: response.data }
+  } catch (error: unknown) {
+    // TypeScript 4.4 and later requires catch clauses to use the type 'unknown'
+    // Check if the error is an AxiosError
+    if (axios.isAxiosError(error)) {
+      console.error(`Error making SF API request to ${endpoint}:`, error)
+      // Now that we've narrowed the type to AxiosError, we can safely access error.response
+      return {
+        success: false,
+        error: error.response?.data.error || error.message
+      }
+    } else {
+      // Handle non-Axios errors
+      console.error('An unexpected error occurred:', error)
+      return {
+        success: false,
+        error: 'An unexpected error occurred'
+      }
+    }
   }
+}
+
+const getStatus = async (req: Request, res: Response) => {
+  if (!req.sfApiToken) {
+    return res.status(401).json({ error: 'No SF API token provided.' })
+  }
+  const { success, data, error } = await makeSFApiRequest({
+    endpoint: '/status',
+    token: req.sfApiToken as string
+  })
+
+  if (!success) {
+    return res.status(500).json({ error })
+  }
+
+  res.json(data)
 }
 
 const getUser = async (req: Request, res: Response) => {
   const username = 'sclassen'
-  try {
-    const sfApiToken = req.sfApiToken
-    if (!sfApiToken) {
-      return res.status(401).json({ error: 'Unauthorized: No SF API token provided.' })
+  if (!req.sfApiToken) {
+    return res.status(401).json({ error: 'No SF API token provided.' })
+  }
+  const { success, data, error } = await makeSFApiRequest({
+    endpoint: '/account',
+    token: req.sfApiToken as string,
+    params: {
+      username: username
     }
+  })
 
-    const response = await axios.get(`${baseURL}/account`, {
-      headers: {
-        Authorization: `Bearer ${sfApiToken}`
-      },
-      params: {
-        username: username
-      }
+  if (!success) {
+    return res.status(500).json({ error })
+  }
+
+  res.json(data)
+}
+
+const getProjectHours = async (req: Request, res: Response) => {
+  const projectName = req.params.repocode
+  if (!req.sfApiToken) {
+    res.status(401).json({ error: 'No SF API token provided.' })
+  }
+
+  try {
+    const { success, data, error } = await makeSFApiRequest<NerscProjectsArray>({
+      endpoint: '/account/projects',
+      token: req.sfApiToken as string
     })
 
-    // Send back the API response
-    res.json(response.data)
+    if (!success) {
+      res.status(500).json({ error })
+    }
+
+    if (!data) {
+      return res.status(404).json({ error: 'No data for that project' })
+    }
+    const project = data.find((p: ProjectStats) => p.repo_name === projectName)
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found.' })
+    }
+
+    const response = {
+      hours_given: project.hours_given,
+      hours_used: project.hours_used
+    }
+
+    logger.info(`Project ${projectName} hours: ${JSON.stringify(response)}`)
+    res.json(response)
   } catch (error) {
-    console.error('Error fetching SF API status:', error)
-    // Respond with a 500 internal server error status
-    // Adjust the error handling as appropriate for your use case
-    res.status(500).json({ error: 'Failed to fetch status from SF API.' })
+    console.error(`Error fetching project hours for ${projectName}:`, error)
+    res.status(500).json({ error: 'Failed to fetch project hours.' })
   }
 }
 
-export { getStatus, getUser }
+export { getStatus, getUser, getProjectHours }
