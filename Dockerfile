@@ -54,6 +54,7 @@ RUN git clone https://github.com/jbhopkins/bioxtasraw.git
 
 # Install BioXTAS RAW from source
 WORKDIR /tmp/bioxtasraw
+RUN conda update -n base -c defaults conda
 RUN python setup.py build_ext --inplace && \
     pip install .
 
