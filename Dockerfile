@@ -67,6 +67,8 @@ WORKDIR /app
 
 # Create a user and group with the provided IDs
 RUN mkdir /home/bilbo
+ARG USER_ID
+ARG GROUP_ID
 RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
@@ -82,7 +84,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 COPY --chown=bilbo:bilbomd . .
 
