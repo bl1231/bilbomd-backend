@@ -71,6 +71,7 @@ To test if the `Dockerfile` will build you can use this command:
 
 ```bash
 docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
+docker build --build-arg USER_ID=62704 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
 ```
 
 ## Authors

@@ -5,7 +5,7 @@ import { logger } from '../middleware/loggers'
 import { Request, Response, NextFunction } from 'express'
 
 const tokenUrl = 'https://oidc.nersc.gov/c2id/token'
-const clientId = process.env.SFAPI_CLIENT_ID as string // Assert non-null with 'as string'
+const clientId = process.env.SFAPI_CLIENT_ID as string
 const privateKeyPath = '/secrets/priv_key.pem'
 
 let cachedToken: string | null = null
@@ -41,6 +41,7 @@ function generateClientAssertion(clientId: string, privateKeyPath: string): stri
   return assertion
 }
 
+// Exchange clientAssertion for an accessToken
 async function getAccessToken(clientAssertion: string): Promise<AccessToken> {
   const params = new URLSearchParams()
   params.append('grant_type', 'client_credentials')
