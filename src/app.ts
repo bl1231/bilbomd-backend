@@ -13,6 +13,7 @@ import { deleteOldJobs } from './middleware/jobCleaner'
 import swaggerUi from 'swagger-ui-express'
 import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
 
+// Instantiate the app
 const app: Express = express()
 
 logger.info(`Starting in ${process.env.NODE_ENV} mode`)
@@ -29,6 +30,7 @@ connectDB()
 //   console.log(req.headers)
 //   next()
 // })
+// Debug - this should be logged by teh requestLogger below.
 app.use((req, res, next) => {
   const protocol = req.get('X-Forwarded-Proto') || req.protocol
   const host = req.get('X-Forwarded-Host') || req.get('Host')
@@ -59,6 +61,8 @@ app.use('/', express.static('public'))
 app.use('/', require('./routes/root'))
 
 app.use('/admin/bullmq', adminRoutes)
+
+app.use('/sfapi', require('./routes/sfapi'))
 
 // Group version 1 routes under /api/v1
 const v1Router = express.Router()

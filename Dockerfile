@@ -54,6 +54,7 @@ RUN git clone https://github.com/jbhopkins/bioxtasraw.git
 
 # Install BioXTAS RAW from source
 WORKDIR /tmp/bioxtasraw
+RUN conda update -n base -c defaults conda
 RUN python setup.py build_ext --inplace && \
     pip install .
 
@@ -62,11 +63,12 @@ RUN python setup.py build_ext --inplace && \
 FROM bilbomd-backend-step2 AS bilbomd-backend
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
-VOLUME [ "/bilbomd/uploads" ]
 WORKDIR /app
 
 # Create a user and group with the provided IDs
 RUN mkdir /home/bilbo
+ARG USER_ID=1001
+ARG GROUP_ID=1001
 RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
@@ -79,14 +81,17 @@ USER bilbo:bilbomd
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-COPY package*.json ./
+COPY --chown=bilbo:bilbomd package*.json .
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 COPY --chown=bilbo:bilbomd . .
 
-# This can be mapped to a different port of the Docker host
+# NERSC requires container to me run as sclassen UID=62704
+USER root
+RUN chown -R 62704:0 "/home/bilbo/.npm"
+
 EXPOSE 3500
 
 # this can be overridden in docker-compose.dev.yml
