@@ -8,7 +8,7 @@ const baseURL = 'https://api.nersc.gov/api/v1.2'
 // Define interfaces for the request and response structures
 interface RequestConfig {
   endpoint: string
-  token: string
+  token?: string
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   data?: Record<string, unknown>
   params?: Record<string, string | number | boolean>
@@ -89,13 +89,46 @@ async function makeSFApiRequest<T>({
   }
 }
 
-const getStatus = async (req: Request, res: Response) => {
-  if (!req.sfApiToken) {
-    return res.status(401).json({ error: 'No SF API token provided.' })
+async function makeUnauthenticatedSFApiRequest<T>({
+  endpoint,
+  method = 'GET',
+  data = {},
+  params = {}
+}: RequestConfig): Promise<ApiResponse<T>> {
+  try {
+    const config = {
+      method,
+      url: `${baseURL}${endpoint}`,
+      params,
+      ...(Object.keys(data).length > 0 && { data }) // Include data if it's not empty
+    }
+
+    const response: AxiosResponse<T> = await axios(config)
+    return { success: true, data: response.data }
+  } catch (error: unknown) {
+    // TypeScript 4.4 and later requires catch clauses to use the type 'unknown'
+    // Check if the error is an AxiosError
+    if (axios.isAxiosError(error)) {
+      console.error(`Error making SF API request to ${endpoint}:`, error)
+      // Now that we've narrowed the type to AxiosError, we can safely access error.response
+      return {
+        success: false,
+        error: error.response?.data.error || error.message
+      }
+    } else {
+      // Handle non-Axios errors
+      console.error('An unexpected error occurred:', error)
+      return {
+        success: false,
+        error: 'An unexpected error occurred'
+      }
+    }
   }
-  const { success, data, error } = await makeSFApiRequest({
-    endpoint: '/status',
-    token: req.sfApiToken as string
+}
+
+const getStatus = async (req: Request, res: Response) => {
+  const { success, data, error } = await makeUnauthenticatedSFApiRequest({
+    endpoint: '/status'
   })
 
   if (!success) {
