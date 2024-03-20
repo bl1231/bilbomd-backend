@@ -9,7 +9,10 @@ from typing import Tuple, Optional
 import igraph
 import numpy
 
+# This is defining the pLDDT threshold for determing flex/rigid
+# which Alphafold2 writes to teh B-factor column
 B_THRESHOLD = 50.00
+MIN_CLUSTER_LENGTH = 5
 CONST_FILE_PATH = "const.inp"
 CLUSTER_FILE = "clusters.csv"
 TEMP_FILE_JSON = "temp.json"
@@ -165,7 +168,7 @@ def define_clusters_for_selected_pae(
     g.es["weight"] = sel_weights
 
     vc = g.community_leiden(
-        weights="weight", resolution=graph_resolution / 100, n_iterations=-1
+        weights="weight", resolution=graph_resolution / 100, n_iterations=10
     )
     membership = numpy.array(vc.membership)
 
@@ -193,6 +196,7 @@ def separate_into_regions(numbers):
     """
     Seprates into regions
     """
+    numbers = sorted(numbers)  # Ensure numbers are sorted
     regions = []
     current_region = [numbers[0]]
     for i in range(1, len(numbers)):
@@ -212,17 +216,18 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
     """
     # print(chain_segment_list)
     rb = []
-    for row in cluster_list:
+    for idx, cluster in enumerate(cluster_list):
         pairs = []
-        if len(row) >= 5:
-            numbers = [int(num) for num in row]
-            # print(f"{len(row)} - {numbers}")
+        if len(cluster) >= MIN_CLUSTER_LENGTH:
+            print(f"cluster{idx} len: {len(cluster)}: {cluster}")
+            numbers = [int(num) for num in cluster]
+            # print(f"{len(cluster)} - {numbers}")
             # consecutive_regions = separate_into_regions(numbers, chain_segment_list)
             consecutive_regions = separate_into_regions(numbers)
             for region in consecutive_regions:
                 first_resnum_cluster = region[0]
                 last_resnum_cluster = region[-1]
-                # check which rigid domains  are rigid and
+                # check which rigid domains are rigid and
                 # which are flexbible based on avearge Bfactor
                 bfactors = []
                 with open(file=crd_file, mode="r", encoding="utf8") as infile:
@@ -270,34 +275,36 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
                                     segid = words[7]
 
                     new_pair = (str1, str2, segid)
+                    print(f"new_pair: {new_pair} pLDDT: {bfactor_avg}")
                     pairs.append(new_pair)
             rb.append(pairs)
-    # increase the gap between rigid bodies
-    # why? what is this doing?
+    print(f"1-RBs: {rb}")
+
+    # Optimizing Rigid Bodies with a minimum gap
     rigid_body_optimized = []
-    for row in rb:
-        pairs_optimized = []
-        for pair in row:
-            residue_1 = pair[0]
-            residue_2 = pair[1]
-            segid = pair[2]
+    for i_clus, cluster in enumerate(rb):
+        if not cluster:  # Skip empty clusters
+            continue
+        cluster_optimized = []
+        for i, pair in enumerate(cluster):
+            # Copy the pair to avoid mutating the original while iterating
+            pair = list(pair)
+            print(f"{i_clus} pair: {pair}")
+            if i < len(cluster) - 1:  # If not the last pair in the cluster
+                next_pair = cluster[i + 1]
+                if pair[2] == next_pair[2]:  # If in the same segment
+                    gap = next_pair[0] - pair[1] - 1
+                    print(f"i: {i} gap: {gap} pair: {pair}")
+                    if gap < 2:  # If the gap is less than 3 residues
+                        # Adjust the end residue of the current pair to enforce the gap
+                        pair[1] = next_pair[0] - 3
+            cluster_optimized.append(tuple(pair))
+        rigid_body_optimized.append(cluster_optimized)
 
-            for row in rb:
-                for pair in row:
-                    first_residue_b = pair[0]
-                    # second_residue_b = pair[1]
-                    segid_b = pair[2]
-                    if int(residue_2) + 1 == int(first_residue_b) and segid == segid_b:
-                        residue_2 = residue_2 - 3
+    # Removing empty lists is already handled by the check for empty clusters
+    rigid_body_optimized = [cluster for cluster in rigid_body_optimized if cluster]
 
-            new_pair = (residue_1, residue_2, segid)
-            pairs_optimized.append(new_pair)
-        rigid_body_optimized.append(pairs_optimized)
-
-    for row in rigid_body_optimized:
-        if row:
-            pass
-    # print(f"rigid body list: {rigid_body_optimized}")
+    print(f"2-RBs: {rigid_body_optimized}")
     return rigid_body_optimized
 
 
@@ -381,7 +388,7 @@ if __name__ == "__main__":
         SELECTED_COLS_START,
         SELECTED_COLS_END,
     )
-    print(f"pae_clusters: {pae_clusters}")
+    # print(f"pae_clusters: {pae_clusters}")
 
     # rigid_body = define_rigid_clusters(
     #     pae_clusters, args.crd_file, first_residue, chain_segments
@@ -389,20 +396,20 @@ if __name__ == "__main__":
     rigid_body_clusters = define_rigid_clusters(
         pae_clusters, args.crd_file, first_residue
     )
-    print(f"rigid_body_clusters: {rigid_body_clusters}")
 
     write_const_file(rigid_body_clusters, CONST_FILE_PATH)
+    print("done")
 
-    max_len = max(len(c) for c in pae_clusters)
-    pae_clusters = [
-        list(c) + [""] * (max_len - len(c)) for c in pae_clusters if len(c) > 2
-    ]
+    # max_len = max(len(c) for c in pae_clusters)
+    # pae_clusters = [
+    #     list(c) + [""] * (max_len - len(c)) for c in pae_clusters if len(c) > 2
+    # ]
 
-    with open(file=CLUSTER_FILE, mode="wt", encoding="utf8") as outfile:
-        for c in pae_clusters:
-            outfile.write(",".join([str(e) for e in c]) + "\n")
+    # with open(file=CLUSTER_FILE, mode="wt", encoding="utf8") as outfile:
+    #     for c in pae_clusters:
+    #         outfile.write(",".join([str(e) for e in c]) + "\n")
 
-    print(
-        f"Wrote {len(pae_clusters)} clusters to {CLUSTER_FILE}. "
-        f"The largest cluster contains {max_len} residues."
-    )
+    # print(
+    #     f"Wrote {len(pae_clusters)} clusters to {CLUSTER_FILE}. "
+    #     f"The largest cluster contains {max_len} residues."
+    # )

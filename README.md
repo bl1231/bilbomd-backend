@@ -86,35 +86,33 @@ Then you need to migrate the image into `$SCRATCH` filesystem to use it.
 podman-hp migrate bl1231/bilbomd-backend:latest
 ```
 
-1  docker system prune
-  572  podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
-  573  cd bilbomd-backend/
-  574  podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
-  575  docker image ls
-  576  git status
-  577  kubectl
-  578  docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
-  579  docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
-  580  docker login
-  581  docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
-  582  podman-hpc migrate bl1231/bilbomd-backend:latest
-  583  podman-hpc images
-  584  docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:2.0.0
-  585  docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
-  586  docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
-  587  podman-hpc login registry.nersc.gov
-  588  docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
-  589  docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-  590  docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-  591  podman-hpc build -t bl1231/bilbomd-backend .
-  592  docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-  593  docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-  594  history | grep docker
-  595  docker build --build-arg USER_ID=62704 --build-arg GROUP_ID=62704 -t bl1231/bilbomd-backend .
-  596  docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-  597  docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-
-
+1 docker system prune
+572 podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
+573 cd bilbomd-backend/
+574 podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
+575 docker image ls
+576 git status
+577 kubectl
+578 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
+579 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
+580 docker login
+581 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
+582 podman-hpc migrate bl1231/bilbomd-backend:latest
+583 podman-hpc images
+584 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:2.0.0
+585 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
+586 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
+587 podman-hpc login registry.nersc.gov
+588 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
+589 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+590 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+591 podman-hpc build -t bl1231/bilbomd-backend .
+592 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+593 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+594 history | grep docker
+595 docker build --build-arg USER_ID=62704 --build-arg GROUP_ID=62704 -t bl1231/bilbomd-backend .
+596 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+597 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
 
 ## Authors
 
@@ -123,6 +121,8 @@ podman-hp migrate bl1231/bilbomd-backend:latest
 
 ## Version History
 
+- 1.8.0
+  - Mainly changes to allow building and deploying on local laptop and NERSC SPIN.
 - 1.7.0
   - Enforce PEP8 Python guidelines. Set default formatter to Black.
   - Refactor `pae_ratios.py` script.
