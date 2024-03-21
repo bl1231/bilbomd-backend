@@ -8,12 +8,11 @@ import { spawn, ChildProcess } from 'node:child_process'
 import { User } from '../model/User'
 import { queueJob, waitForJobCompletion, pdb2crdQueueEvents } from '../queues/pdb2crd'
 
-const uploadFolder: string = process.env.DATA_VOL ?? '/'
-const af2paeUploads = path.join(uploadFolder, 'af2pae_uploads')
+const uploadFolder: string = process.env.DATA_VOL ?? '/bilbomd/uploads'
 
 const createNewConstFile = async (req: Request, res: Response) => {
   const UUID = uuid()
-  const jobDir = path.join(af2paeUploads, UUID)
+  const jobDir = path.join(uploadFolder, UUID)
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
@@ -84,7 +83,7 @@ const downloadConstFile = async (req: Request, res: Response) => {
   const { uuid } = req.query
   if (!uuid) return res.status(400).json({ message: 'Job UUID required.' })
   logger.info(`Request to download ${uuid}`)
-  const constFile = path.join(af2paeUploads, uuid.toString(), 'const.inp')
+  const constFile = path.join(uploadFolder, uuid.toString(), 'const.inp')
   try {
     await fs.promises.access(constFile)
     res.download(constFile, (err) => {

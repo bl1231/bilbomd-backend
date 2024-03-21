@@ -46,15 +46,15 @@ FROM bilbomd-backend-step1 AS bilbomd-backend-step2
 
 # install deps
 RUN apt-get update && \
-    apt-get install -y zip build-essential libarchive13 git
+    apt-get install -y zip build-essential libarchive13
 
 # Install BioXYAS from source
 WORKDIR /tmp
-RUN git clone https://github.com/jbhopkins/bioxtasraw.git
-
+# RUN git clone https://github.com/jbhopkins/bioxtasraw.git
+COPY bioxtas/bioxtasraw-master.zip .
+RUN unzip bioxtasraw-master.zip && rm bioxtasraw-master.zip
 # Install BioXTAS RAW from source
-WORKDIR /tmp/bioxtasraw
-RUN conda update -n base -c defaults conda
+WORKDIR /tmp/bioxtasraw-master
 RUN python setup.py build_ext --inplace && \
     pip install .
 

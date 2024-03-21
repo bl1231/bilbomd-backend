@@ -9,6 +9,11 @@ const spawn = require('child_process').spawn
 import { queueJob, getBullMQJob } from '../queues/bilbomd'
 import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper'
 import {
+  queueJob as queuePdb2CrdJob,
+  waitForJobCompletion,
+  pdb2crdQueueEvents
+} from '../queues/pdb2crd'
+import {
   Job,
   BilboMdJob,
   IBilboMDJob,
@@ -197,17 +202,17 @@ const handleBilboMDAutoJob = async (
     const { job_type: jobType } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(
-      `CRD File: ${
-        files['crd_file'] ? files['crd_file'][0].originalname.toLowerCase() : 'Not Found'
+      `PDB File: ${
+        files['pdb_file'] ? files['pdb_file'][0].originalname.toLowerCase() : 'Not Found'
       }`
     )
+
     const now = new Date()
     // logger.info(`now:  ${now.toDateString()}`)
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
       uuid: UUID,
-      psf_file: files['psf_file'][0].originalname.toLowerCase(),
-      crd_file: files['crd_file'][0].originalname.toLowerCase(),
+      pdb_file: files['pdb_file'][0].originalname.toLowerCase(),
       pae_file: files['pae_file'][0].originalname.toLowerCase(),
       data_file: files['dat_file'][0].originalname.toLowerCase(),
       conformational_sampling: 3,
@@ -221,6 +226,24 @@ const handleBilboMDAutoJob = async (
     await newJob.save()
     logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
 
+    // Convert PDB to PSF and CRD
+    const Pdb2CrdBullId = await queuePdb2CrdJob({
+      type: 'Pdb2Crd',
+      title: 'convert PDB to CRD',
+      uuid: UUID
+    })
+    logger.info(`PDB 2 CRD Job assigned UUID: ${UUID}`)
+    logger.info(`PDB 2 CRD Job assigned BullMQ ID: ${Pdb2CrdBullId}`)
+
+    // Need to wait here until the BullMQ job is finished
+    await waitForJobCompletion(Pdb2CrdBullId, pdb2crdQueueEvents)
+    logger.info(`PDB 2 CRD completed.`)
+
+    // add PSF and CRD files to Mongo entry
+    newJob.psf_file = 'bilbomd_pdb2crd.psf'
+    newJob.crd_file = 'bilbomd_pdb2crd.crd'
+    await newJob.save()
+
     // Queue the job
     const BullId = await queueJob({
       type: jobType,
@@ -231,13 +254,13 @@ const handleBilboMDAutoJob = async (
 
     logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
     logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+
     res.status(200).json({
       message: `New ${jobType} Job ${newJob.title} successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
   } catch (error) {
-    // Handle any errors and send an appropriate response to the client
     logger.error(error)
     res.status(500).json({ message: 'Failed to create handleBilboMDAutoJob job' })
   }
