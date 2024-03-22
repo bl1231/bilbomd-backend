@@ -121,6 +121,8 @@ podman-hp migrate bl1231/bilbomd-backend:latest
 
 ## Version History
 
+- 1.8.1
+  - Changes to allow PDB files for BilboMD Auto
 - 1.8.0
   - Mainly changes to allow building and deploying on local laptop and NERSC SPIN.
 - 1.7.0
