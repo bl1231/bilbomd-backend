@@ -14,8 +14,9 @@ interface IJob extends Document {
 }
 
 interface IBilboMDJob extends IJob {
-  psf_file: string
-  crd_file: string
+  psf_file?: string
+  crd_file?: string
+  pdb_file?: string
   const_inp_file: string
   conformational_sampling: number
   rg_min: number
@@ -65,6 +66,7 @@ const jobSchema = new Schema<IJob>(
 )
 
 const bilboMdJobSchema = new Schema<IBilboMDJob>({
+  pdb_file: { type: String, required: true },
   psf_file: { type: String, required: true },
   crd_file: { type: String, required: true },
   const_inp_file: { type: String, required: true },
