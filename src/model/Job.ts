@@ -2,7 +2,7 @@ import { Document, Schema, model } from 'mongoose'
 import { IUser } from './User'
 
 interface IJob extends Document {
-  __t: 'BilboMd' | 'BilboMdAuto' | 'BilboMdScoper'
+  __t: 'BilboMdPDB' | 'BilboMdCRD' | 'BilboMdAuto' | 'BilboMdScoper'
   title: string
   uuid: string
   status: string
@@ -13,9 +13,19 @@ interface IJob extends Document {
   user: IUser
 }
 
-interface IBilboMDJob extends IJob {
+interface IBilboMDPDBJob extends IJob {
   psf_file?: string
   crd_file?: string
+  pdb_file: string
+  const_inp_file: string
+  conformational_sampling: number
+  rg_min: number
+  rg_max: number
+}
+
+interface IBilboMDCRDJob extends IJob {
+  psf_file: string
+  crd_file: string
   pdb_file?: string
   const_inp_file: string
   conformational_sampling: number
@@ -65,8 +75,22 @@ const jobSchema = new Schema<IJob>(
   }
 )
 
-const bilboMdJobSchema = new Schema<IBilboMDJob>({
+const bilboMdPDBJobSchema = new Schema<IBilboMDPDBJob>({
   pdb_file: { type: String, required: true },
+  psf_file: { type: String, required: false },
+  crd_file: { type: String, required: false },
+  const_inp_file: { type: String, required: true },
+  conformational_sampling: {
+    type: Number,
+    enum: [1, 2, 3, 4],
+    default: 1
+  },
+  rg_min: { type: Number, required: true, min: 10, max: 100 },
+  rg_max: { type: Number, required: true, min: 10, max: 100 }
+})
+
+const bilboMdCRDJobSchema = new Schema<IBilboMDCRDJob>({
+  pdb_file: { type: String, required: false },
   psf_file: { type: String, required: true },
   crd_file: { type: String, required: true },
   const_inp_file: { type: String, required: true },
@@ -99,15 +123,18 @@ const bilboMdScoperJobSchema = new Schema<IBilboMDScoperJob>({
 })
 
 const Job = model('Job', jobSchema)
-const BilboMdJob = Job.discriminator('BilboMd', bilboMdJobSchema)
+const BilboMdPDBJob = Job.discriminator('BilboMdPDB', bilboMdPDBJobSchema)
+const BilboMdCRDJob = Job.discriminator('BilboMdCRD', bilboMdCRDJobSchema)
 const BilboMdAutoJob = Job.discriminator('BilboMdAuto', bilboMdAutoJobSchema)
 const BilboMdScoperJob = Job.discriminator('BilboMdScoper', bilboMdScoperJobSchema)
 
 export {
   Job,
   IJob,
-  BilboMdJob,
-  IBilboMDJob,
+  BilboMdPDBJob,
+  IBilboMDPDBJob,
+  BilboMdCRDJob,
+  IBilboMDCRDJob,
   BilboMdAutoJob,
   IBilboMDAutoJob,
   BilboMdScoperJob,
