@@ -121,6 +121,8 @@ podman-hp migrate bl1231/bilbomd-backend:latest
 
 ## Version History
 
+- 1.8.2
+  - Changes to allow PDB files for BilboMD Classic
 - 1.8.1
   - Changes to allow PDB files for BilboMD Auto
 - 1.8.0
