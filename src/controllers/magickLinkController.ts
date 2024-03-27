@@ -6,46 +6,6 @@ import { Request, Response } from 'express'
 import { sendMagickLinkEmail } from '../config/nodemailerConfig'
 const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
-/**
- * @openapi
- * /magicklink:
- *   post:
- *     summary: Generate a MagickLink for user authentication.
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 description: The email address of the user.
- *     responses:
- *       201:
- *         description: MagickLink and OTP created successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: string
- *                   description: A success message.
- *                 otp:
- *                   type: string
- *                   description: The generated OTP (One-Time Password).
- *       400:
- *         description: Bad request. Missing email.
- *       401:
- *         description: Unauthorized. No account found with the provided email.
- *       403:
- *         description: Forbidden. Account is pending or deactivated.
- *       500:
- *         description: Internal server error.
- */
 const generateMagickLink = async (req: Request, res: Response) => {
   const { email } = req.body
 
@@ -74,7 +34,7 @@ const generateMagickLink = async (req: Request, res: Response) => {
     foundUser.otp = otp
     await foundUser.save()
 
-    const message = 'magicklink requested by %s send OTP: %s'
+    const message = 'Magicklink requested by %s send OTP: %s'
     logger.info(message, foundUser.email, passcode)
 
     if (config.sendEmailNotifications) {
