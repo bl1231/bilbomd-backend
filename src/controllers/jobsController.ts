@@ -15,8 +15,10 @@ import {
 } from '../queues/pdb2crd'
 import {
   Job,
-  BilboMdJob,
-  IBilboMDJob,
+  BilboMdPDBJob,
+  IBilboMDPDBJob,
+  BilboMdCRDJob,
+  IBilboMDCRDJob,
   BilboMdAutoJob,
   IBilboMDAutoJob,
   BilboMdScoperJob,
@@ -95,6 +97,7 @@ const createNewJob = async (req: Request, res: Response) => {
 
     // Use `upload.fields()` to handle multiple files and fields
     upload.fields([
+      { name: 'bilbomd_mode', maxCount: 1 },
       { name: 'psf_file', maxCount: 1 },
       { name: 'pdb_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
@@ -111,23 +114,26 @@ const createNewJob = async (req: Request, res: Response) => {
       }
 
       try {
-        const { email, job_type } = req.body
+        const { email, bilbomd_mode } = req.body
         const foundUser = await User.findOne({ email }).exec()
+
         if (!foundUser) {
           return res.status(401).json({ message: 'No user found with that email' })
         }
-        if (!job_type) {
+
+        if (!bilbomd_mode) {
           return res.status(400).json({ message: 'No job type provided' })
         }
+
         user = foundUser
 
-        if (job_type === 'BilboMD') {
-          logger.info('about to handleBilboMDJob')
+        if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
+          logger.info(`about to handleBilboMDJob ${req.body.bilbomd_mode}`)
           await handleBilboMDJob(req, res, user, UUID)
-        } else if (job_type === 'BilboMDAuto') {
+        } else if (bilbomd_mode === 'auto') {
           logger.info('about to handleBilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, user, UUID)
-        } else if (job_type === 'BilboMDScoper') {
+        } else if (bilbomd_mode === 'scoper') {
           logger.info('about to handleBilboMDScoperJob')
           await handleBilboMDScoperJob(req, res, user, UUID)
         } else {
@@ -152,37 +158,89 @@ const handleBilboMDJob = async (
   UUID: string
 ) => {
   try {
-    const { job_type: jobType } = req.body
+    const { bilbomd_mode: bilbomdMode } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-    // console.log('Received files:', files)
-    const now = new Date()
-    const newJob: IBilboMDJob = new BilboMdJob({
+    logger.info(`bilbomdMode: ${bilbomdMode}`)
+    logger.info(`title: ${req.body.title}`)
+
+    const constInpFile = files['constinp'][0].originalname.toLowerCase()
+    const dataFile = files['expdata'][0].originalname.toLowerCase()
+
+    const jobData = {
       title: req.body.title,
       uuid: UUID,
-      psf_file: files['psf_file'][0].originalname.toLowerCase(),
-      crd_file: files['crd_file'][0].originalname.toLowerCase(),
-      const_inp_file: files['constinp'][0].originalname.toLowerCase(),
-      data_file: files['expdata'][0].originalname.toLowerCase(),
+      const_inp_file: constInpFile,
+      data_file: dataFile,
       conformational_sampling: req.body.num_conf,
       rg_min: req.body.rg_min,
       rg_max: req.body.rg_max,
       status: 'Submitted',
-      time_submitted: now,
+      time_submitted: new Date(),
       user: user
-    })
+    }
+
+    let newJob: IBilboMDPDBJob | IBilboMDCRDJob | undefined
+
+    if (bilbomdMode === 'crd_psf') {
+      const psfFile = files['psf_file']
+        ? files['psf_file'][0].originalname.toLowerCase()
+        : ''
+      const crdFile = files['crd_file']
+        ? files['crd_file'][0].originalname.toLowerCase()
+        : ''
+      // Add specific fields for CRD/PSF mode
+      Object.assign(jobData, { psf_file: psfFile, crd_file: crdFile })
+      newJob = new BilboMdCRDJob(jobData)
+    } else if (bilbomdMode === 'pdb') {
+      const pdbFile = files['pdb_file']
+        ? files['pdb_file'][0].originalname.toLowerCase()
+        : ''
+      // Add specific field for PDB mode
+      Object.assign(jobData, { pdb_file: pdbFile })
+      newJob = new BilboMdPDBJob(jobData)
+    }
+    // Ensure newJob is defined before proceeding
+    if (!newJob) {
+      // Handle the case where newJob wasn't set due to an unsupported bilbomdMode
+      logger.error(`Unsupported bilbomd_mode: ${bilbomdMode}`)
+      return res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
+    }
+    // Save the job to MongoDB
     await newJob.save()
-    logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+    logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
+
+    // ----- move this to worker ----- //
+    // // Convert PDB to PSF and CRD
+    // const Pdb2CrdBullId = await queuePdb2CrdJob({
+    //   type: 'Pdb2Crd',
+    //   title: 'convert PDB to CRD',
+    //   uuid: UUID
+    // })
+    // logger.info(`PDB 2 CRD Job assigned UUID: ${UUID}`)
+    // logger.info(`PDB 2 CRD Job assigned BullMQ ID: ${Pdb2CrdBullId}`)
+
+    // // Need to wait here until the BullMQ job is finished
+    // await waitForJobCompletion(Pdb2CrdBullId, pdb2crdQueueEvents)
+    // logger.info(`PDB 2 CRD completed.`)
+
+    // // add PSF and CRD files to Mongo entry
+    // // These names are hardcoded in the Python/CHARMM script
+    // newJob.psf_file = 'bilbomd_pdb2crd.psf'
+    // newJob.crd_file = 'bilbomd_pdb2crd.crd'
+    // await newJob.save()
+
     const BullId = await queueJob({
-      type: jobType,
+      type: bilbomdMode,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
     })
 
-    logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
-    logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+    logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
+
     res.status(200).json({
-      message: `New ${jobType} Job successfully created`,
+      message: `New ${bilbomdMode} Job successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
@@ -199,7 +257,7 @@ const handleBilboMDAutoJob = async (
   UUID: string
 ) => {
   try {
-    const { job_type: jobType } = req.body
+    const { bilbomd_mode: bilbomdMode } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(
       `PDB File: ${
@@ -224,7 +282,7 @@ const handleBilboMDAutoJob = async (
 
     // Save the job to the database
     await newJob.save()
-    logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+    logger.info(`${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Convert PDB to PSF and CRD
     const Pdb2CrdBullId = await queuePdb2CrdJob({
@@ -246,17 +304,17 @@ const handleBilboMDAutoJob = async (
 
     // Queue the job
     const BullId = await queueJob({
-      type: jobType,
+      type: bilbomdMode,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
     })
 
-    logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
-    logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+    logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
 
     res.status(200).json({
-      message: `New ${jobType} Job ${newJob.title} successfully created`,
+      message: `New ${bilbomdMode} Job ${newJob.title} successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
@@ -273,7 +331,7 @@ const handleBilboMDScoperJob = async (
   UUID: string
 ) => {
   try {
-    const { job_type: jobType } = req.body
+    const { bilbomd_mode: bilbomdMode } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(
       `PDB File: ${
@@ -299,20 +357,20 @@ const handleBilboMDScoperJob = async (
     // logger.info(`in handleBilboMDScoperJob: ${newJob}`)
     // Save the job to the database
     await newJob.save()
-    logger.info(`${jobType} Job saved to MongoDB: ${newJob.id}`)
+    logger.info(`${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Queue the job
     const BullId = await queueScoperJob({
-      type: jobType,
+      type: bilbomdMode,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
     })
 
-    logger.info(`${jobType} Job assigned UUID: ${newJob.uuid}`)
-    logger.info(`${jobType} Job assigned BullMQ ID: ${BullId}`)
+    logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
     res.status(200).json({
-      message: `New ${jobType} Job ${newJob.title} successfully created`,
+      message: `New ${bilbomdMode} Job ${newJob.title} successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
@@ -452,7 +510,8 @@ const getJobById = async (req: Request, res: Response) => {
 
   try {
     const job = (await Job.findOne({ _id: jobId }).exec()) as
-      | IBilboMDJob
+      | IBilboMDPDBJob
+      | IBilboMDCRDJob
       | IBilboMDAutoJob
       | IBilboMDScoperJob
 
@@ -466,7 +525,7 @@ const getJobById = async (req: Request, res: Response) => {
     // Instantiate a bilbomdJob object with id and MongoDB info
     let bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
-    if (job.__t === 'BilboMd') {
+    if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD') {
       bullmq = await getBullMQJob(job.uuid)
       if (bullmq && 'bilbomdStep' in bullmq) {
         bilbomdJob.bullmq = bullmq

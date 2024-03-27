@@ -89,41 +89,41 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
     })
 }
 
-const sendJobCompleteEmail = (email: string, url: string, jobid: string) => {
-  logger.info('send job complete email to %s', email)
-  transporter.use(
-    'compile',
-    hbs({
-      viewEngine: {
-        extname: '.handlebars',
-        layoutsDir: viewPath,
-        defaultLayout: false,
-        partialsDir: partialsPath
-      },
-      viewPath: viewPath,
-      extName: '.handlebars'
-    })
-  )
+// const sendJobCompleteEmail = (email: string, url: string, jobid: string) => {
+//   logger.info('send job complete email to %s', email)
+//   transporter.use(
+//     'compile',
+//     hbs({
+//       viewEngine: {
+//         extname: '.handlebars',
+//         layoutsDir: viewPath,
+//         defaultLayout: false,
+//         partialsDir: partialsPath
+//       },
+//       viewPath: viewPath,
+//       extName: '.handlebars'
+//     })
+//   )
 
-  const mailOptions = {
-    from: user,
-    to: email,
-    subject: 'BilboMD Job Complete',
-    template: 'jobcomplete',
-    context: {
-      jobid: jobid,
-      url: url
-    }
-  }
+//   const mailOptions = {
+//     from: user,
+//     to: email,
+//     subject: 'BilboMD Job Complete',
+//     template: 'jobcomplete',
+//     context: {
+//       jobid: jobid,
+//       url: url
+//     }
+//   }
 
-  transporter
-    .sendMail(mailOptions)
-    .then(() => {
-      logger.info('Job Complete Email sent successfully!')
-    })
-    .catch((err) => {
-      logger.error('Error sending Job Complete email:', err)
-    })
-}
+//   transporter
+//     .sendMail(mailOptions)
+//     .then(() => {
+//       logger.info('Job Complete Email sent successfully!')
+//     })
+//     .catch((err) => {
+//       logger.error('Error sending Job Complete email:', err)
+//     })
+// }
 
-export { sendVerificationEmail, sendMagickLinkEmail, sendJobCompleteEmail }
+export { sendVerificationEmail, sendMagickLinkEmail }

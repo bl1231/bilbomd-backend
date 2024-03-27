@@ -2,7 +2,7 @@ import { logger } from '../middleware/loggers'
 import fs from 'fs-extra'
 import path from 'path'
 import { Job } from '../model/Job'
-import { IJob, IBilboMDJob, IBilboMDAutoJob, IBilboMDScoperJob } from '../model/Job'
+import { IJob, IBilboMDScoperJob } from '../model/Job'
 import { FoxsData, FoxsDataPoint } from 'types/foxs'
 // eslint-disable-next-line no-unused-vars
 import { Express, Request, Response } from 'express'
@@ -47,108 +47,108 @@ const getFoxsData = async (req: Request, res: Response) => {
   if (!job) {
     return res.status(404).json({ message: `No job matches ID ${jobId}.` })
   }
-
-  // Type assertion based on the __t field
-  let typedJob: IJob | IBilboMDJob | IBilboMDAutoJob | IBilboMDScoperJob
-  if (job.__t === 'BilboMd' || job.__t === 'BilboMdAuto') {
-    typedJob = job as IBilboMDJob | IBilboMDAutoJob
-  } else if (job.__t === 'BilboMdScoper') {
-    typedJob = job as IBilboMDScoperJob
-  } else {
-    // eslint-disable-next-line no-unused-vars
-    typedJob = job // Default to base IJob if none of the specific types match
-  }
-
-  if (typedJob.__t === 'BilboMdScoper' && 'pdb_file' in typedJob) {
-    const datFileBase = typedJob.data_file.split('.')[0]
-    const pdbFileBase = typedJob.pdb_file.split('.')[0]
-    const topKFile = path.join(uploadFolder, job.uuid, 'top_k_dirname.txt')
-    const pdbNumber = await readTopKNum(topKFile)
-
-    const foxsAnalysisDir = path.join(uploadFolder, job.uuid, 'foxs_analysis')
-    if (!fs.existsSync(foxsAnalysisDir)) {
-      return res.status(404).json({ message: 'FoXS analysis data not found.' })
+  try {
+    if (job.__t === 'BilboMdScoper') {
+      const scoperJob = job as IBilboMDScoperJob
+      await getFoxsScoperData(scoperJob, res)
+    } else {
+      await getFoxsBilboData(job, res)
     }
-    const originalDat = path.join(
-      uploadFolder,
-      job.uuid,
-      'foxs_analysis',
-      `${pdbFileBase}_${datFileBase}.dat`
-    )
-    const scoperDat = path.join(
-      uploadFolder,
-      job.uuid,
-      'foxs_analysis',
-      `scoper_combined_newpdb_${pdbNumber}_${datFileBase}.dat`
-    )
-    const foxsLog = path.join(uploadFolder, job.uuid, 'foxs_analysis', 'foxs.log')
+  } catch (error) {
+    console.error(`Error getting FoXS data: ${error}`)
+    res.status(500).json({ message: 'Error processing FoXS data.' })
+  }
+}
 
-    const originalDatContent = fs.readFileSync(originalDat, 'utf8')
-    const scoperDatContent = fs.readFileSync(scoperDat, 'utf8')
-    const foxsLogContent = fs.readFileSync(foxsLog, 'utf8')
+const getFoxsScoperData = async (job: IBilboMDScoperJob, res: Response) => {
+  const datFileBase = job.data_file.split('.')[0]
+  const pdbFileBase = job.pdb_file.split('.')[0]
+  const topKFile = path.join(uploadFolder, job.uuid, 'top_k_dirname.txt')
+  const pdbNumber = await readTopKNum(topKFile)
 
-    const dataFromOrig = parseFileContent(originalDatContent)
-    const dataFromScop = parseFileContent(scoperDatContent)
+  const foxsAnalysisDir = path.join(uploadFolder, job.uuid, 'foxs_analysis')
+  if (!fs.existsSync(foxsAnalysisDir)) {
+    return res.status(404).json({ message: 'FoXS analysis data not found.' })
+  }
+  const originalDat = path.join(
+    uploadFolder,
+    job.uuid,
+    'foxs_analysis',
+    `${pdbFileBase}_${datFileBase}.dat`
+  )
+  const scoperDat = path.join(
+    uploadFolder,
+    job.uuid,
+    'foxs_analysis',
+    `scoper_combined_newpdb_${pdbNumber}_${datFileBase}.dat`
+  )
+  const foxsLog = path.join(uploadFolder, job.uuid, 'foxs_analysis', 'foxs.log')
 
-    const chisqFromOrig = extractChiSquared(originalDatContent)
-    const chisqFromScop = extractChiSquared(scoperDatContent)
+  const originalDatContent = fs.readFileSync(originalDat, 'utf8')
+  const scoperDatContent = fs.readFileSync(scoperDat, 'utf8')
+  const foxsLogContent = fs.readFileSync(foxsLog, 'utf8')
 
-    const { c1FromOrig, c1FromScop } = extractC1Values(foxsLogContent)
-    const { c2FromOrig, c2FromScop } = extractC2Values(foxsLogContent)
+  const dataFromOrig = parseFileContent(originalDatContent)
+  const dataFromScop = parseFileContent(scoperDatContent)
 
-    const data = [
-      {
-        filename: typedJob.pdb_file,
-        chisq: chisqFromOrig,
-        c1: c1FromOrig,
-        c2: c2FromOrig,
-        data: dataFromOrig
-      },
-      {
-        filename: `scoper_combined_newpdb_${pdbNumber}.pdb`,
-        chisq: chisqFromScop,
-        c1: c1FromScop,
-        c2: c2FromScop,
-        data: dataFromScop
+  const chisqFromOrig = extractChiSquared(originalDatContent)
+  const chisqFromScop = extractChiSquared(scoperDatContent)
+
+  const { c1FromOrig, c1FromScop } = extractC1Values(foxsLogContent)
+  const { c2FromOrig, c2FromScop } = extractC2Values(foxsLogContent)
+
+  const data = [
+    {
+      filename: job.pdb_file,
+      chisq: chisqFromOrig,
+      c1: c1FromOrig,
+      c2: c2FromOrig,
+      data: dataFromOrig
+    },
+    {
+      filename: `scoper_combined_newpdb_${pdbNumber}.pdb`,
+      chisq: chisqFromScop,
+      c1: c1FromScop,
+      c2: c2FromScop,
+      data: dataFromScop
+    }
+  ]
+  res.json(data)
+}
+
+const getFoxsBilboData = async (job: IJob, res: Response) => {
+  try {
+    let data: FoxsData[] = []
+
+    const jobDir = path.join(uploadFolder, job.uuid)
+    const resultsDir = path.join(uploadFolder, job.uuid, 'results')
+
+    if (!fs.existsSync(resultsDir)) {
+      return res.status(404).json({ message: 'results directory unavailable.' })
+    }
+
+    const datFileBase = job.data_file.split('.')[0]
+    const originalDat = path.join(jobDir, `minimization_output_${datFileBase}.dat`)
+
+    data.push(await createDataObject(originalDat))
+
+    const files = await fs.readdir(resultsDir)
+    const filePattern = /^multi_state_model_\d+_1_1\.dat$/
+
+    for (const file of files) {
+      if (filePattern.test(file)) {
+        logger.info(`getFoXSData ${file}`)
+        const filename = path.join(resultsDir, file)
+        data.push(await createDataObject(filename))
       }
-    ]
+    }
+
     res.json(data)
-  }
-
-  if (typedJob.__t === 'BilboMd' || typedJob.__t === 'BilboMdAuto') {
-    try {
-      let data: FoxsData[] = []
-
-      const jobDir = path.join(uploadFolder, job.uuid)
-      const resultsDir = path.join(uploadFolder, job.uuid, 'results')
-
-      if (!fs.existsSync(resultsDir)) {
-        return res.status(404).json({ message: 'results directory unavailable.' })
-      }
-
-      const datFileBase = typedJob.data_file.split('.')[0]
-      const originalDat = path.join(jobDir, `minimization_output_${datFileBase}.dat`)
-
-      data.push(await createDataObject(originalDat))
-
-      const files = await fs.readdir(resultsDir)
-      const filePattern = /^multi_state_model_\d+_1_1\.dat$/
-
-      for (const file of files) {
-        if (filePattern.test(file)) {
-          logger.info(`getFoXSData ${file}`)
-          const filename = path.join(resultsDir, file)
-          data.push(await createDataObject(filename))
-        }
-      }
-
-      res.json(data)
-    } catch (error) {
-      logger.error(`error getting FoXS analysis data`)
-      return res
-        .status(500)
-        .json({ message: 'Internal server error while processing FoXS analysis data.' })
-    }
+  } catch (error) {
+    logger.error(`error getting FoXS analysis data`)
+    return res
+      .status(500)
+      .json({ message: 'Internal server error while processing FoXS analysis data.' })
   }
 }
 
