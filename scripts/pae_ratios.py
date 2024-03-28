@@ -59,6 +59,7 @@ def get_first_and_last_residue_numbers(
 
     return first_resnum, last_resnum
 
+
 def define_segments(crd_file: str):
     """
     Defines segments. But what is it actually doing?
@@ -137,7 +138,7 @@ def define_clusters_for_selected_pae(
         selected_data["predicted_aligned_error"], dtype=numpy.float64
     )
 
-    pae_power = 1.4
+    pae_power = 2.0
     pae_cutoff = 10
     graph_resolution = 1
     # Avoid divide-by-zero by adding a small epsilon value to the denominator
@@ -185,7 +186,9 @@ def separate_into_regions(numbers, chain_segments: list):
     regions = []
     current_region = [numbers[0]]
     for i in range(1, len(numbers)):
-        if (numbers[i] == numbers[i - 1] + 1) and (numbers[i-1] not in chain_segments):
+        if (numbers[i] == numbers[i - 1] + 1) and (
+            numbers[i - 1] not in chain_segments
+        ):
             current_region.append(numbers[i])
         else:
             regions.append(current_region)
@@ -195,7 +198,9 @@ def separate_into_regions(numbers, chain_segments: list):
     return regions
 
 
-def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int, chain_segment_list: list) -> list:
+def define_rigid_clusters(
+    cluster_list: list, crd_file: str, first_resnum: int, chain_segment_list: list
+) -> list:
     """
     Define a rigid cluster
     """
