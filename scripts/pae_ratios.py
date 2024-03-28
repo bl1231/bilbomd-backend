@@ -10,8 +10,9 @@ import igraph
 import numpy
 
 # This is defining the pLDDT threshold for determing flex/rigid
-# which Alphafold2 writes to teh B-factor column
+# which Alphafold2 writes to the B-factor column
 B_THRESHOLD = 50.00
+PAE_POWER = 2.0
 MIN_CLUSTER_LENGTH = 5
 CONST_FILE_PATH = "const.inp"
 CLUSTER_FILE = "clusters.csv"
@@ -53,7 +54,8 @@ def get_first_and_last_residue_numbers(
                     except ValueError:
                         continue  # Skip lines that do not start with an integer
                 try:
-                    last_resnum = int(words[1])  # Continuously update last_resnum
+                    # Continuously update last_resnum
+                    last_resnum = int(words[1])
                 except ValueError:
                     pass  # Ignore lines that do not start with an integer
 
@@ -138,12 +140,12 @@ def define_clusters_for_selected_pae(
         selected_data["predicted_aligned_error"], dtype=numpy.float64
     )
 
-    pae_power = 2.0
     pae_cutoff = 10
     graph_resolution = 1
     # Avoid divide-by-zero by adding a small epsilon value to the denominator
     epsilon = 1e-6  # You can adjust this value based on your specific needs
-    weights = 1 / (pae_matrix + epsilon) ** pae_power
+    weights = 1 / (pae_matrix + epsilon) ** PAE_POWER
+    print(f"PAE_POWER: {PAE_POWER}")
 
     g = igraph.Graph()
     size = weights.shape[0]
@@ -163,7 +165,8 @@ def define_clusters_for_selected_pae(
         membership_clusters[cluster].append(index)
 
     # Directly sort the cluster values by their length in descending order
-    sorted_clusters = sorted(membership_clusters.values(), key=len, reverse=True)
+    sorted_clusters = sorted(
+        membership_clusters.values(), key=len, reverse=True)
     return sorted_clusters
 
 
@@ -178,7 +181,7 @@ def is_float(arg):
         return False
 
 
-def separate_into_regions(numbers, chain_segments: list):
+def separate_into_regions(numbers, chain_segs: list):
     """
     Seprates into regions
     """
@@ -187,7 +190,7 @@ def separate_into_regions(numbers, chain_segments: list):
     current_region = [numbers[0]]
     for i in range(1, len(numbers)):
         if (numbers[i] == numbers[i - 1] + 1) and (
-            numbers[i - 1] not in chain_segments
+            numbers[i - 1] not in chain_segs
         ):
             current_region.append(numbers[i])
         else:
@@ -212,7 +215,8 @@ def define_rigid_clusters(
             print(f"cluster{idx} len: {len(cluster)}: {cluster}")
             numbers = [int(num) for num in cluster]
             # print(f"{len(cluster)} - {numbers}")
-            consecutive_regions = separate_into_regions(numbers, chain_segment_list)
+            consecutive_regions = separate_into_regions(
+                numbers, chain_segment_list)
             # consecutive_regions = separate_into_regions(numbers)
             for region in consecutive_regions:
                 first_resnum_cluster = region[0]
@@ -259,7 +263,8 @@ def define_rigid_clusters(
                                 if int(words[1]) == first_resnum_cluster + first_resnum:
                                     str1 = int(words[8])
                                 elif (
-                                    int(words[1]) == last_resnum_cluster + first_resnum
+                                    int(words[1]) == last_resnum_cluster +
+                                        first_resnum
                                 ):
                                     str2 = int(words[8])
                                     segid = words[7]
@@ -292,7 +297,8 @@ def define_rigid_clusters(
         rigid_body_optimized.append(cluster_optimized)
 
     # Removing empty lists is already handled by the check for empty clusters
-    rigid_body_optimized = [cluster for cluster in rigid_body_optimized if cluster]
+    rigid_body_optimized = [
+        cluster for cluster in rigid_body_optimized if cluster]
 
     print(f"2-RBs: {rigid_body_optimized}")
     return rigid_body_optimized
@@ -335,7 +341,8 @@ def write_const_file(rigid_body_list: list, output_file):
                     )
                     if n == len(rigid_body):
                         dock_count += 1
-                        const_file.write(f"shape desc dock{dock_count} rigid sele ")
+                        const_file.write(
+                            f"shape desc dock{dock_count} rigid sele ")
                         for number in range(1, n):
                             const_file.write(f"rigid{number} .or. ")
                         const_file.write(f"rigid{n} end \n")
@@ -348,20 +355,29 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Extract PAE matrix for interacxtive region from an AlphaFold PAE matrix."
     )
-    parser.add_argument("pae_file", type=str, help="Name of the PAE JSON file.")
+    parser.add_argument("pae_file", type=str,
+                        help="Name of the PAE JSON file.")
     parser.add_argument("crd_file", type=str, help="Name of the CRD file.")
+    parser.add_argument("pae_power", type=float,
+                        help="PAE power used to weight the cluster_leiden() function")
     args = parser.parse_args()
 
-    first_residue, last_residue = get_first_and_last_residue_numbers(args.crd_file)
+    first_residue, last_residue = get_first_and_last_residue_numbers(
+        args.crd_file)
     # print(f"first_residue: {first_residue} last_residues: {last_residue}")
 
-    # this doesn't appear to be actually doing anything...
+    # chain_segments is used to define breakpoint between PROA-PROB-PROC etc.
+    # it is needed in cases where clusting results in a single Leiden cluster
+    # that spans multiple chains.
     chain_segments = define_segments(args.crd_file)
     print(f"here in main - {chain_segments}")
     SELECTED_ROWS_START = first_residue - 1
     SELECTED_ROWS_END = last_residue - 1
     SELECTED_COLS_START = SELECTED_ROWS_START
     SELECTED_COLS_END = SELECTED_ROWS_END
+
+    # set global constant for pae_power
+    PAE_POWER = args.pae_power
 
     correct_json_brackets(args.pae_file, TEMP_FILE_JSON)
 
@@ -386,17 +402,3 @@ if __name__ == "__main__":
 
     write_const_file(rigid_body_clusters, CONST_FILE_PATH)
     print("done")
-
-    # max_len = max(len(c) for c in pae_clusters)
-    # pae_clusters = [
-    #     list(c) + [""] * (max_len - len(c)) for c in pae_clusters if len(c) > 2
-    # ]
-
-    # with open(file=CLUSTER_FILE, mode="wt", encoding="utf8") as outfile:
-    #     for c in pae_clusters:
-    #         outfile.write(",".join([str(e) for e in c]) + "\n")
-
-    # print(
-    #     f"Wrote {len(pae_clusters)} clusters to {CLUSTER_FILE}. "
-    #     f"The largest cluster contains {max_len} residues."
-    # )
