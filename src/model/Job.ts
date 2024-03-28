@@ -2,7 +2,7 @@ import { Document, Schema, model } from 'mongoose'
 import { IUser } from './User'
 
 interface IJob extends Document {
-  __t: 'BilboMdPDB' | 'BilboMdCRD' | 'BilboMdAuto' | 'BilboMdScoper'
+  __t: 'BilboMd' | 'BilboMdPDB' | 'BilboMdCRD' | 'BilboMdAuto' | 'BilboMdScoper'
   title: string
   uuid: string
   status: string
@@ -125,12 +125,14 @@ const bilboMdScoperJobSchema = new Schema<IBilboMDScoperJob>({
 const Job = model('Job', jobSchema)
 const BilboMdPDBJob = Job.discriminator('BilboMdPDB', bilboMdPDBJobSchema)
 const BilboMdCRDJob = Job.discriminator('BilboMdCRD', bilboMdCRDJobSchema)
+const BilboMdJob = Job.discriminator('BilboMd', bilboMdCRDJobSchema)
 const BilboMdAutoJob = Job.discriminator('BilboMdAuto', bilboMdAutoJobSchema)
 const BilboMdScoperJob = Job.discriminator('BilboMdScoper', bilboMdScoperJobSchema)
 
 export {
   Job,
   IJob,
+  BilboMdJob,
   BilboMdPDBJob,
   IBilboMDPDBJob,
   BilboMdCRDJob,

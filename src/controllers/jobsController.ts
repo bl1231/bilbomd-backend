@@ -525,7 +525,7 @@ const getJobById = async (req: Request, res: Response) => {
     // Instantiate a bilbomdJob object with id and MongoDB info
     let bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
-    if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD') {
+    if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD' || job.__t === 'BilboMd') {
       bullmq = await getBullMQJob(job.uuid)
       if (bullmq && 'bilbomdStep' in bullmq) {
         bilbomdJob.bullmq = bullmq
