@@ -59,21 +59,6 @@ def get_first_and_last_residue_numbers(
 
     return first_resnum, last_resnum
 
-
-# def segment_id(crd, residue):
-#     """
-#     Returns segment ID
-#     """
-#     seg_id = None
-#     with open(file=crd, mode="r", encoding="utf8") as infile:
-#         for line in infile:
-#             words = line.split()
-#             if len(words) == 10 and words[1] == residue:
-#                 seg_id = words[7]
-#                 break
-#     return seg_id
-
-
 def define_segments(crd_file: str):
     """
     Defines segments. But what is it actually doing?
@@ -192,7 +177,7 @@ def is_float(arg):
         return False
 
 
-def separate_into_regions(numbers):
+def separate_into_regions(numbers, chain_segments: list):
     """
     Seprates into regions
     """
@@ -200,7 +185,7 @@ def separate_into_regions(numbers):
     regions = []
     current_region = [numbers[0]]
     for i in range(1, len(numbers)):
-        if numbers[i] == numbers[i - 1] + 1:
+        if (numbers[i] == numbers[i - 1] + 1) and (numbers[i-1] not in chain_segments):
             current_region.append(numbers[i])
         else:
             regions.append(current_region)
@@ -210,7 +195,7 @@ def separate_into_regions(numbers):
     return regions
 
 
-def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) -> list:
+def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int, chain_segment_list: list) -> list:
     """
     Define a rigid cluster
     """
@@ -222,8 +207,8 @@ def define_rigid_clusters(cluster_list: list, crd_file: str, first_resnum: int) 
             print(f"cluster{idx} len: {len(cluster)}: {cluster}")
             numbers = [int(num) for num in cluster]
             # print(f"{len(cluster)} - {numbers}")
-            # consecutive_regions = separate_into_regions(numbers, chain_segment_list)
-            consecutive_regions = separate_into_regions(numbers)
+            consecutive_regions = separate_into_regions(numbers, chain_segment_list)
+            # consecutive_regions = separate_into_regions(numbers)
             for region in consecutive_regions:
                 first_resnum_cluster = region[0]
                 last_resnum_cluster = region[-1]
@@ -366,8 +351,8 @@ if __name__ == "__main__":
     # print(f"first_residue: {first_residue} last_residues: {last_residue}")
 
     # this doesn't appear to be actually doing anything...
-    # chain_segments = define_segments(args.crd_file)
-    # print(f"here in main - {chain_segments}")
+    chain_segments = define_segments(args.crd_file)
+    print(f"here in main - {chain_segments}")
     SELECTED_ROWS_START = first_residue - 1
     SELECTED_ROWS_END = last_residue - 1
     SELECTED_COLS_START = SELECTED_ROWS_START
@@ -390,11 +375,8 @@ if __name__ == "__main__":
     )
     # print(f"pae_clusters: {pae_clusters}")
 
-    # rigid_body = define_rigid_clusters(
-    #     pae_clusters, args.crd_file, first_residue, chain_segments
-    # )
     rigid_body_clusters = define_rigid_clusters(
-        pae_clusters, args.crd_file, first_residue
+        pae_clusters, args.crd_file, first_residue, chain_segments
     )
 
     write_const_file(rigid_body_clusters, CONST_FILE_PATH)

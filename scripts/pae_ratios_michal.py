@@ -321,6 +321,7 @@ if __name__ == "__main__":
     first_residue = first_residue_number(args.crd_file)
     last_residues = last_residue_number(args.crd_file)
     chain_segments = define_segments(args.crd_file)
+    print(f"here in main - {chain_segments}")
     selected_rows_start = str(int(first_residue) - 1)
     selected_rows_end = str(int(last_residues) - 1)
     selected_cols_start = selected_rows_start
