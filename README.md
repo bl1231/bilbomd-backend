@@ -121,6 +121,8 @@ podman-hp migrate bl1231/bilbomd-backend:latest
 
 ## Version History
 
+- 1.8.3
+  - Fix `pae_ratios.py` to accomodate the new frontend UI slider for controlling the weight value used by `igraph` `cluster_leiden()` function.
 - 1.8.2
   - Changes to allow PDB files for BilboMD Classic
 - 1.8.1
