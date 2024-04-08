@@ -39,14 +39,15 @@ const createNewConstFile = async (req: Request, res: Response) => {
 
     upload.fields([
       { name: 'pdb_file', maxCount: 1 },
-      { name: 'pae_file', maxCount: 1 }
+      { name: 'pae_file', maxCount: 1 },
+      { name: 'pae_power', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
         logger.error(err)
         return res.status(500).json({ message: 'Failed to upload one or more files' })
       }
       try {
-        const { email } = req.body
+        const { email, pae_power } = req.body
         const user = await User.findOne({ email }).exec()
         if (!user) {
           return res.status(401).json({ message: 'No user found with that email' })
@@ -62,7 +63,7 @@ const createNewConstFile = async (req: Request, res: Response) => {
         // Need to wait here until the BullMQ job is finished
         await waitForJobCompletion(BullId, pdb2crdQueueEvents)
 
-        await spawnAF2PAEInpFileMaker(jobDir)
+        await spawnAF2PAEInpFileMaker(jobDir, pae_power)
 
         res.status(200).json({
           message: 'New const.inp file successfully created',
@@ -99,14 +100,20 @@ const downloadConstFile = async (req: Request, res: Response) => {
   }
 }
 
-const spawnAF2PAEInpFileMaker = (af2paeDir: string) => {
+const spawnAF2PAEInpFileMaker = (af2paeDir: string, paePower: string) => {
   logger.info(`spawnAF2PAEInpFileMaker af2paeDir ${af2paeDir}`)
   const logFile = path.join(af2paeDir, 'af2pae.log')
   const errorFile = path.join(af2paeDir, 'af2pae_error.log')
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const af2pae_script = '/app/scripts/pae_ratios.py'
-  const args = [af2pae_script, 'pae_file.json', 'bilbomd_pdb2crd.crd']
+  const args = [
+    af2pae_script,
+    'pae_file.json',
+    'bilbomd_pdb2crd.crd',
+    '--pae_power',
+    paePower
+  ]
 
   return new Promise((resolve, reject) => {
     const af2pae: ChildProcess = spawn('python', args, { cwd: af2paeDir })
