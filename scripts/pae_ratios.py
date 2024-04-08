@@ -355,22 +355,29 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Extract PAE matrix for interacxtive region from an AlphaFold PAE matrix."
     )
-    parser.add_argument("pae_file", type=str,
+
+    parser.add_argument("pae_file",
+                        type=str,
                         help="Name of the PAE JSON file.")
-    parser.add_argument("crd_file", type=str, help="Name of the CRD file.")
-    parser.add_argument("pae_power", type=float,
-                        help="PAE power used to weight the cluster_leiden() function")
+    parser.add_argument("crd_file",
+                        type=str,
+                        help="Name of the CRD file.")
+    parser.add_argument("--pae_power",
+                        type=float,
+                        help="PAE power used to weight the cluster_leiden() function",
+                        default=2.0)
+
     args = parser.parse_args()
 
     first_residue, last_residue = get_first_and_last_residue_numbers(
         args.crd_file)
     # print(f"first_residue: {first_residue} last_residues: {last_residue}")
 
-    # chain_segments is used to define breakpoint between PROA-PROB-PROC etc.
+    # define_segments is used to define breakpoint between PROA-PROB-PROC etc.
     # it is needed in cases where clusting results in a single Leiden cluster
     # that spans multiple chains.
     chain_segments = define_segments(args.crd_file)
-    print(f"here in main - {chain_segments}")
+    # print(f"here in main - {chain_segments}")
     SELECTED_ROWS_START = first_residue - 1
     SELECTED_ROWS_END = last_residue - 1
     SELECTED_COLS_START = SELECTED_ROWS_START
