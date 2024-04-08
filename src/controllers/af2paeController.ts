@@ -107,7 +107,13 @@ const spawnAF2PAEInpFileMaker = (af2paeDir: string, paePower: string) => {
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const af2pae_script = '/app/scripts/pae_ratios.py'
-  const args = [af2pae_script, 'pae_file.json', 'bilbomd_pdb2crd.crd', paePower]
+  const args = [
+    af2pae_script,
+    'pae_file.json',
+    'bilbomd_pdb2crd.crd',
+    '--pae_power',
+    paePower
+  ]
 
   return new Promise((resolve, reject) => {
     const af2pae: ChildProcess = spawn('python', args, { cwd: af2paeDir })
