@@ -212,10 +212,10 @@
         }
       }
     },
-    "/register": {
+    "/users": {
       "post": {
         "summary": "Create a New User",
-        "description": "Creates a new user with the provided username and email.",
+        "description": "Registers a new user with username and email. Returns a conflict error if the username or email already exists.",
         "tags": [
           "User Management"
         ],
@@ -225,28 +225,27 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": {
-                  "user": {
-                    "type": "string",
-                    "description": "The username of the new user."
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "description": "The email address of the new user."
-                  }
-                },
                 "required": [
                   "user",
                   "email"
-                ]
+                ],
+                "properties": {
+                  "user": {
+                    "type": "string",
+                    "description": "The username for the new user."
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "The email address for the new user."
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "User created successfully.",
+            "description": "Successfully created the new user.",
             "content": {
               "application/json": {
                 "schema": {
@@ -258,7 +257,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Confirmation code for email verification."
+                      "description": "Confirmation code for the user."
                     }
                   }
                 }
@@ -266,7 +265,7 @@
             }
           },
           "400": {
-            "description": "Invalid user data received.",
+            "description": "Bad request due to missing username or email, or invalid user data.",
             "content": {
               "application/json": {
                 "schema": {
@@ -274,7 +273,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message explaining the reason for the bad request."
                     }
                   }
                 }
@@ -282,7 +281,7 @@
             }
           },
           "409": {
-            "description": "Conflict. Duplicate username or email found.",
+            "description": "Conflict due to duplicate username or email.",
             "content": {
               "application/json": {
                 "schema": {
@@ -290,7 +289,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating a duplicate username or email."
                     }
                   }
                 }
@@ -298,9 +297,7 @@
             }
           }
         }
-      }
-    },
-    "/users": {
+      },
       "get": {
         "summary": "Get all users",
         "description": "Retrieve a list of all users.",
