@@ -36,7 +36,7 @@ const getAllUsers = async (req: Request, res: Response) => {
 
 /**
  * @openapi
- * /users/{id}:
+ * /users:
  *   patch:
  *     summary: Update User
  *     description: Updates an existing user's information.
