@@ -16,7 +16,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'https://bl1231.als.lbl.gov/api/v1',
+        url: 'https://bilbomd.bl1231.als.lbl.gov/api/v1',
         description: 'production'
       },
       {
