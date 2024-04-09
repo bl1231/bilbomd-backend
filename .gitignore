@@ -11,7 +11,7 @@
 /charmm
 
 # production
-/build
+/dist
 
 # misc
 .env
@@ -27,3 +27,7 @@ yarn-error.log*
 
 imp-2.18.0.tar.gz
 RAW-2.2.1-source.zip
+bioxtas/bioxtasraw-2.2.2.zip
+bioxtas/bioxtasraw-master.zip
+
+scripts/test-data

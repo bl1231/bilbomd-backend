@@ -15,7 +15,7 @@ Provides backend support for bilbomd-ui
 - [![ExpressJS][ExpressJS]][ExpressJS-url]
 - [![Docker][Docker]][Docker-url]
 - [![Redis][Redis]][Redis-url]
-- [BullMQ][BullMQ-url]
+- [![BullMQ][BullMQ]][BullMQ-url]
 
 ### Installing
 
@@ -23,26 +23,47 @@ Provides backend support for bilbomd-ui
 
 ### Instructions for installing a develoment instance of the backend
 
-I guess you should probably start by cloning the repo.
+Clone the repo.
 
 ```
 cd /wherever/this/will/live
 git clone https://github.com/bl1231/bilbomd-backend
 ```
 
-You can install the Node.js dependencies for testing purposes, but keep in mind that these will be installed **inside** the Docker container when you run `docker compose build` from the `bilbomd` [main project](https://github.com/bl1231/bilbomd).
+Install the Node.js dependencies for testing purposes, but keep in mind that these will be installed **inside** the Docker container when you run `docker compose build` from the `bilbomd` [main project](https://github.com/bl1231/bilbomd).
 
 ```
 npm install
 ```
 
-### Executing program
+### Run tests
 
-Production is run via docker compose. However, for interactive local development efforts you probably want to run using `npm`:
+```bash
+npm run test
+```
+
+### Run program
+
+Production is run via docker compose. However, for interactive local development efforts you might be able to:
 
 ```bash
 npm run dev
 ```
+
+However, `bilbomd-backend` needs to communicate with Redis and MongoDB which are typically running in separate Docker images so you would likely have to fiddle with PORT values etc. in order to run in "dev" mode within a local terminal. It will be much easier to use docker compose and develop directly within the `bilbomd-dev` environment. Details can be found in `bilbomd` repo. Briefly, the entry point for the `backend` service in `bilbomd-dev` has been set as:
+
+```
+command: [ "npm", "run", "dev" ]
+```
+
+and the local directory has been mounted inside the docker image:
+
+```
+    volumes:
+      - ./bilbomd-backend:/app
+```
+
+This makes it so that `bilbomd-backend` will automatically restart inside the docker image anytime changes are made to source files.
 
 ## Build docker image
 
@@ -50,16 +71,123 @@ To test if the `Dockerfile` will build you can use this command:
 
 ```bash
 docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
+docker build --build-arg USER_ID=62704 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
 ```
+
+or if using `podman-hpc` on perlmutter...
+
+```bash
+podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
+```
+
+Then you need to migrate the image into `$SCRATCH` filesystem to use it.
+
+```bash
+podman-hp migrate bl1231/bilbomd-backend:latest
+```
+
+1 docker system prune
+572 podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
+573 cd bilbomd-backend/
+574 podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
+575 docker image ls
+576 git status
+577 kubectl
+578 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
+579 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
+580 docker login
+581 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
+582 podman-hpc migrate bl1231/bilbomd-backend:latest
+583 podman-hpc images
+584 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:2.0.0
+585 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
+586 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
+587 podman-hpc login registry.nersc.gov
+588 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
+589 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+590 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+591 podman-hpc build -t bl1231/bilbomd-backend .
+592 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+593 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+594 history | grep docker
+595 docker build --build-arg USER_ID=62704 --build-arg GROUP_ID=62704 -t bl1231/bilbomd-backend .
+596 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
+597 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
 
 ## Authors
 
-Contributors names and contact info
-
-Scott Classen [@scott_classen](https://twitter.com/scott_classen)
+- Scott Classen sclassen at lbl dot gov
+- Michal Hammel mhammel at lbl dot gov
 
 ## Version History
 
+- 1.8.3
+  - Fix `pae_ratios.py` to accomodate the new frontend UI slider for controlling the weight value used by `igraph` `cluster_leiden()` function.
+- 1.8.2
+  - Changes to allow PDB files for BilboMD Classic
+- 1.8.1
+  - Changes to allow PDB files for BilboMD Auto
+- 1.8.0
+  - Mainly changes to allow building and deploying on local laptop and NERSC SPIN.
+- 1.7.0
+  - Enforce PEP8 Python guidelines. Set default formatter to Black.
+  - Refactor `pae_ratios.py` script.
+  - Add new dedicated `pdb2crd` BullMQ queue.
+- 1.6.1
+  - Make Job deletion more robust to NFS lock files.
+- 1.6.0
+  - Add routes for getting `FoXS` analysis results for BilboMD auto/classic
+- 1.5.4
+  - Mainly dependency updates.
+- 1.5.3
+  - Add information about the `scoper` queue
+- 1.5.2
+  - Update dependencies
+- 1.5.1
+  - Add `FoXS` C1 and C2 values to teh Scoper plots.
+- 1.5.0
+  - Add new route to retrieve `FoXS` analysis of Scoepr results.
+- 1.4.3
+  - Add ability to load multiple models into Molstar viewer.
+- 1.4.2
+  - Add route for fetching PDB files from results.
+    This was needed for the `bilbomd-ui` Molstar viewer.
+- 1.4.1
+  - Add better status details for Scoper/IonNet jobs
+    This required restructuring the `BilboMDScoperSteps` object type
+- 1.4.0
+  - Add new Scoper/IonNet pipeline for RNA
+- 1.3.7
+  - fix bug when deleting users
+  - adjust the Mongoose schema
+- 1.3.6
+  - Upgrade mongoose from 7.6.3 to 8.0.2
+- 1.3.5
+  - Jest test files have been converted to Typescript
+- 1.3.4
+  - Remove unused CHARMM handlebars templates
+- 1.3.3
+  - Set defualt `conformational_sampling` to `3`
+- 1.3.2
+  - Bug fixes
+- 1.3.1
+  - update the `pae_ratios.py` script
+- 1.3.0
+  - Migrate most Javascript code to Typescript
+- 1.2.0
+  - Add new route for retrieving Log information
+- 1.1.0
+  - Add Job step details for new BilboMD Auto job type
+  - update npm dependencies
+- 1.0.1
+  - Adjust admin route for new `v1` API
+  - Adjust formidable maxFileSize
+  - Some swagger config changes
+- 1.0.0
+  - Implement versioned API (start with `v1`)
+  - Start out with a new major package version (`1.0.0`)
+  - API will make best effort to conform to [OpenAPI 3.\*](https://swagger.io/specification/) specification.
+  - Add [SwaggerUI](https://swagger.io/tools/swagger-ui/) for public facing API documentation.
 - 0.0.14
   - Add AutoRg API endpoint that uses [BioXTAS RAW](https://github.com/jbhopkins/bioxtasraw) to calcualte `rg_min` and `rg_max`
 - 0.0.13
@@ -113,4 +241,5 @@ Inspiration, code snippets, etc.
 [Redis-url]: https://redis.io/
 [Docker]: https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com/
+[BullMQ]: ./public/BullMQ-logo-sm.png
 [BullMQ-url]: https://docs.bullmq.io/
