@@ -41,7 +41,7 @@ const generateMagickLink = async (req: Request, res: Response) => {
       sendMagickLinkEmail(email, bilboMdUrl, passcode)
     }
 
-    res.status(201).json({ success: `OTP created for ${email}`, otp: passcode })
+    res.status(201).json({ success: `OTP created for ${email}` })
   } catch (error) {
     logger.error(`magicklink error: ${error}`)
     res.status(500).json({ message: error })
