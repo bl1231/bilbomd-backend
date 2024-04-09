@@ -618,12 +618,12 @@
     "/verify/resend": {
       "post": {
         "summary": "Resend Verification Code",
-        "description": "Resend a verification code to a user's email for account confirmation.",
+        "description": "Resends a new verification code to the user's email.",
         "tags": [
           "User Management"
         ],
         "requestBody": {
-          "description": "The user's email to resend the verification code.",
+          "description": "Email address of the user to resend the verification code to.",
           "required": true,
           "content": {
             "application/json": {
@@ -632,7 +632,7 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "description": "The user's email address for resending the verification code."
+                    "description": "The email address of the user to whom the verification code should be resent."
                   }
                 }
               }
@@ -641,7 +641,7 @@
         },
         "responses": {
           "201": {
-            "description": "Verification code resent successfully.",
+            "description": "A new verification code was successfully generated and sent.",
             "content": {
               "application/json": {
                 "schema": {
@@ -649,7 +649,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Success message."
+                      "description": "Success message indicating the verification code was sent."
                     }
                   }
                 }
@@ -657,7 +657,7 @@
             }
           },
           "400": {
-            "description": "Bad request. Invalid input or missing fields.",
+            "description": "Bad request due to missing email field.",
             "content": {
               "application/json": {
                 "schema": {
@@ -665,7 +665,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating that the email field is required."
                     }
                   }
                 }
@@ -673,7 +673,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized. No user with the provided email.",
+            "description": "Unauthorized because no user exists with the provided email.",
             "content": {
               "application/json": {
                 "schema": {
@@ -681,7 +681,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating no user found with that email."
                     }
                   }
                 }
@@ -689,7 +689,7 @@
             }
           },
           "500": {
-            "description": "Internal server error.",
+            "description": "Internal server error occurred during the process.",
             "content": {
               "application/json": {
                 "schema": {
@@ -697,7 +697,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "General error message for server-side errors."
                     }
                   }
                 }
