@@ -1,8 +1,8 @@
 import fs from 'fs'
 import m2s from 'mongoose-to-swagger'
 import swaggerSpecJson from './swaggerOptions'
-import { User } from '../model/User' // Adjust the import if you have a default or named export
-import { BilboMdJob } from '../model/Job' // Adjust the import if you have a default or named export
+import { User } from '../model/User'
+import { BilboMdJob } from '../model/Job'
 
 // Assuming the types for these modules might not be available,
 // and your models and swaggerOptions are correctly typed or accepted as any.
@@ -37,14 +37,14 @@ const bilboMdJobSwaggerDefinition = m2s(BilboMdJob)
 swaggerSpec.components = swaggerSpec.components || {}
 swaggerSpec.components.schemas = swaggerSpec.components.schemas || {}
 swaggerSpec.components.schemas.User = userSwaggerDefinition
-swaggerSpec.components.schemas.BilboMDJob = bilboMdJobSwaggerDefinition
+swaggerSpec.components.schemas.Jobs = bilboMdJobSwaggerDefinition
 
-// Add Bearer authentication
-swaggerSpec.security = [
-  {
-    bearerAuth: []
-  }
-]
+// Add Bearer authentication at global level...I don't think we want this.
+// swaggerSpec.security = [
+//   {
+//     bearerAuth: []
+//   }
+// ]
 
 swaggerSpec.components.securitySchemes = {
   bearerAuth: {
