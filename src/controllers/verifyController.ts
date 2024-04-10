@@ -26,7 +26,7 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *                 type: string
  *                 description: The confirmation code to verify the new user.
  *     responses:
- *       '200':
+ *        200:
  *         description: User verified successfully.
  *         content:
  *           application/json:
@@ -36,7 +36,7 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *                 message:
  *                   type: string
  *                   description: Success message.
- *       '400':
+ *        400:
  *         description: Bad request. Invalid input or missing fields.
  *         content:
  *           application/json:
@@ -46,7 +46,7 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *                 message:
  *                   type: string
  *                   description: Error message.
- *       '500':
+ *        500:
  *         description: Internal server error.
  *         content:
  *           application/json:
@@ -90,11 +90,11 @@ const verifyNewUser = async (req: Request, res: Response) => {
  * /verify/resend:
  *   post:
  *     summary: Resend Verification Code
- *     description: Resend a verification code to a user's email for account confirmation.
+ *     description: Resends a new verification code to the user's email.
  *     tags:
  *       - User Management
  *     requestBody:
- *       description: The user's email to resend the verification code.
+ *       description: Email address of the user to resend the verification code to.
  *       required: true
  *       content:
  *         application/json:
@@ -103,10 +103,10 @@ const verifyNewUser = async (req: Request, res: Response) => {
  *             properties:
  *               email:
  *                 type: string
- *                 description: The user's email address for resending the verification code.
+ *                 description: The email address of the user to whom the verification code should be resent.
  *     responses:
- *       '201':
- *         description: Verification code resent successfully.
+ *       201:
+ *         description: A new verification code was successfully generated and sent.
  *         content:
  *           application/json:
  *             schema:
@@ -114,9 +114,9 @@ const verifyNewUser = async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Success message.
- *       '400':
- *         description: Bad request. Invalid input or missing fields.
+ *                   description: Success message indicating the verification code was sent.
+ *       400:
+ *         description: Bad request due to missing email field.
  *         content:
  *           application/json:
  *             schema:
@@ -124,9 +124,9 @@ const verifyNewUser = async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message.
- *       '401':
- *         description: Unauthorized. No user with the provided email.
+ *                   description: Error message indicating that the email field is required.
+ *       401:
+ *         description: Unauthorized because no user exists with the provided email.
  *         content:
  *           application/json:
  *             schema:
@@ -134,9 +134,9 @@ const verifyNewUser = async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message.
- *       '500':
- *         description: Internal server error.
+ *                   description: Error message indicating no user found with that email.
+ *       500:
+ *         description: Internal server error occurred during the process.
  *         content:
  *           application/json:
  *             schema:
@@ -144,7 +144,7 @@ const verifyNewUser = async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message.
+ *                   description: General error message for server-side errors.
  */
 const resendVerificationCode = async (req: Request, res: Response) => {
   try {

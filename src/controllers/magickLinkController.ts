@@ -6,6 +6,77 @@ import { Request, Response } from 'express'
 import { sendMagickLinkEmail } from '../config/nodemailerConfig'
 const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
+/**
+ * @openapi
+ * /magicklink:
+ *   post:
+ *     summary: Generate Magic Link
+ *     description: Generates a one-time password (OTP) for user authentication based on the provided email address.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       description: Email address of the user to generate the magic link for.
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email address associated with the user's account.
+ *     responses:
+ *       201:
+ *         description: OTP created and magic link (if applicable) sent to the user's email address.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: string
+ *                   description: Success message.
+ *       400:
+ *         description: Bad request due to missing email field.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the email field is required.
+ *       401:
+ *         description: Unauthorized request because no account exists with the provided email address.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating no account found with that email.
+ *       403:
+ *         description: Forbidden action due to the user's account being in a pending state or deactivated.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the account status.
+ *       500:
+ *         description: Internal server error occurred during the magic link generation process.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: General error message for server-side errors.
+ */
 const generateMagickLink = async (req: Request, res: Response) => {
   const { email } = req.body
 

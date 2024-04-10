@@ -12,7 +12,7 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  * /register:
  *   post:
  *     summary: Create a New User
- *     description: Creates a new user with the provided username and email.
+ *     description: Registers a new user with username and email. Returns a conflict error if the username or email already exists.
  *     tags:
  *       - User Management
  *     requestBody:
@@ -21,20 +21,19 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
- *               user:
- *                 type: string
- *                 description: The username of the new user.
- *               email:
- *                 type: string
- *                 format: email
- *                 description: The email address of the new user.
  *             required:
  *               - user
  *               - email
+ *             properties:
+ *               user:
+ *                 type: string
+ *                 description: The username for the new user.
+ *               email:
+ *                 type: string
+ *                 description: The email address for the new user.
  *     responses:
  *       201:
- *         description: User created successfully.
+ *         description: Successfully created the new user.
  *         content:
  *           application/json:
  *             schema:
@@ -45,9 +44,9 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *                   description: Success message.
  *                 code:
  *                   type: string
- *                   description: Confirmation code for email verification.
+ *                   description: Confirmation code for the user.
  *       400:
- *         description: Invalid user data received.
+ *         description: Bad request due to missing username or email, or invalid user data.
  *         content:
  *           application/json:
  *             schema:
@@ -55,9 +54,9 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message.
+ *                   description: Error message explaining the reason for the bad request.
  *       409:
- *         description: Conflict. Duplicate username or email found.
+ *         description: Conflict due to duplicate username or email.
  *         content:
  *           application/json:
  *             schema:
@@ -65,10 +64,10 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message.
+ *                   description: Error message indicating a duplicate username or email.
  */
+
 const handleNewUser = async (req: Request, res: Response) => {
-  // logger.info('handleNewUser', req.body)
   const { user, email } = req.body
   logger.info('handleNewUser: %s %s', user, email)
   // confirm we have required data
@@ -82,14 +81,14 @@ const handleNewUser = async (req: Request, res: Response) => {
     .collation({ locale: 'en', strength: 2 })
     .lean()
     .exec()
-  if (duplicateUser) return res.status(409).json({ message: 'Duplicate username' }) //Conflict
+  if (duplicateUser) return res.status(409).json({ message: 'Duplicate username' })
 
   // check for duplicate emails in the db
   const duplicate = await User.findOne({ email: email })
     .collation({ locale: 'en', strength: 2 })
     .lean()
     .exec()
-  if (duplicate) return res.status(409).json({ message: 'Duplicate email' }) //Conflict
+  if (duplicate) return res.status(409).json({ message: 'Duplicate email' })
 
   try {
     //create a unique confirmation code
@@ -99,8 +98,8 @@ const handleNewUser = async (req: Request, res: Response) => {
     }
     logger.info('made new confirmationCode: %s', code)
 
-    //  120000 ms = 2minutes
-    // 3600000 ms = 1hour
+    //  120000 ms = 2 min
+    // 3600000 ms = 1 hour
     const confirmationCode = { code: code, expiresAt: new Date(Date.now() + 3600000) }
 
     // unique UUID for each user

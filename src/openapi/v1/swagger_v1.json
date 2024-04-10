@@ -2,126 +2,20 @@
   "openapi": "3.0.0",
   "info": {
     "title": "BilboMD Backend",
-    "version": "1.0.1",
+    "version": "1.8.3",
     "description": "API documentation for bilbomd-backend"
   },
   "servers": [
     {
-      "url": "https://bl1231.als.lbl.gov/bilbomd-dev-backend/v1",
+      "url": "https://bilbomd.bl1231.als.lbl.gov/api/v1",
       "description": "production"
     },
     {
-      "url": "http://localhost:3501/v1",
+      "url": "http://localhost:3501/api/v1",
       "description": "development"
     }
   ],
   "paths": {
-    "/af2pae": {
-      "post": {
-        "summary": "Create a new const file from PAE matrix.",
-        "tags": [
-          "Utilities"
-        ],
-        "description": "Endpoint for creating a new const file.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "description": "The email associated with the user."
-                  },
-                  "crd_file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "The CRD file to upload."
-                  },
-                  "pae_file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "The PAE file to upload."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Const file created successfully."
-          },
-          "400": {
-            "description": "Invalid form data."
-          }
-        }
-      },
-      "get": {
-        "summary": "Download Const File",
-        "tags": [
-          "Utilities"
-        ],
-        "description": "Download the const.inp file associated with a job by its UUID.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "uuid",
-            "required": true,
-            "description": "The UUID of the job for which to download the const.inp file.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Const file downloaded successfully.",
-            "content": {
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request. The UUID parameter is missing or invalid.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "The error message indicating the missing or invalid UUID."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error. Failed to download the const.inp file.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "The error message indicating the failure to download the file."
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/auth/otp": {
       "post": {
         "summary": "Authenticate user with OTP",
@@ -321,42 +215,47 @@
     "/jobs": {
       "get": {
         "summary": "Get All Jobs",
-        "description": "Retrieve a list of all jobs.",
+        "description": "Retrieves a list of all jobs, including details from both MongoDB and BullMQ.",
         "tags": [
           "Job Management"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "List of jobs retrieved successfully.",
+            "description": "Successfully retrieved a list of jobs.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Job"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request. No jobs found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "Error message."
+                    "type": "object",
+                    "properties": {
+                      "mongo": {
+                        "$ref": "#/components/schemas/Jobs"
+                      },
+                      "bullmq": {
+                        "type": "object",
+                        "description": "BullMQ job details. Structure depends on the job type."
+                      },
+                      "username": {
+                        "type": "string",
+                        "description": "Username of the user associated with the job."
+                      }
                     }
                   }
                 }
               }
             }
           },
+          "204": {
+            "description": "No jobs found. Returns an empty response."
+          },
           "500": {
-            "description": "Internal server error.",
+            "description": "Internal Server Error - Unable to retrieve jobs.",
             "content": {
               "application/json": {
                 "schema": {
@@ -364,7 +263,8 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message.",
+                      "example": "Internal Server Error - getAllJobs"
                     }
                   }
                 }
@@ -374,12 +274,18 @@
         }
       },
       "post": {
-        "summary": "Create a new job",
-        "description": "Create a new job submission.",
+        "summary": "Create a New Job",
+        "description": "Creates a new job with various files and job type specifications.",
         "tags": [
           "Job Management"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
@@ -387,40 +293,78 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "description": "The email address of the user."
+                    "format": "email",
+                    "description": "Email of the user creating the job."
                   },
-                  "files": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "binary"
-                    },
-                    "description": "Array of files to be uploaded."
+                  "bilbomd_mode": {
+                    "type": "string",
+                    "description": "Type of job to create."
+                  },
+                  "psf_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PSF file for the job."
+                  },
+                  "pdb_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDB file for the job."
+                  },
+                  "crd_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CRD file for the job."
+                  },
+                  "constinp": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Constraint input file."
+                  },
+                  "const_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Constraint file for the job."
+                  },
+                  "inp_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Input file for the job."
+                  },
+                  "expdata": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Experimental data file."
+                  },
+                  "dat_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "DAT file for the job."
+                  },
+                  "pae_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PAE file for the job."
                   }
-                }
+                },
+                "required": [
+                  "email",
+                  "bilbomd_mode"
+                ]
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "New BilboMD Job successfully created.",
+          "201": {
+            "description": "Job created successfully.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {
+                    "success": {
                       "type": "string",
-                      "description": "A success message."
-                    },
-                    "jobid": {
-                      "type": "string",
-                      "description": "The ID of the newly created job."
-                    },
-                    "uuid": {
-                      "type": "string",
-                      "description": "The UUID associated with the job."
+                      "description": "Success message indicating job creation."
                     }
                   }
                 }
@@ -428,23 +372,15 @@
             }
           },
           "400": {
-            "description": "There was a problem parsing the uploaded files.",
+            "description": "Bad request due to missing fields or invalid job type.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": {
-                      "type": "string",
-                      "description": "Status of the request (Fail)."
-                    },
                     "message": {
                       "type": "string",
-                      "description": "Error message."
-                    },
-                    "error": {
-                      "type": "string",
-                      "description": "Detailed error description."
+                      "description": "Error message detailing the issue with the request."
                     }
                   }
                 }
@@ -452,46 +388,7 @@
             }
           },
           "401": {
-            "description": "No user found with that email."
-          },
-          "500": {
-            "description": "Internal server error."
-          }
-        }
-      },
-      "patch": {
-        "summary": "Update job status",
-        "description": "Update the status of a job.",
-        "tags": [
-          "Job Management"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "description": "The ID of the job to update."
-                  },
-                  "email": {
-                    "type": "string",
-                    "description": "The email address associated with the job."
-                  },
-                  "status": {
-                    "type": "string",
-                    "description": "The new status for the job."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Job status updated successfully.",
+            "description": "Unauthorized request due to no user found with the provided email.",
             "content": {
               "application/json": {
                 "schema": {
@@ -499,23 +396,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "A success message indicating the job title that was updated."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "All fields are required, or job not found, or nothing to do.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating no user found."
                     }
                   }
                 }
@@ -523,24 +404,42 @@
             }
           },
           "500": {
-            "description": "Internal server error."
+            "description": "Internal server error due to issues creating the job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message detailing the server issue."
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/jobs/{id}": {
       "delete": {
-        "summary": "Delete a Job by ID",
-        "description": "Delete a job by its unique identifier.",
+        "summary": "Delete a Job",
+        "description": "Deletes a specific job by its ID, along with any associated files on disk.",
         "tags": [
           "Job Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
         "parameters": [
           {
             "in": "path",
             "name": "id",
             "required": true,
-            "description": "The ID of the job to delete.",
+            "description": "Unique identifier of the job to be deleted.",
             "schema": {
               "type": "string"
             }
@@ -548,7 +447,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Job deleted successfully.",
+            "description": "Job and associated resources successfully deleted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -556,7 +455,7 @@
                   "properties": {
                     "reply": {
                       "type": "string",
-                      "description": "A success message indicating the deleted job."
+                      "description": "Confirmation message of the job deletion."
                     }
                   }
                 }
@@ -564,7 +463,7 @@
             }
           },
           "400": {
-            "description": "Bad Request. Invalid or missing job ID.",
+            "description": "Job ID not provided or job not found in the database.",
             "content": {
               "application/json": {
                 "schema": {
@@ -572,7 +471,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "An error message indicating the invalid or missing ID."
+                      "description": "Error message indicating either a missing job ID or that the job could not be found."
                     }
                   }
                 }
@@ -580,7 +479,7 @@
             }
           },
           "404": {
-            "description": "Not Found. The job with the specified ID was not found.",
+            "description": "Directory associated with the job not found on disk or no job was deleted because it didn't exist.",
             "content": {
               "application/json": {
                 "schema": {
@@ -588,7 +487,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "An error message indicating the job was not found."
+                      "description": "Error message indicating the directory for the job was not found or no job was found to delete."
                     }
                   }
                 }
@@ -596,7 +495,7 @@
             }
           },
           "500": {
-            "description": "Internal Server Error. Failed to delete the job.",
+            "description": "Error occurred during the deletion process, either with database deletion or directory removal.",
             "content": {
               "application/json": {
                 "schema": {
@@ -604,7 +503,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "An error message indicating the failure to delete the job."
+                      "description": "Error message detailing the server-side issue encountered during deletion."
                     }
                   }
                 }
@@ -614,16 +513,22 @@
         }
       },
       "get": {
-        "summary": "Get a job by its ID.",
+        "summary": "Get Job by ID",
+        "description": "Retrieves detailed information about a specific job, including its status and results, if available.",
         "tags": [
           "Job Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
         "parameters": [
           {
             "in": "path",
             "name": "id",
-            "description": "ID of the job to retrieve.",
             "required": true,
+            "description": "The unique identifier of the job.",
             "schema": {
               "type": "string"
             }
@@ -631,114 +536,34 @@
         ],
         "responses": {
           "200": {
-            "description": "Job retrieved successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Job"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request. Job ID required."
-          },
-          "404": {
-            "description": "No job matches the provided ID."
-          },
-          "500": {
-            "description": "Internal server error."
-          }
-        }
-      }
-    },
-    "/jobs/{id}/download": {
-      "get": {
-        "summary": "Download job results by its ID.",
-        "tags": [
-          "Job Management"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of the job to download results from.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Job results downloaded successfully."
-          },
-          "204": {
-            "description": "No job matches the provided ID."
-          },
-          "400": {
-            "description": "Bad request. Job ID required."
-          },
-          "500": {
-            "description": "Internal server error."
-          }
-        }
-      }
-    },
-    "/autorg": {
-      "post": {
-        "summary": "Calculate AutoRg for uploaded data.",
-        "tags": [
-          "Utilities"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "description": "The email address of the user."
-                  },
-                  "file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "The data file to calculate AutoRg from."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "AutoRg calculation successful.",
+            "description": "Successfully retrieved job details.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {
+                    "id": {
                       "type": "string",
-                      "description": "A success message."
+                      "description": "The job's unique ID."
                     },
-                    "uuid": {
-                      "type": "string",
-                      "description": "The UUID of the AutoRg calculation."
+                    "mongo": {
+                      "$ref": "#/components/schemas/Job"
                     },
-                    "rg": {
-                      "type": "number",
-                      "description": "The calculated Rg value."
+                    "bullmq": {
+                      "type": "object",
+                      "description": "Optional. Details from BullMQ about the job's execution."
                     },
-                    "rg_min": {
-                      "type": "number",
-                      "description": "The minimum Rg value."
+                    "classic": {
+                      "type": "object",
+                      "description": "Optional. Specific details for classic BilboMD jobs."
                     },
-                    "rg_max": {
-                      "type": "number",
-                      "description": "The maximum Rg value."
+                    "auto": {
+                      "type": "object",
+                      "description": "Optional. Specific details for auto BilboMD jobs."
+                    },
+                    "scoper": {
+                      "type": "object",
+                      "description": "Optional. Status information for Scoper jobs."
                     }
                   }
                 }
@@ -746,24 +571,65 @@
             }
           },
           "400": {
-            "description": "Bad request. Missing email or file."
+            "description": "Bad request due to missing job ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating that the job ID is required."
+                    }
+                  }
+                }
+              }
+            }
           },
-          "401": {
-            "description": "Unauthorized. No user found with the provided email."
+          "404": {
+            "description": "No job matches the provided ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating no job found with the provided ID."
+                    }
+                  }
+                }
+              }
+            }
           },
           "500": {
-            "description": "Internal server error."
+            "description": "Failed to retrieve job due to an internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message detailing the issue encountered."
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/magicklink": {
       "post": {
-        "summary": "Generate a MagickLink for user authentication.",
+        "summary": "Generate Magic Link",
+        "description": "Generates a one-time password (OTP) for user authentication based on the provided email address.",
         "tags": [
           "Authentication"
         ],
         "requestBody": {
+          "description": "Email address of the user to generate the magic link for.",
           "required": true,
           "content": {
             "application/json": {
@@ -772,7 +638,7 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "description": "The email address of the user."
+                    "description": "The email address associated with the user's account."
                   }
                 }
               }
@@ -781,7 +647,7 @@
         },
         "responses": {
           "201": {
-            "description": "MagickLink and OTP created successfully.",
+            "description": "OTP created and magic link (if applicable) sent to the user's email address.",
             "content": {
               "application/json": {
                 "schema": {
@@ -789,11 +655,7 @@
                   "properties": {
                     "success": {
                       "type": "string",
-                      "description": "A success message."
-                    },
-                    "otp": {
-                      "type": "string",
-                      "description": "The generated OTP (One-Time Password)."
+                      "description": "Success message."
                     }
                   }
                 }
@@ -801,16 +663,68 @@
             }
           },
           "400": {
-            "description": "Bad request. Missing email."
+            "description": "Bad request due to missing email field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating that the email field is required."
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized. No account found with the provided email."
+            "description": "Unauthorized request because no account exists with the provided email address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating no account found with that email."
+                    }
+                  }
+                }
+              }
+            }
           },
           "403": {
-            "description": "Forbidden. Account is pending or deactivated."
+            "description": "Forbidden action due to the user's account being in a pending state or deactivated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating the account status."
+                    }
+                  }
+                }
+              }
+            }
           },
           "500": {
-            "description": "Internal server error."
+            "description": "Internal server error occurred during the magic link generation process.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "General error message for server-side errors."
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -818,7 +732,7 @@
     "/register": {
       "post": {
         "summary": "Create a New User",
-        "description": "Creates a new user with the provided username and email.",
+        "description": "Registers a new user with username and email. Returns a conflict error if the username or email already exists.",
         "tags": [
           "User Management"
         ],
@@ -828,28 +742,27 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": {
-                  "user": {
-                    "type": "string",
-                    "description": "The username of the new user."
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "description": "The email address of the new user."
-                  }
-                },
                 "required": [
                   "user",
                   "email"
-                ]
+                ],
+                "properties": {
+                  "user": {
+                    "type": "string",
+                    "description": "The username for the new user."
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "The email address for the new user."
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "User created successfully.",
+            "description": "Successfully created the new user.",
             "content": {
               "application/json": {
                 "schema": {
@@ -861,7 +774,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Confirmation code for email verification."
+                      "description": "Confirmation code for the user."
                     }
                   }
                 }
@@ -869,7 +782,7 @@
             }
           },
           "400": {
-            "description": "Invalid user data received.",
+            "description": "Bad request due to missing username or email, or invalid user data.",
             "content": {
               "application/json": {
                 "schema": {
@@ -877,7 +790,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message explaining the reason for the bad request."
                     }
                   }
                 }
@@ -885,7 +798,7 @@
             }
           },
           "409": {
-            "description": "Conflict. Duplicate username or email found.",
+            "description": "Conflict due to duplicate username or email.",
             "content": {
               "application/json": {
                 "schema": {
@@ -893,7 +806,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating a duplicate username or email."
                     }
                   }
                 }
@@ -910,9 +823,14 @@
         "tags": [
           "User Management"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Users retrieved successfully.",
+            "description": "A JSON array of user objects. Returns an empty array if no users are found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -924,21 +842,21 @@
               }
             }
           },
-          "400": {
-            "description": "No users found."
-          },
           "500": {
-            "description": "Internal server error."
+            "description": "Internal server error. Indicates an unexpected condition encountered on the server."
           }
         }
-      }
-    },
-    "/users/{id}": {
+      },
       "patch": {
         "summary": "Update User",
         "description": "Updates an existing user's information.",
         "tags": [
           "User Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
         "requestBody": {
           "description": "User object to update.",
@@ -1028,22 +946,29 @@
             }
           }
         }
-      },
+      }
+    },
+    "/users/{id}": {
       "delete": {
-        "summary": "Delete User",
-        "description": "Deletes an existing user by their ID.",
+        "summary": "Delete a user",
+        "description": "Deletes a user by ID. Fails if the user has assigned jobs or if the user does not exist.",
         "tags": [
           "User Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
         "parameters": [
           {
             "in": "path",
             "name": "id",
+            "required": true,
+            "description": "The unique identifier of the user to delete.",
             "schema": {
               "type": "string"
-            },
-            "required": true,
-            "description": "The ID of the user to delete."
+            }
           }
         ],
         "responses": {
@@ -1056,7 +981,8 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Success message."
+                      "description": "Confirmation message of deletion.",
+                      "example": "Username johndoe with ID 12345 deleted"
                     }
                   }
                 }
@@ -1064,7 +990,7 @@
             }
           },
           "400": {
-            "description": "Bad request. Invalid input or missing fields.",
+            "description": "User ID not provided or user has assigned jobs and cannot be deleted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1072,7 +998,8 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message.",
+                      "example": "User ID Required"
                     }
                   }
                 }
@@ -1080,7 +1007,7 @@
             }
           },
           "404": {
-            "description": "User not found.",
+            "description": "User not found or no user was deleted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1088,7 +1015,8 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message.",
+                      "example": "User not found"
                     }
                   }
                 }
@@ -1099,24 +1027,29 @@
       },
       "get": {
         "summary": "Get User by ID",
-        "description": "Retrieves user information by their ID.",
+        "description": "Retrieves detailed information about a user by their unique identifier.",
         "tags": [
           "User Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
         "parameters": [
           {
             "in": "path",
             "name": "id",
+            "required": true,
+            "description": "Unique identifier of the user to retrieve.",
             "schema": {
               "type": "string"
-            },
-            "required": true,
-            "description": "The ID of the user to retrieve."
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "User retrieved successfully.",
+            "description": "User found and returned successfully.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1126,7 +1059,7 @@
             }
           },
           "400": {
-            "description": "Bad request. Invalid input or missing fields.",
+            "description": "User ID not provided or user with specified ID not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1134,23 +1067,8 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "User not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating the user ID was not provided or not found.",
+                      "example": "User ID required"
                     }
                   }
                 }
@@ -1239,12 +1157,12 @@
     "/verify/resend": {
       "post": {
         "summary": "Resend Verification Code",
-        "description": "Resend a verification code to a user's email for account confirmation.",
+        "description": "Resends a new verification code to the user's email.",
         "tags": [
           "User Management"
         ],
         "requestBody": {
-          "description": "The user's email to resend the verification code.",
+          "description": "Email address of the user to resend the verification code to.",
           "required": true,
           "content": {
             "application/json": {
@@ -1253,7 +1171,7 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "description": "The user's email address for resending the verification code."
+                    "description": "The email address of the user to whom the verification code should be resent."
                   }
                 }
               }
@@ -1262,7 +1180,7 @@
         },
         "responses": {
           "201": {
-            "description": "Verification code resent successfully.",
+            "description": "A new verification code was successfully generated and sent.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1270,7 +1188,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Success message."
+                      "description": "Success message indicating the verification code was sent."
                     }
                   }
                 }
@@ -1278,7 +1196,7 @@
             }
           },
           "400": {
-            "description": "Bad request. Invalid input or missing fields.",
+            "description": "Bad request due to missing email field.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1286,7 +1204,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating that the email field is required."
                     }
                   }
                 }
@@ -1294,7 +1212,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized. No user with the provided email.",
+            "description": "Unauthorized because no user exists with the provided email.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1302,7 +1220,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "Error message indicating no user found with that email."
                     }
                   }
                 }
@@ -1310,7 +1228,7 @@
             }
           },
           "500": {
-            "description": "Internal server error.",
+            "description": "Internal server error occurred during the process.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1318,7 +1236,7 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "description": "Error message."
+                      "description": "General error message for server-side errors."
                     }
                   }
                 }
@@ -1404,7 +1322,7 @@
           "jobs": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "schemaobjectid"
             }
           },
           "_id": {
@@ -1413,6 +1331,98 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "Jobs": {
+        "title": "BilboMd",
+        "required": [
+          "title",
+          "uuid",
+          "data_file",
+          "user",
+          "psf_file",
+          "crd_file",
+          "const_inp_file",
+          "rg_min",
+          "rg_max"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "data_file": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Submitted",
+              "Pending",
+              "Running",
+              "Completed",
+              "Error"
+            ]
+          },
+          "time_submitted": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "time_started": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "time_completed": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "type": "schemaobjectid"
+          },
+          "_id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "__t": {
+            "type": "string"
+          },
+          "pdb_file": {
+            "type": "string",
+            "required": false
+          },
+          "psf_file": {
+            "type": "string"
+          },
+          "crd_file": {
+            "type": "string"
+          },
+          "const_inp_file": {
+            "type": "string"
+          },
+          "conformational_sampling": {
+            "type": "number",
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "rg_min": {
+            "type": "number"
+          },
+          "rg_max": {
+            "type": "number"
           }
         }
       }
@@ -1425,10 +1435,5 @@
       }
     }
   },
-  "tags": [],
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ]
+  "tags": []
 }

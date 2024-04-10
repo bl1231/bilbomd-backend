@@ -1,6 +1,6 @@
 import { User } from '../model/User'
 import { Job } from '../model/Job'
-// import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers'
 import { Request, Response } from 'express'
 
 /**
@@ -11,34 +11,41 @@ import { Request, Response } from 'express'
  *     description: Retrieve a list of all users.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Users retrieved successfully.
+ *         description: A JSON array of user objects. Returns an empty array if no users are found.
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/User'
- *       400:
- *         description: No users found.
  *       500:
- *         description: Internal server error.
+ *         description: Internal server error. Indicates an unexpected condition encountered on the server.
  */
 const getAllUsers = async (req: Request, res: Response) => {
-  const users = await User.find().lean()
-  if (!users) return res.status(400).json({ message: 'No users found' })
-  res.json(users)
+  try {
+    const users = await User.find().lean()
+    res.json(users)
+  } catch (error) {
+    console.error(error)
+    logger.error(error)
+    res.status(500).json({ message: 'Internal server error' })
+  }
 }
 
 /**
  * @openapi
- * /users/{id}:
+ * /users:
  *   patch:
  *     summary: Update User
  *     description: Updates an existing user's information.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       description: User object to update.
  *       required: true
@@ -143,17 +150,19 @@ const updateUser = async (req: Request, res: Response) => {
  * @openapi
  * /users/{id}:
  *   delete:
- *     summary: Delete User
- *     description: Deletes an existing user by their ID.
+ *     summary: Delete a user
+ *     description: Deletes a user by ID. Fails if the user has assigned jobs or if the user does not exist.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
+ *         description: The unique identifier of the user to delete.
  *         schema:
  *           type: string
- *         required: true
- *         description: The ID of the user to delete.
  *     responses:
  *       200:
  *         description: User deleted successfully.
@@ -164,9 +173,10 @@ const updateUser = async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Success message.
+ *                   description: Confirmation message of deletion.
+ *                   example: "Username johndoe with ID 12345 deleted"
  *       400:
- *         description: Bad request. Invalid input or missing fields.
+ *         description: User ID not provided or user has assigned jobs and cannot be deleted.
  *         content:
  *           application/json:
  *             schema:
@@ -175,8 +185,9 @@ const updateUser = async (req: Request, res: Response) => {
  *                 message:
  *                   type: string
  *                   description: Error message.
+ *                   example: "User ID Required"
  *       404:
- *         description: User not found.
+ *         description: User not found or no user was deleted.
  *         content:
  *           application/json:
  *             schema:
@@ -185,6 +196,7 @@ const updateUser = async (req: Request, res: Response) => {
  *                 message:
  *                   type: string
  *                   description: Error message.
+ *                   example: "User not found"
  */
 const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params
@@ -224,25 +236,27 @@ const deleteUser = async (req: Request, res: Response) => {
  * /users/{id}:
  *   get:
  *     summary: Get User by ID
- *     description: Retrieves user information by their ID.
+ *     description: Retrieves detailed information about a user by their unique identifier.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
+ *         description: Unique identifier of the user to retrieve.
  *         schema:
  *           type: string
- *         required: true
- *         description: The ID of the user to retrieve.
  *     responses:
  *       200:
- *         description: User retrieved successfully.
+ *         description: User found and returned successfully.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/User'
  *       400:
- *         description: Bad request. Invalid input or missing fields.
+ *         description: User ID not provided or user with specified ID not found.
  *         content:
  *           application/json:
  *             schema:
@@ -250,17 +264,8 @@ const deleteUser = async (req: Request, res: Response) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message.
- *       404:
- *         description: User not found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
+ *                   description: Error message indicating the user ID was not provided or not found.
+ *                   example: "User ID required"
  */
 const getUser = async (req: Request, res: Response) => {
   if (!req?.params?.id) return res.status(400).json({ message: 'User ID required' })
