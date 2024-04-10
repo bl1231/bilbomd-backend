@@ -11,6 +11,8 @@ import { Request, Response } from 'express'
  *     description: Retrieve a list of all users.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: A JSON array of user objects. Returns an empty array if no users are found.
@@ -42,6 +44,8 @@ const getAllUsers = async (req: Request, res: Response) => {
  *     description: Updates an existing user's information.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       description: User object to update.
  *       required: true
@@ -150,6 +154,8 @@ const updateUser = async (req: Request, res: Response) => {
  *     description: Deletes a user by ID. Fails if the user has assigned jobs or if the user does not exist.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -233,6 +239,8 @@ const deleteUser = async (req: Request, res: Response) => {
  *     description: Retrieves detailed information about a user by their unique identifier.
  *     tags:
  *       - User Management
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -259,7 +267,6 @@ const deleteUser = async (req: Request, res: Response) => {
  *                   description: Error message indicating the user ID was not provided or not found.
  *                   example: "User ID required"
  */
-
 const getUser = async (req: Request, res: Response) => {
   if (!req?.params?.id) return res.status(400).json({ message: 'User ID required' })
   const user = await User.findOne({ _id: req.params.id }).lean().exec()
