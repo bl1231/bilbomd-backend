@@ -121,6 +121,10 @@ podman-hp migrate bl1231/bilbomd-backend:latest
 
 ## Version History
 
+- 1.8.5
+  - OTP bug fix
+  - security enhancements
+  - Add OpenAPI/swagger docs for some API endpoints
 - 1.8.3
   - Fix `pae_ratios.py` to accomodate the new frontend UI slider for controlling the weight value used by `igraph` `cluster_leiden()` function.
 - 1.8.2
