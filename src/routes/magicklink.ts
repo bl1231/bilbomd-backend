@@ -1,6 +1,7 @@
 import express from 'express'
-const router = express.Router()
 import { generateMagickLink } from '../controllers/magickLinkController'
+
+const router = express.Router()
 
 router.post('/', generateMagickLink)
 

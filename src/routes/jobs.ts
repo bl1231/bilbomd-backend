@@ -10,11 +10,10 @@ import {
 } from '../controllers/jobsController'
 import { downloadPDB, getFoxsData } from '../controllers/downloadController'
 import verifyJWT from '../middleware/verifyJWT'
+
 const router = express.Router()
 
-if (process.env.NODE_ENV === 'production') {
-  router.use(verifyJWT)
-}
+router.use(verifyJWT)
 
 router.route('/').get(getAllJobs).post(createNewJob).patch(updateJobStatus)
 
