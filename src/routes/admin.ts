@@ -1,14 +1,15 @@
 import express from 'express'
-const router = express.Router()
 import IORedis, { RedisOptions } from 'ioredis'
 import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
 import { Queue as QueueMQ } from 'bullmq'
 import { logger } from '../middleware/loggers'
-// import verifyJWT from '../middleware/verifyJWT'
+import verifyJWT from '../middleware/verifyJWT'
 
 const basePath = '/admin/bullmq'
+
+const router = express.Router()
 
 const redisOptions: RedisOptions = {
   port:
@@ -38,9 +39,8 @@ createBullBoard({
   serverAdapter: serverAdapter
 })
 
-// if (process.env.NODE_ENV === 'production1') {
-//   router.use(verifyJWT)
-// }
+router.use(verifyJWT)
+
 logger.info('here1')
 router.use('/', serverAdapter.getRouter())
 

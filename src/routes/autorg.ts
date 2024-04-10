@@ -1,7 +1,8 @@
 import express from 'express'
-const router = express.Router()
 import { getAutoRg } from '../controllers/jobsController'
 import verifyJWT from '../middleware/verifyJWT'
+
+const router = express.Router()
 
 router.use(verifyJWT)
 

@@ -1,5 +1,4 @@
 import express from 'express'
-const router = express.Router()
 import {
   getAllUsers,
   updateUser,
@@ -7,6 +6,8 @@ import {
   getUser
 } from '../controllers/usersController'
 import verifyJWT from '../middleware/verifyJWT'
+
+const router = express.Router()
 
 router.use(verifyJWT)
 

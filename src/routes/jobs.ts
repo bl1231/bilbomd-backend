@@ -10,11 +10,8 @@ import {
 } from '../controllers/jobsController'
 import { downloadPDB, getFoxsData } from '../controllers/downloadController'
 import verifyJWT from '../middleware/verifyJWT'
-const router = express.Router()
 
-// if (process.env.NODE_ENV === 'production') {
-//   router.use(verifyJWT)
-// }
+const router = express.Router()
 
 router.use(verifyJWT)
 
