@@ -39,6 +39,48 @@ type AutoRgResults = {
   rg_max: number
 }
 
+/**
+ * @openapi
+ * /jobs:
+ *   get:
+ *     summary: Get All Jobs
+ *     description: Retrieves a list of all jobs, including details from both MongoDB and BullMQ.
+ *     tags:
+ *       - Job Management
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved a list of jobs.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   mongo:
+ *                     $ref: '#/components/schemas/Jobs'
+ *                   bullmq:
+ *                     type: object
+ *                     description: BullMQ job details. Structure depends on the job type.
+ *                   username:
+ *                     type: string
+ *                     description: Username of the user associated with the job.
+ *       204:
+ *         description: No jobs found. Returns an empty response.
+ *       500:
+ *         description: Internal Server Error - Unable to retrieve jobs.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message.
+ *                   example: 'Internal Server Error - getAllJobs'
+ */
 const getAllJobs = async (req: Request, res: Response) => {
   try {
     const DBjobs: Array<IJob> = await Job.find().lean()
@@ -75,6 +117,111 @@ const getAllJobs = async (req: Request, res: Response) => {
   }
 }
 
+/**
+ * @openapi
+ * /jobs:
+ *   post:
+ *     summary: Create a New Job
+ *     description: Creates a new job with various files and job type specifications.
+ *     tags:
+ *       - Job Management
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email of the user creating the job.
+ *               bilbomd_mode:
+ *                 type: string
+ *                 description: Type of job to create.
+ *               psf_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: PSF file for the job.
+ *               pdb_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: PDB file for the job.
+ *               crd_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: CRD file for the job.
+ *               constinp:
+ *                 type: string
+ *                 format: binary
+ *                 description: Constraint input file.
+ *               const_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Constraint file for the job.
+ *               inp_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Input file for the job.
+ *               expdata:
+ *                 type: string
+ *                 format: binary
+ *                 description: Experimental data file.
+ *               dat_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: DAT file for the job.
+ *               pae_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: PAE file for the job.
+ *             required:
+ *               - email
+ *               - bilbomd_mode
+ *     responses:
+ *       201:
+ *         description: Job created successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: string
+ *                   description: Success message indicating job creation.
+ *       400:
+ *         description: Bad request due to missing fields or invalid job type.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message detailing the issue with the request.
+ *       401:
+ *         description: Unauthorized request due to no user found with the provided email.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating no user found.
+ *       500:
+ *         description: Internal server error due to issues creating the job.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message detailing the server issue.
+ */
 const createNewJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, UUID)
@@ -420,6 +567,65 @@ const updateJobStatus = async (req: Request, res: Response) => {
   res.json(`'${updatedJob.title}' updated`)
 }
 
+/**
+ * @openapi
+ * /jobs/{id}:
+ *   delete:
+ *     summary: Delete a Job
+ *     description: Deletes a specific job by its ID, along with any associated files on disk.
+ *     tags:
+ *       - Job Management
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Unique identifier of the job to be deleted.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Job and associated resources successfully deleted.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reply:
+ *                   type: string
+ *                   description: Confirmation message of the job deletion.
+ *       400:
+ *         description: Job ID not provided or job not found in the database.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating either a missing job ID or that the job could not be found.
+ *       404:
+ *         description: Directory associated with the job not found on disk or no job was deleted because it didn't exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the directory for the job was not found or no job was found to delete.
+ *       500:
+ *         description: Error occurred during the deletion process, either with database deletion or directory removal.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message detailing the server-side issue encountered during deletion.
+ */
 const deleteJob = async (req: Request, res: Response) => {
   const { id } = req.params
 
@@ -502,6 +708,79 @@ const deleteJob = async (req: Request, res: Response) => {
   res.status(200).json({ reply })
 }
 
+/**
+ * @openapi
+ * /jobs/{id}:
+ *   get:
+ *     summary: Get Job by ID
+ *     description: Retrieves detailed information about a specific job, including its status and results, if available.
+ *     tags:
+ *       - Job Management
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The unique identifier of the job.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved job details.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: The job's unique ID.
+ *                 mongo:
+ *                   $ref: '#/components/schemas/Job'  # Assuming you define a Job schema in the components section
+ *                 bullmq:
+ *                   type: object
+ *                   description: Optional. Details from BullMQ about the job's execution.
+ *                 classic:
+ *                   type: object
+ *                   description: Optional. Specific details for classic BilboMD jobs.
+ *                 auto:
+ *                   type: object
+ *                   description: Optional. Specific details for auto BilboMD jobs.
+ *                 scoper:
+ *                   type: object
+ *                   description: Optional. Status information for Scoper jobs.
+ *       400:
+ *         description: Bad request due to missing job ID.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the job ID is required.
+ *       404:
+ *         description: No job matches the provided ID.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating no job found with the provided ID.
+ *       500:
+ *         description: Failed to retrieve job due to an internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message detailing the issue encountered.
+ */
 const getJobById = async (req: Request, res: Response) => {
   const jobId = req.params.id
   if (!jobId) {
