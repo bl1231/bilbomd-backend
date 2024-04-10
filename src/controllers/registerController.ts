@@ -9,7 +9,7 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
 /**
  * @openapi
- * /users:
+ * /register:
  *   post:
  *     summary: Create a New User
  *     description: Registers a new user with username and email. Returns a conflict error if the username or email already exists.
