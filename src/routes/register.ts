@@ -1,6 +1,7 @@
 import express from 'express'
-const router = express.Router()
 import { handleNewUser } from '../controllers/registerController'
+
+const router = express.Router()
 
 router.post('/', handleNewUser)
 

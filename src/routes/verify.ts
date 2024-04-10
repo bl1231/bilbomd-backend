@@ -1,6 +1,6 @@
 import express from 'express'
-const router = express.Router()
 import { verifyNewUser, resendVerificationCode } from '../controllers/verifyController'
+const router = express.Router()
 
 router.route('/').post(verifyNewUser)
 router.route('/resend').post(resendVerificationCode)
