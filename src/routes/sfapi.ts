@@ -1,11 +1,11 @@
 import express from 'express'
 import { getStatus, getUser, getProjectHours } from '../controllers/sfapiController'
 import { ensureSFAuthenticated } from '../middleware/tokenManager'
-import verifyJWT from '../middleware/verifyJWT'
+// import verifyJWT from '../middleware/verifyJWT'
 
 const router = express.Router()
 
-router.use(verifyJWT)
+// router.use(verifyJWT)
 
 // Unauthenticated routes first
 router.route('/status').get(getStatus)
