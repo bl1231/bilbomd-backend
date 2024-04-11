@@ -21,7 +21,7 @@
   "dependencies": {
     "@bull-board/api": "^5.15.3",
     "@bull-board/express": "^5.15.3",
-    "bullmq": "^5.7.0",
+    "bullmq": "^5.7.1",
     "cookie-parser": "~1.4.6",
     "cors": "^2.8.5",
     "cron": "^3.1.7",
@@ -45,9 +45,9 @@
     "nodemailer-express-handlebars": "^6.1.2",
     "npm-check-updates": "^16.14.18",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui": "^5.14.0",
+    "swagger-ui": "^5.15.1",
     "swagger-ui-express": "^5.0.0",
-    "typescript": "^5.4.4",
+    "typescript": "^5.4.5",
     "uuid": "^9.0.1",
     "winston": "^3.13.0",
     "winston-mongodb": "^5.1.1"
