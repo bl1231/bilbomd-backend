@@ -39,18 +39,16 @@ swaggerSpec.components.schemas = swaggerSpec.components.schemas || {}
 swaggerSpec.components.schemas.User = userSwaggerDefinition
 swaggerSpec.components.schemas.Jobs = bilboMdJobSwaggerDefinition
 
-// Add Bearer authentication at global level...I don't think we want this.
-// swaggerSpec.security = [
-//   {
-//     bearerAuth: []
-//   }
-// ]
-
 swaggerSpec.components.securitySchemes = {
   bearerAuth: {
     type: 'http',
     scheme: 'bearer',
     bearerFormat: 'JWT'
+  },
+  cookieAuth: {
+    type: 'apiKey',
+    in: 'cookie',
+    name: 'jwt'
   }
 }
 

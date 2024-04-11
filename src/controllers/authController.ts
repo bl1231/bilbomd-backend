@@ -173,6 +173,8 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
  *     description: Refreshes the access token using a valid refresh token.
  *     tags:
  *       - Authentication
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: cookie
  *         name: jwt
@@ -245,7 +247,7 @@ const refresh = async (req: Request, res: Response) => {
         accessTokenSecret,
         { expiresIn: '15m' }
       )
-
+      // console.log(accessToken)
       res.json({ accessToken })
     } catch (error) {
       // Handle errors here

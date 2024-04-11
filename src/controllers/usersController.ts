@@ -12,7 +12,7 @@ import { Request, Response } from 'express'
  *     tags:
  *       - User Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: A JSON array of user objects. Returns an empty array if no users are found.
@@ -45,7 +45,7 @@ const getAllUsers = async (req: Request, res: Response) => {
  *     tags:
  *       - User Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       description: User object to update.
  *       required: true
@@ -155,7 +155,7 @@ const updateUser = async (req: Request, res: Response) => {
  *     tags:
  *       - User Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -240,7 +240,7 @@ const deleteUser = async (req: Request, res: Response) => {
  *     tags:
  *       - User Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "BilboMD Backend",
-    "version": "1.8.3",
+    "version": "1.8.5",
     "description": "API documentation for bilbomd-backend"
   },
   "servers": [
@@ -11,7 +11,7 @@
       "description": "production"
     },
     {
-      "url": "http://localhost:3501/api/v1",
+      "url": "http://localhost:3001/api/v1",
       "description": "development"
     }
   ],
@@ -119,6 +119,11 @@
         "tags": [
           "Authentication"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "cookie",
@@ -221,7 +226,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -281,7 +286,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -431,7 +436,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -520,7 +525,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -825,7 +830,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -855,7 +860,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -957,7 +962,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -1033,7 +1038,7 @@
         ],
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -1432,6 +1437,11 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "jwt"
       }
     }
   },

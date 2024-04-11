@@ -48,7 +48,7 @@ type AutoRgResults = {
  *     tags:
  *       - Job Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Successfully retrieved a list of jobs.
@@ -126,7 +126,7 @@ const getAllJobs = async (req: Request, res: Response) => {
  *     tags:
  *       - Job Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -576,7 +576,7 @@ const updateJobStatus = async (req: Request, res: Response) => {
  *     tags:
  *       - Job Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -717,7 +717,7 @@ const deleteJob = async (req: Request, res: Response) => {
  *     tags:
  *       - Job Management
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
