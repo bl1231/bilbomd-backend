@@ -9,7 +9,7 @@
     "copy-assets": "copyfiles --all --up 1 --exclude \"./**/*.{ts,tsx}\" \"./src/**/*\" ./dist",
     "lint": "eslint \"./src/**/*\" --ext .ts",
     "tsc": "tsc",
-    "build": "npm-run-all clean copy-assets lint tsc",
+    "build": "npm-run-all clean copy-assets lint tsc swagger",
     "dev": "concurrently \"npm run watch-ts\" \"nodemon dist/server.js\"",
     "watch-ts": "tsc -w",
     "start": "npm run build && node dist/server.js",

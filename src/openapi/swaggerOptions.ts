@@ -26,6 +26,6 @@ const options: swaggerJsdoc.Options = {
 
 const swaggerSpecJson = swaggerJsdoc(options)
 
-console.log(swaggerSpecJson)
+// console.log(swaggerSpecJson)
 
 export default swaggerSpecJson

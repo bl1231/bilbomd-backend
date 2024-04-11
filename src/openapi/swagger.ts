@@ -52,5 +52,7 @@ swaggerSpec.components.securitySchemes = {
   }
 }
 
+// console.log(JSON.stringify(swaggerSpec, null, 2))
+
 // Write the updated Swagger JSON to a file
 fs.writeFileSync('src/openapi/v1/swagger_v1.json', JSON.stringify(swaggerSpec, null, 2))
