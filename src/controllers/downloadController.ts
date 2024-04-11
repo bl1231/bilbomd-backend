@@ -113,6 +113,7 @@ const getFoxsScoperData = async (job: IBilboMDScoperJob, res: Response) => {
       data: dataFromScop
     }
   ]
+
   res.json(data)
 }
 
@@ -130,16 +131,16 @@ const getFoxsBilboData = async (job: IJob, res: Response) => {
     const datFileBase = job.data_file.split('.')[0]
     const originalDat = path.join(jobDir, `minimization_output_${datFileBase}.dat`)
 
-    data.push(await createDataObject(originalDat))
+    data.push(await createDataObject(originalDat, jobDir))
 
     const files = await fs.readdir(resultsDir)
     const filePattern = /^multi_state_model_\d+_1_1\.dat$/
 
     for (const file of files) {
       if (filePattern.test(file)) {
-        logger.info(`getFoXSData ${file}`)
+        // logger.info(`getFoXSData ${file}`)
         const filename = path.join(resultsDir, file)
-        data.push(await createDataObject(filename))
+        data.push(await createDataObject(filename, jobDir))
       }
     }
 
@@ -152,22 +153,43 @@ const getFoxsBilboData = async (job: IJob, res: Response) => {
   }
 }
 
-const createDataObject = async (file: string): Promise<FoxsData> => {
-  // const foxsLog = path.join(uploadFolder, job.uuid, 'foxs_analysis', 'foxs.log')
+// Modify the createDataObject function to accept jobDir as an additional parameter
+const createDataObject = async (file: string, jobDir: string): Promise<FoxsData> => {
   const fileContent = await fs.readFile(file, 'utf8')
   const filename = path.basename(file)
   const data: FoxsDataPoint[] = parseFileContent(fileContent)
   const chisq: number = extractChiSquared(fileContent)
-  const c1 = parseFloat('1.234') // replace with actual function
-  const c2 = parseFloat('4.321') // replace with actual function
+
+  const logFile = path.join(jobDir, `initial_foxs_analysis.log`)
+  const { c1, c2 } = await extractC1C2(logFile) // Extract c1 and c2 values
+
   const foxsData: FoxsData = {
-    filename: filename,
-    chisq: chisq,
-    c1: c1,
-    c2: c2,
-    data: data
+    filename,
+    chisq,
+    c1,
+    c2,
+    data
   }
+
   return foxsData
+}
+
+const extractC1C2 = async (logFilePath: string): Promise<{ c1: string; c2: string }> => {
+  const logContent = await fs.readFile(logFilePath, 'utf8')
+
+  // Use regular expressions to find c1 and c2, considering the format "c1 = <value> c2 = <value>"
+  const c1Match = logContent.match(/c1\s*=\s*([\d.]+)/)
+  const c2Match = logContent.match(/c2\s*=\s*([\d.]+)/)
+
+  if (!c1Match || !c2Match) {
+    throw new Error('Could not find c1 and c2 values in log file')
+  }
+
+  const c1 = parseFloat(c1Match[1]).toFixed(2)
+  const c2 = parseFloat(c2Match[1]).toFixed(2)
+  // logger.info(`c1: ${c1}`)
+  // logger.info(`c2: ${c2}`)
+  return { c1, c2 }
 }
 
 const readTopKNum = async (file: string) => {
