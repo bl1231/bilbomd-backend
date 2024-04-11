@@ -66,7 +66,6 @@ const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
  *                   type: string
  *                   description: Error message indicating a duplicate username or email.
  */
-
 const handleNewUser = async (req: Request, res: Response) => {
   const { user, email } = req.body
   logger.info('handleNewUser: %s %s', user, email)

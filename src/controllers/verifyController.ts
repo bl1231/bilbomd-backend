@@ -1,4 +1,5 @@
 import { logger } from '../middleware/loggers'
+import { config } from '../config/config'
 import { User } from '../model/User'
 import { Request, Response } from 'express'
 import { sendVerificationEmail } from '../config/nodemailerConfig'
@@ -183,7 +184,9 @@ const resendVerificationCode = async (req: Request, res: Response) => {
     )
 
     // Send verification email
-    sendVerificationEmail(email, bilboMdUrl, code)
+    if (config.sendEmailNotifications) {
+      sendVerificationEmail(email, bilboMdUrl, code)
+    }
 
     res.status(201).json({ message: 'OK' })
   } catch (error) {
