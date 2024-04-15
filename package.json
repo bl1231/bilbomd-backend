@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@bull-board/api": "^5.15.3",
-    "@bull-board/express": "^5.15.3",
+    "@bull-board/express": "^5.15.5",
     "bullmq": "^5.7.1",
     "cookie-parser": "~1.4.6",
     "cors": "^2.8.5",
