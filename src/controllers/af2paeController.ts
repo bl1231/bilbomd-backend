@@ -2,7 +2,7 @@ import { logger } from '../middleware/loggers'
 import multer from 'multer'
 import fs from 'fs-extra'
 import path from 'path'
-import { Request, Response } from 'express'
+import { Express, Request, Response } from 'express'
 import { v4 as uuid } from 'uuid'
 import { spawn, ChildProcess } from 'node:child_process'
 import { User } from '../model/User'
@@ -23,15 +23,15 @@ const createNewConstFile = async (req: Request, res: Response) => {
         cb(null, jobDir)
       },
       filename: function (req, file, cb) {
-        let newFilename
-        if (file.fieldname === 'pdb_file') {
-          newFilename = 'pdb_file.pdb'
-        } else if (file.fieldname === 'pae_file') {
-          newFilename = 'pae_file.json'
-        } else {
-          newFilename = file.fieldname
-        }
-        cb(null, newFilename)
+        // let newFilename
+        // if (file.fieldname === 'pdb_file') {
+        //   newFilename = 'pdb_file.pdb'
+        // } else if (file.fieldname === 'pae_file') {
+        //   newFilename = 'pae_file.json'
+        // } else {
+        //   newFilename = file.fieldname
+        // }
+        cb(null, file.originalname.toLowerCase())
       }
     })
 
@@ -52,18 +52,33 @@ const createNewConstFile = async (req: Request, res: Response) => {
         if (!user) {
           return res.status(401).json({ message: 'No user found with that email' })
         }
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+        const pdbFileName =
+          files['pdb_file'] && files['pdb_file'][0]
+            ? files['pdb_file'][0].originalname
+            : 'missing.pdb'
+        const paeFileName =
+          files['pae_file'] && files['pae_file'][0]
+            ? files['pae_file'][0].originalname
+            : 'missing.json'
+
         const BullId = await queueJob({
           type: 'Pdb2Crd',
           title: 'convert PDB to CRD',
-          uuid: UUID
+          uuid: UUID,
+          pdb_file: pdbFileName,
+          pae_power: pae_power
         })
-        logger.info(`PDB 2 CRD Job assigned UUID: ${UUID}`)
-        logger.info(`PDB 2 CRD Job assigned BullMQ ID: ${BullId}`)
+        logger.info(`Pdb2Crd Job assigned UUID: ${UUID}`)
+        logger.info(`Pdb2Crd Job assigned BullMQ ID: ${BullId}`)
 
         // Need to wait here until the BullMQ job is finished
         await waitForJobCompletion(BullId, pdb2crdQueueEvents)
 
-        await spawnAF2PAEInpFileMaker(jobDir, pae_power)
+        // I should try using the pae_ratios.py on worker instead of backend
+        // so we can have only a single version of teh script.
+
+        await spawnAF2PAEInpFileMaker(jobDir, paeFileName, pae_power)
 
         res.status(200).json({
           message: 'New const.inp file successfully created',
@@ -100,20 +115,18 @@ const downloadConstFile = async (req: Request, res: Response) => {
   }
 }
 
-const spawnAF2PAEInpFileMaker = (af2paeDir: string, paePower: string) => {
+const spawnAF2PAEInpFileMaker = (
+  af2paeDir: string,
+  paeFile: string,
+  paePower: string
+) => {
   logger.info(`spawnAF2PAEInpFileMaker af2paeDir ${af2paeDir}`)
   const logFile = path.join(af2paeDir, 'af2pae.log')
   const errorFile = path.join(af2paeDir, 'af2pae_error.log')
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const af2pae_script = '/app/scripts/pae_ratios.py'
-  const args = [
-    af2pae_script,
-    'pae_file.json',
-    'bilbomd_pdb2crd.crd',
-    '--pae_power',
-    paePower
-  ]
+  const args = [af2pae_script, paeFile, 'bilbomd_pdb2crd.crd', '--pae_power', paePower]
 
   return new Promise((resolve, reject) => {
     const af2pae: ChildProcess = spawn('python', args, { cwd: af2paeDir })
