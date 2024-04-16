@@ -146,7 +146,7 @@ const getFoxsBilboData = async (job: IJob, res: Response) => {
 
     res.json(data)
   } catch (error) {
-    logger.error(`error getting FoXS analysis data`)
+    logger.error(`error getting FoXS analysis data ${error}`)
     return res
       .status(500)
       .json({ message: 'Internal server error while processing FoXS analysis data.' })
@@ -155,31 +155,56 @@ const getFoxsBilboData = async (job: IJob, res: Response) => {
 
 // Modify the createDataObject function to accept jobDir as an additional parameter
 const createDataObject = async (file: string, jobDir: string): Promise<FoxsData> => {
-  const fileContent = await fs.readFile(file, 'utf8')
-  const filename = path.basename(file)
-  const data: FoxsDataPoint[] = parseFileContent(fileContent)
-  const chisq: number = extractChiSquared(fileContent)
+  try {
+    // Check if the main file exists
+    await fs.access(file)
+    const fileContent = await fs.readFile(file, 'utf8')
+    const filename = path.basename(file)
+    const data: FoxsDataPoint[] = parseFileContent(fileContent)
+    const chisq: number = extractChiSquared(fileContent)
 
-  const logFile = path.join(jobDir, `initial_foxs_analysis.log`)
-  const { c1, c2 } = await extractC1C2(logFile) // Extract c1 and c2 values
+    const logFile = path.join(jobDir, `initial_foxs_analysis.log`)
 
-  const foxsData: FoxsData = {
-    filename,
-    chisq,
-    c1,
-    c2,
-    data
+    // Initialize c1 and c2 with default values
+    let c1 = 'unk'
+    let c2 = 'unk'
+
+    try {
+      // Check if the log file exists and extract c1, c2
+      // logger.info(`logFile: ${logFile}`)
+      await fs.access(logFile)
+      const extracted = await extractC1C2(logFile)
+      // logger.info(`extracted: ${JSON.stringify(extracted)}`)
+      c1 = extracted.c1 ?? 'unk'
+      c2 = extracted.c2 ?? 'unk'
+    } catch (logError) {
+      // If the log file doesn't exist or extraction fails, default to 0.00
+      logger.warn(`Log file not accessible or extraction failed: ${logError}`)
+    }
+
+    const foxsData: FoxsData = {
+      filename,
+      chisq,
+      c1,
+      c2,
+      data
+    }
+
+    return foxsData
+  } catch (error) {
+    console.error('Failed to create data object:', error)
+    throw new Error(`Failed to process the data object: ${error}`)
   }
-
-  return foxsData
 }
 
 const extractC1C2 = async (logFilePath: string): Promise<{ c1: string; c2: string }> => {
+  // logger.info('in extractC1C2 -----------------')
   const logContent = await fs.readFile(logFilePath, 'utf8')
-
+  // logger.info(`Reading from log file: ${logFilePath}`)
+  // logger.info(`Log content: ${logContent.substring(0, 500)}...`)
   // Use regular expressions to find c1 and c2, considering the format "c1 = <value> c2 = <value>"
-  const c1Match = logContent.match(/c1\s*=\s*([\d.]+)/)
-  const c2Match = logContent.match(/c2\s*=\s*([\d.]+)/)
+  const c1Match = logContent.match(/c1\s*=\s*([\d.-]+)/)
+  const c2Match = logContent.match(/c2\s*=\s*([\d.-]+)/)
 
   if (!c1Match || !c2Match) {
     throw new Error('Could not find c1 and c2 values in log file')

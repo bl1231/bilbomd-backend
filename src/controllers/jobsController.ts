@@ -346,36 +346,19 @@ const handleBilboMDJob = async (
       Object.assign(jobData, { pdb_file: pdbFile })
       newJob = new BilboMdPDBJob(jobData)
     }
+
     // Ensure newJob is defined before proceeding
     if (!newJob) {
       // Handle the case where newJob wasn't set due to an unsupported bilbomdMode
       logger.error(`Unsupported bilbomd_mode: ${bilbomdMode}`)
       return res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
     }
+
     // Save the job to MongoDB
     await newJob.save()
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
-    // ----- move this to worker ----- //
-    // // Convert PDB to PSF and CRD
-    // const Pdb2CrdBullId = await queuePdb2CrdJob({
-    //   type: 'Pdb2Crd',
-    //   title: 'convert PDB to CRD',
-    //   uuid: UUID
-    // })
-    // logger.info(`PDB 2 CRD Job assigned UUID: ${UUID}`)
-    // logger.info(`PDB 2 CRD Job assigned BullMQ ID: ${Pdb2CrdBullId}`)
-
-    // // Need to wait here until the BullMQ job is finished
-    // await waitForJobCompletion(Pdb2CrdBullId, pdb2crdQueueEvents)
-    // logger.info(`PDB 2 CRD completed.`)
-
-    // // add PSF and CRD files to Mongo entry
-    // // These names are hardcoded in the Python/CHARMM script
-    // newJob.psf_file = 'bilbomd_pdb2crd.psf'
-    // newJob.crd_file = 'bilbomd_pdb2crd.crd'
-    // await newJob.save()
-
+    // Queue the job
     const BullId = await queueJob({
       type: bilbomdMode,
       title: newJob.title,
@@ -406,20 +389,29 @@ const handleBilboMDAutoJob = async (
   try {
     const { bilbomd_mode: bilbomdMode } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-    logger.info(
-      `PDB File: ${
-        files['pdb_file'] ? files['pdb_file'][0].originalname.toLowerCase() : 'Not Found'
-      }`
-    )
+    const pdbFileName =
+      files['pdb_file'] && files['pdb_file'][0]
+        ? files['pdb_file'][0].originalname.toLowerCase()
+        : 'missing.pdb'
+    const paeFileName =
+      files['pae_file'] && files['pae_file'][0]
+        ? files['pae_file'][0].originalname.toLowerCase()
+        : 'missing.json'
+    const datFileName =
+      files['dat_file'] && files['dat_file'][0]
+        ? files['dat_file'][0].originalname.toLowerCase()
+        : 'missing.json'
+    logger.info(`PDB File: ${pdbFileName}`)
+    logger.info(`PAE File: ${paeFileName}`)
 
     const now = new Date()
     // logger.info(`now:  ${now.toDateString()}`)
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
       uuid: UUID,
-      pdb_file: files['pdb_file'][0].originalname.toLowerCase(),
-      pae_file: files['pae_file'][0].originalname.toLowerCase(),
-      data_file: files['dat_file'][0].originalname.toLowerCase(),
+      pdb_file: pdbFileName,
+      pae_file: paeFileName,
+      data_file: datFileName,
       conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
@@ -435,16 +427,18 @@ const handleBilboMDAutoJob = async (
     const Pdb2CrdBullId = await queuePdb2CrdJob({
       type: 'Pdb2Crd',
       title: 'convert PDB to CRD',
-      uuid: UUID
+      uuid: UUID,
+      pdb_file: pdbFileName,
+      pae_power: '2.0'
     })
-    logger.info(`PDB 2 CRD Job assigned UUID: ${UUID}`)
-    logger.info(`PDB 2 CRD Job assigned BullMQ ID: ${Pdb2CrdBullId}`)
+    logger.info(`Pdb2Crd Job assigned UUID: ${UUID}`)
+    logger.info(`Pdb2Crd Job assigned BullMQ ID: ${Pdb2CrdBullId}`)
 
     // Need to wait here until the BullMQ job is finished
     await waitForJobCompletion(Pdb2CrdBullId, pdb2crdQueueEvents)
-    logger.info(`PDB 2 CRD completed.`)
+    logger.info(`Pdb2Crd completed.`)
 
-    // add PSF and CRD files to Mongo entry
+    // Add PSF and CRD files to Mongo entry
     newJob.psf_file = 'bilbomd_pdb2crd.psf'
     newJob.crd_file = 'bilbomd_pdb2crd.crd'
     await newJob.save()
