@@ -121,6 +121,10 @@ podman-hp migrate bl1231/bilbomd-backend:latest
 
 ## Version History
 
+- 1.9.0
+  - Fix for negative C1 C2 values in FoXS plots
+  - Some changes to accomodate new pdb2crd numbering logic
+  - Use Content-Disposition headers for results file downloads
 - 1.8.5
   - OTP bug fix
   - security enhancements
