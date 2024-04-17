@@ -857,23 +857,47 @@ const calculateNumEnsembles = async (
 
 const downloadJobResults = async (req: Request, res: Response) => {
   if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
+
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {
     return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
   }
-  const resultFile = path.join(uploadFolder, job.uuid, 'results.tar.gz')
+
+  const outputFolder = path.join(uploadFolder, job.uuid)
+  const defaultResultFile = path.join(outputFolder, 'results.tar.gz')
+  const uuidPrefix = job.uuid.split('-')[0]
+  const newResultFile = path.join(outputFolder, `results-${uuidPrefix}.tar.gz`)
+
+  // Attempt to access and send the default results file
   try {
-    await fs.promises.access(resultFile)
-    res.download(resultFile, (err) => {
+    await fs.promises.access(defaultResultFile)
+    const filename = path.basename(defaultResultFile) // Extract filename for setting Content-Disposition
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+    return res.download(defaultResultFile, filename, (err) => {
       if (err) {
-        res.status(500).json({
-          message: 'Could not download the file . ' + err
+        return res.status(500).json({
+          message: 'Could not download the file: ' + err
         })
       }
     })
   } catch (error) {
-    logger.error('No %s available.', resultFile)
-    return res.status(500).json({ message: `No ${resultFile} available.` })
+    // If the default file is not found, try the new file name
+    try {
+      await fs.promises.access(newResultFile)
+      const filename = path.basename(newResultFile) // Extract new filename for setting Content-Disposition
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+      return res.download(newResultFile, filename, (err) => {
+        if (err) {
+          return res.status(500).json({
+            message: 'Could not download the file: ' + err
+          })
+        }
+      })
+    } catch (newFileError) {
+      // If neither file is found, log error and return a message
+      logger.error('No result files available for job ID %s.', req.params.id)
+      return res.status(500).json({ message: 'No result files available.' })
+    }
   }
 }
 
