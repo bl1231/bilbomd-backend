@@ -55,11 +55,11 @@ const createNewConstFile = async (req: Request, res: Response) => {
         const files = req.files as { [fieldname: string]: Express.Multer.File[] }
         const pdbFileName =
           files['pdb_file'] && files['pdb_file'][0]
-            ? files['pdb_file'][0].originalname
+            ? files['pdb_file'][0].originalname.toLowerCase()
             : 'missing.pdb'
         const paeFileName =
           files['pae_file'] && files['pae_file'][0]
-            ? files['pae_file'][0].originalname
+            ? files['pae_file'][0].originalname.toLowerCase()
             : 'missing.json'
 
         const BullId = await queueJob({
