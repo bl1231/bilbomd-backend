@@ -359,7 +359,7 @@ const handleBilboMDJob = async (
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Save Job params to $UUID for use by NERSC job script.
-    const nerscParams = JSON.stringify(jobData, null, 2)
+    const nerscParams = JSON.stringify(newJob, null, 2)
     try {
       const jobDir = path.join(uploadFolder, UUID)
       const paramsFile = path.join(jobDir, 'params.json')
