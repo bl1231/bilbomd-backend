@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # Build stage 1 - Install Miniforge3
-FROM node:20.11.1-slim as bilbomd-backend-step1
+FROM node:20.12.2-slim as bilbomd-backend-step1
 ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG NODE_MAJOR=20
