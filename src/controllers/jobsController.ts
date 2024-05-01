@@ -358,16 +358,8 @@ const handleBilboMDJob = async (
     await newJob.save()
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
-    // Save Job params to $UUID for use by NERSC job script.
-    const nerscParams = JSON.stringify(newJob, null, 2)
-    try {
-      const jobDir = path.join(uploadFolder, UUID)
-      const paramsFile = path.join(jobDir, 'params.json')
-      fs.writeFileSync(paramsFile, nerscParams)
-      logger.info(`Saved ${paramsFile}`)
-    } catch (error) {
-      logger.error(`Unable to save params.json ${error}`)
-    }
+    // Write Job params for use by NERSC job script.
+    await writeJobParams(newJob, UUID)
 
     // Queue the job
     const BullId = await queueJob({
@@ -416,7 +408,7 @@ const handleBilboMDAutoJob = async (
     logger.info(`PAE File: ${paeFileName}`)
 
     const now = new Date()
-    // logger.info(`now:  ${now.toDateString()}`)
+
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
       uuid: UUID,
@@ -428,11 +420,13 @@ const handleBilboMDAutoJob = async (
       time_submitted: now,
       user: user
     })
-    // logger.info(`handleBilboMDAutoJob newJob: ${newJob}`)
 
     // Save the job to the database
     await newJob.save()
     logger.info(`${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
+
+    // Write Job params for use by NERSC job script.
+    await writeJobParams(newJob, UUID)
 
     // Convert PDB to PSF and CRD
     const Pdb2CrdBullId = await queuePdb2CrdJob({
@@ -1207,6 +1201,34 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
         })
     })
   })
+}
+
+const writeJobParams = async (
+  Job: IBilboMDPDBJob | IBilboMDCRDJob | IBilboMDAutoJob,
+  UUID: string
+): Promise<void> => {
+  const jobParams = {
+    title: Job.title,
+    uuid: Job.uuid,
+    job_type: Job.__t,
+    username: Job.user.username,
+    email: Job.user.email,
+    pdb_file: Job.pdb_file,
+    constinp: Job.const_inp_file,
+    saxs_data: Job.data_file,
+    rg_min: Job.rg_min,
+    rg_max: Job.rg_max,
+    conf_sample: Job.conformational_sampling
+  }
+  const nerscParams = JSON.stringify(jobParams, null, 2)
+  try {
+    const jobDir = path.join(uploadFolder, UUID)
+    const paramsFile = path.join(jobDir, 'params.json')
+    fs.writeFileSync(paramsFile, nerscParams)
+    logger.info(`Saved ${paramsFile}`)
+  } catch (error) {
+    logger.error(`Unable to save params.json ${error}`)
+  }
 }
 
 export {
