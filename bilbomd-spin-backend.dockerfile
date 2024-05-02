@@ -1,22 +1,11 @@
 # -----------------------------------------------------------------------------
 # Build stage 1 - Install Miniforge3
-FROM node:20.12.2-slim as bilbomd-backend-step1
-ARG USER_ID=1001
-ARG GROUP_ID=1001
-ARG NODE_MAJOR=20
+FROM node:20-slim as bilbomd-backend-step1
 
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update && \
     apt-get install -y ncat ca-certificates wget libgl1-mesa-dev
-
-# # Install Miniconda3
-# RUN wget "https://repo.anaconda.com/miniconda/Miniconda3-latest-$(uname)-$(uname -m).sh" -O /miniconda.sh && \
-#     bash /miniconda.sh -b -p /miniconda && \
-#     rm /miniconda.sh
-
-# # Add Conda to PATH
-# ENV PATH="/miniconda/bin/:${PATH}"
 
 # Download and install Miniforge3
 RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
@@ -61,36 +50,40 @@ RUN python setup.py build_ext --inplace && \
 # -----------------------------------------------------------------------------
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
+ARG USER_ID=1001
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
 
-# Create a user and group with the provided IDs
-RUN mkdir /home/bilbo
-ARG USER_ID=1001
-ARG GROUP_ID=1001
-RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
-
-# Change ownership of directories to the user and group
-RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
-
-# Switch to the non-root user
-USER bilbo:bilbomd
+# update NPM
+RUN npm install -g npm@10.7.0
 
 # switch back so we can install bilbomd-backend
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-COPY --chown=bilbo:bilbomd package*.json .
+COPY package*.json .
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-COPY --chown=bilbo:bilbomd . .
+# Copy entire backend app
+COPY . .
 
-# NERSC requires container to me run as sclassen UID=62704
-USER root
-RUN chown -R 62704:0 "/home/bilbo/.npm"
+# NERSC considerations
+#
+# My understanding is that if I want to mount a CFS volume into
+# the container and be able to write to it (e.g. /bilbomd/uploads/) I need to 
+# run the container as "me" i.e. sclassen UID=62704
+#
+# If the entire image is built as root then I need to chown the entire /app
+# directory to my NERSC UID so that SPIN...running the container with UID=62704
+# will be able to write to /app
+#
+#   A large GID does not work with node:20.12.2-slim
+#
+# RUN chown -R 62704:104818 *
+RUN chown -R $USER_ID:0 /app
 
 EXPOSE 3500
 
