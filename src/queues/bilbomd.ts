@@ -17,7 +17,7 @@ const redis = new IORedis(redisOptions)
 const bilbomdQueue = new Queue('bilbomd', {
   connection: redis,
   defaultJobOptions: {
-    attempts: 3
+    attempts: 1
   }
 })
 
