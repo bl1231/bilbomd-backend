@@ -4,6 +4,8 @@ Simple python jiffy to calculate the min and max Rg values
 
 import argparse
 import json
+import os
+os.environ[ 'MPLCONFIGDIR' ] = '/tmp/'
 
 import bioxtasraw.RAWAPI as raw
 

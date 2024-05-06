@@ -51,24 +51,41 @@ RUN python setup.py build_ext --inplace && \
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID=1001
+ARG GROUP_ID=62704
+# install vim
+RUN apt-get update && \
+    apt-get install -y vim
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
 
+# Create a user and group with the provided IDs
+RUN mkdir /home/bilbo
+
+RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
+
+# Change ownership of directories to the user and group
+RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
+
 # update NPM
 RUN npm install -g npm@10.7.0
+
+# Switch to the non-root user
+USER bilbo:bilbomd
 
 # switch back so we can install bilbomd-backend
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-COPY package*.json .
+# COPY package*.json .
+COPY --chown=bilbo:bilbomd package*.json .
 
 # Install dependencies
 RUN npm ci
 
 # Copy entire backend app
-COPY . .
+# COPY . .
+COPY --chown=bilbo:bilbomd . .
 
 # NERSC considerations
 #
@@ -83,7 +100,7 @@ COPY . .
 #   A large GID does not work with node:20.12.2-slim
 #
 # RUN chown -R 62704:104818 *
-RUN chown -R $USER_ID:0 /app
+# RUN chown -R $USER_ID:0 /app
 
 EXPOSE 3500
 
