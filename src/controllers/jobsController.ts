@@ -1214,6 +1214,8 @@ const writeJobParams = async (
     username: Job.user.username,
     email: Job.user.email,
     pdb_file: Job.pdb_file,
+    psf_file: Job.psf_file,
+    crd_file: Job.crd_file,
     constinp: Job.const_inp_file,
     saxs_data: Job.data_file,
     rg_min: Job.rg_min,
