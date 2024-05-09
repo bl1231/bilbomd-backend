@@ -360,7 +360,7 @@ const handleBilboMDJob = async (
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Write Job params for use by NERSC job script.
-    await writeJobParams(newJob, UUID)
+    await writeJobParams(newJob)
 
     // Queue the job
     const BullId = await queueJob({
@@ -427,7 +427,7 @@ const handleBilboMDAutoJob = async (
     logger.info(`${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Write Job params for use by NERSC job script.
-    await writeJobParams(newJob, UUID)
+    await writeJobParams(newJob)
 
     // ---------------------------------------------------------- //
     // Convert PDB to PSF and CRD
@@ -1209,9 +1209,9 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
 }
 
 const writeJobParams = async (
-  Job: IBilboMDPDBJob | IBilboMDCRDJob | IBilboMDAutoJob,
-  UUID: string
+  Job: IBilboMDPDBJob | IBilboMDCRDJob | IBilboMDAutoJob
 ): Promise<void> => {
+  const UUID = Job.uuid
   const jobParams = {
     title: Job.title,
     uuid: Job.uuid,
@@ -1220,12 +1220,16 @@ const writeJobParams = async (
     email: Job.user.email,
     pdb_file: Job.pdb_file,
     psf_file: Job.psf_file,
+    pae_file: '',
     crd_file: Job.crd_file,
     constinp: Job.const_inp_file,
     saxs_data: Job.data_file,
     rg_min: Job.rg_min,
     rg_max: Job.rg_max,
     conf_sample: Job.conformational_sampling
+  }
+  if ('pae_file' in Job) {
+    jobParams.pae_file = Job.pae_file
   }
   const nerscParams = JSON.stringify(jobParams, null, 2)
   try {
