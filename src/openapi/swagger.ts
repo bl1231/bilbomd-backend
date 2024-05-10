@@ -1,8 +1,10 @@
 import fs from 'fs'
 import m2s from 'mongoose-to-swagger'
 import swaggerSpecJson from './swaggerOptions'
-import { User } from '../model/User'
-import { BilboMdJob } from '../model/Job'
+// import { User } from '../model/User'
+// import { BilboMdJob } from '../model/Job'
+import { User } from '@bl1231/bilbomd-mongodb-schema'
+import { BilboMdJob } from '@bl1231/bilbomd-mongodb-schema'
 
 // Assuming the types for these modules might not be available,
 // and your models and swaggerOptions are correctly typed or accepted as any.

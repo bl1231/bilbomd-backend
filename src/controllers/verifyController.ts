@@ -1,6 +1,7 @@
 import { logger } from '../middleware/loggers'
 import { config } from '../config/config'
-import { User } from '../model/User'
+// import { User } from '../model/User'
+import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { sendVerificationEmail } from '../config/nodemailerConfig'
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'

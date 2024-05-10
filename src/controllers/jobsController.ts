@@ -14,6 +14,17 @@ import {
   waitForJobCompletion,
   pdb2crdQueueEvents
 } from '../queues/pdb2crd'
+// import {
+//   Job,
+//   BilboMdPDBJob,
+//   IBilboMDPDBJob,
+//   BilboMdCRDJob,
+//   IBilboMDCRDJob,
+//   BilboMdAutoJob,
+//   IBilboMDAutoJob,
+//   BilboMdScoperJob,
+//   IBilboMDScoperJob
+// } from '../model/Job'
 import {
   Job,
   BilboMdPDBJob,
@@ -24,9 +35,10 @@ import {
   IBilboMDAutoJob,
   BilboMdScoperJob,
   IBilboMDScoperJob
-} from '../model/Job'
+} from '@bl1231/bilbomd-mongodb-schema'
 
-import { User, IUser } from '../model/User'
+// import { User, IUser } from '../model/User'
+import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
 import { IJob, BilboMDScoperSteps, BilboMDSteps } from 'types/bilbomd'
@@ -360,7 +372,7 @@ const handleBilboMDJob = async (
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Write Job params for use by NERSC job script.
-    await writeJobParams(newJob)
+    await writeJobParams(newJob.id)
 
     // Queue the job
     const BullId = await queueJob({
@@ -427,7 +439,7 @@ const handleBilboMDAutoJob = async (
     logger.info(`${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Write Job params for use by NERSC job script.
-    await writeJobParams(newJob)
+    await writeJobParams(newJob.id)
 
     // ---------------------------------------------------------- //
     // Convert PDB to PSF and CRD
@@ -1208,38 +1220,62 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
   })
 }
 
-const writeJobParams = async (
-  Job: IBilboMDPDBJob | IBilboMDCRDJob | IBilboMDAutoJob
-): Promise<void> => {
-  const UUID = Job.uuid
-  const jobParams = {
-    title: Job.title,
-    uuid: Job.uuid,
-    job_type: Job.__t,
-    username: Job.user.username,
-    email: Job.user.email,
-    pdb_file: Job.pdb_file,
-    psf_file: Job.psf_file,
-    pae_file: '',
-    crd_file: Job.crd_file,
-    constinp: Job.const_inp_file,
-    saxs_data: Job.data_file,
-    rg_min: Job.rg_min,
-    rg_max: Job.rg_max,
-    conf_sample: Job.conformational_sampling
-  }
-  if ('pae_file' in Job) {
-    jobParams.pae_file = Job.pae_file
-  }
-  const nerscParams = JSON.stringify(jobParams, null, 2)
+const writeJobParams = async (jobID: string): Promise<void> => {
   try {
+    const job = await Job.findById(jobID).populate('user').exec()
+    if (!job) {
+      throw new Error('Job not found')
+    }
+    const UUID = job.uuid
+    // Convert the Mongoose document to a plain object
+    const jobObject = job.toObject({ virtuals: true, versionKey: false })
+    // Exclude metadata like mongoose versionKey, etc, if necessary
+    delete jobObject.__v // Optionally remove version key if not done globally
+
+    // Serialize to JSON with pretty printing
+    const jobJson = JSON.stringify(jobObject, null, 2)
     const jobDir = path.join(uploadFolder, UUID)
-    const paramsFile = path.join(jobDir, 'params.json')
-    fs.writeFileSync(paramsFile, nerscParams)
-    logger.info(`Saved ${paramsFile}`)
+    // Define the path for the params.json file
+    const paramsFilePath = path.join(jobDir, 'params.json') // Adjust the directory path as needed
+
+    // Write JSON string to a file
+    await fs.writeFile(paramsFilePath, jobJson)
+    console.log(`Saved params.json to ${paramsFilePath}`)
   } catch (error) {
-    logger.error(`Unable to save params.json ${error}`)
+    logger.error(`Unable to save params.json: ${error}`)
   }
+
+  // const UUID = Job.uuid
+  // const jobParams: any = {
+  //   title: Job.title,
+  //   uuid: Job.uuid,
+  //   job_type: Job.__t,
+  //   pdb_file: Job.pdb_file,
+  //   psf_file: Job.psf_file,
+  //   pae_file: '',
+  //   crd_file: Job.crd_file,
+  //   constinp: Job.const_inp_file,
+  //   saxs_data: Job.data_file,
+  //   rg_min: Job.rg_min,
+  //   rg_max: Job.rg_max,
+  //   conf_sample: Job.conformational_sampling
+  // }
+  // if ('user' in Job) {
+  //   jobParams.username = Job.user.username
+  //   jobParams.email = Job.user.email
+  // }
+  // if ('pae_file' in Job) {
+  //   jobParams.pae_file = Job.pae_file
+  // }
+  // const nerscParams = JSON.stringify(jobParams, null, 2)
+  // try {
+  //   const jobDir = path.join(uploadFolder, UUID)
+  //   const paramsFile = path.join(jobDir, 'params.json')
+  //   fs.writeFileSync(paramsFile, nerscParams)
+  //   logger.info(`Saved ${paramsFile}`)
+  // } catch (error) {
+  //   logger.error(`Unable to save params.json ${error}`)
+  // }
 }
 
 export {

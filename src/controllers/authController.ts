@@ -1,6 +1,6 @@
 import { logger } from '../middleware/loggers'
-import { User, IUser } from '../model/User'
-// import { Schema } from 'mongoose'
+// import { User, IUser } from '../model/User'
+import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import jwt from 'jsonwebtoken'
 import { Request, Response } from 'express'
 
