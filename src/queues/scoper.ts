@@ -23,7 +23,7 @@ const scoperQueue = new Queue('bilbomd-scoper', {
 
 const closeQueue = async () => {
   await scoperQueue.close()
-  await redis.disconnect() // Disconnect from Redis
+  redis.disconnect()
 }
 
 const queueScoperJob = async (data: BullMQData) => {

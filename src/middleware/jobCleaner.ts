@@ -4,7 +4,8 @@ import path from 'path'
 import fs from 'fs-extra'
 // import IORedis, { RedisOptions } from 'ioredis'
 // import { Queue } from 'bullmq'
-import { Job } from '../model/Job'
+// import { Job } from '../model/Job'
+import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from './loggers'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
@@ -47,7 +48,7 @@ export const deleteOldJobs = async () => {
 
     for (const job of oldJobs) {
       logger.warn(
-        `Preparing to delete: ${job.title} user: ${job.user.username} completed: ${job.time_completed}`
+        `Preparing to delete: ${job.title} user: ${job.user} completed: ${job.time_completed}`
       )
       const jobDir = path.join(uploadFolder, job.uuid)
 

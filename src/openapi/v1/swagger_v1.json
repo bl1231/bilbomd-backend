@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "BilboMD Backend",
-    "version": "1.8.5",
+    "version": "1.9.0",
     "description": "API documentation for bilbomd-backend"
   },
   "servers": [
@@ -1258,6 +1258,8 @@
         "title": "User",
         "required": [
           "username",
+          "roles",
+          "refreshToken",
           "email"
         ],
         "properties": {
@@ -1386,6 +1388,167 @@
           },
           "user": {
             "type": "schemaobjectid"
+          },
+          "steps": {
+            "type": "object",
+            "properties": {
+              "pae": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "autorg": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "minimize": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "heat": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "md": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "foxs": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "multifoxs": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "results": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "email": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "numEnsembles": {
+                "type": "number"
+              }
+            }
           },
           "_id": {
             "type": "string"

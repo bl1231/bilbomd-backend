@@ -1,8 +1,9 @@
 import { logger } from '../middleware/loggers'
 import fs from 'fs-extra'
 import path from 'path'
-import { Job } from '../model/Job'
-import { IJob, IBilboMDScoperJob } from '../model/Job'
+// import { Job } from '../model/Job'
+// import { IJob, IBilboMDScoperJob } from '../model/Job'
+import { Job, IJob, IBilboMDScoperJob } from '@bl1231/bilbomd-mongodb-schema'
 import { FoxsData, FoxsDataPoint } from 'types/foxs'
 // eslint-disable-next-line no-unused-vars
 import { Express, Request, Response } from 'express'

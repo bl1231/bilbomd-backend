@@ -19,6 +19,7 @@
     "swagger": "npx ts-node src/openapi/swagger.ts"
   },
   "dependencies": {
+    "@bl1231/bilbomd-mongodb-schema": "^1.0.10",
     "@bull-board/api": "^5.16.0",
     "@bull-board/express": "^5.16.0",
     "bullmq": "^5.7.5",
@@ -43,7 +44,6 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.13",
     "nodemailer-express-handlebars": "^6.1.2",
-    "npm-check-updates": "^16.14.18",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui": "^5.17.1",
     "swagger-ui-express": "^5.0.0",

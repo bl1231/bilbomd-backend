@@ -1,22 +1,11 @@
 # -----------------------------------------------------------------------------
 # Build stage 1 - Install Miniforge3
-FROM node:20.11.1-slim as bilbomd-backend-step1
-ARG USER_ID=1001
-ARG GROUP_ID=1001
-ARG NODE_MAJOR=20
+FROM node:20-slim as bilbomd-backend-step1
 
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update && \
     apt-get install -y ncat ca-certificates wget libgl1-mesa-dev
-
-# # Install Miniconda3
-# RUN wget "https://repo.anaconda.com/miniconda/Miniconda3-latest-$(uname)-$(uname -m).sh" -O /miniconda.sh && \
-#     bash /miniconda.sh -b -p /miniconda && \
-#     rm /miniconda.sh
-
-# # Add Conda to PATH
-# ENV PATH="/miniconda/bin/:${PATH}"
 
 # Download and install Miniforge3
 RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
@@ -61,18 +50,23 @@ RUN python setup.py build_ext --inplace && \
 # -----------------------------------------------------------------------------
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
+ARG USER_ID=1001
+ARG GROUP_ID=1001
+ARG NPM_TOKEN
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
 
 # Create a user and group with the provided IDs
 RUN mkdir /home/bilbo
-ARG USER_ID=1001
-ARG GROUP_ID=1001
+
 RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
 RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
+
+# update NPM
+RUN npm install -g npm@10.7.0
 
 # Switch to the non-root user
 USER bilbo:bilbomd
@@ -83,14 +77,17 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY --chown=bilbo:bilbomd package*.json .
 
+# Create .npmrc file using the build argument
+RUN echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" > /home/bilbo/.npmrc
+
 # Install dependencies
-RUN npm install
+RUN npm ci
 
+# Optionally, clean up the environment variable for security
+RUN unset NPM_TOKEN
+
+# Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
-
-# NERSC requires container to me run as sclassen UID=62704
-USER root
-RUN chown -R 62704:0 "/home/bilbo/.npm"
 
 EXPOSE 3500
 

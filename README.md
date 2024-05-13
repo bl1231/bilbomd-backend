@@ -70,49 +70,22 @@ This makes it so that `bilbomd-backend` will automatically restart inside the do
 To test if the `Dockerfile` will build you can use this command:
 
 ```bash
-docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 .
-docker build --build-arg USER_ID=62704 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
+docker build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -f bilbomd-backend.dockerfile
 ```
 
 or if using `podman-hpc` on perlmutter...
 
 ```bash
-podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
+podman-hpc build --build-arg USER_ID=$UID -t bl1231/bilbomd-spin-backend -f bilbomd-spin-backend.dockerfile
 ```
 
-Then you need to migrate the image into `$SCRATCH` filesystem to use it.
+Then you need to tag and push in order for it to be available to Helm/SPIN.
 
 ```bash
-podman-hp migrate bl1231/bilbomd-backend:latest
+podman-hpc login registry.nersc.gov
+podman-hpc tag bl1231/bilbomd-spin-backend:latest registry.nersc.gov/m4659/sclassen/bl1231/bilbomd-spin-backend:latest
+podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 ```
-
-1 docker system prune
-572 podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
-573 cd bilbomd-backend/
-574 podman-hpc build --build-arg USER_ID=1001 --build-arg GROUP_ID=1001 -t bl1231/bilbomd-backend .
-575 docker image ls
-576 git status
-577 kubectl
-578 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
-579 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
-580 docker login
-581 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:2.0.0
-582 podman-hpc migrate bl1231/bilbomd-backend:latest
-583 podman-hpc images
-584 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:2.0.0
-585 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
-586 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
-587 podman-hpc login registry.nersc.gov
-588 docker push registry.nersc.gov/m3513/sclassen/bilbomd-backend:latest
-589 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-590 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-591 podman-hpc build -t bl1231/bilbomd-backend .
-592 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-593 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-594 history | grep docker
-595 docker build --build-arg USER_ID=62704 --build-arg GROUP_ID=62704 -t bl1231/bilbomd-backend .
-596 docker tag localhost/bl1231/bilbomd-backend:latest registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
-597 docker push registry.nersc.gov/m4521/sclassen/bilbomd-backend:latest
 
 ## Authors
 
