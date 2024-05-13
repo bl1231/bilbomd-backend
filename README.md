@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.9.1
+  - Add in some changes required for NERSC deployment
 - 1.9.0
   - Fix for negative C1 C2 values in FoXS plots
   - Some changes to accomodate new pdb2crd numbering logic
