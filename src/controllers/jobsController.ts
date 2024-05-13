@@ -27,6 +27,7 @@ import {
 // } from '../model/Job'
 import {
   Job,
+  IJob,
   BilboMdPDBJob,
   IBilboMDPDBJob,
   BilboMdCRDJob,
@@ -41,7 +42,7 @@ import {
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
-import { IJob, BilboMDScoperSteps, BilboMDSteps } from 'types/bilbomd'
+import { BilboMDScoperSteps, BilboMDSteps } from 'types/bilbomd'
 import { BilboMDJob, BilboMDBullMQ } from 'types/bilbomd'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
