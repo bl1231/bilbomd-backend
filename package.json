@@ -19,7 +19,7 @@
     "swagger": "npx ts-node src/openapi/swagger.ts"
   },
   "dependencies": {
-    "@bl1231/bilbomd-mongodb-schema": "^1.0.15",
+    "@bl1231/bilbomd-mongodb-schema": "^1.0.16",
     "@bull-board/api": "^5.17.1",
     "@bull-board/express": "^5.17.1",
     "bullmq": "^5.7.8",
