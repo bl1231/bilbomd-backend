@@ -339,6 +339,7 @@ const handleBilboMDJob = async (
       time_submitted: new Date(),
       user: user,
       steps: {
+        pdb2crd: {},
         pae: {},
         autorg: {},
         minimize: {},
@@ -434,18 +435,7 @@ const handleBilboMDAutoJob = async (
     logger.info(`PAE File: ${paeFileName}`)
 
     const now = new Date()
-    // const steps = {
-    //   pae: 'Waiting',
-    //   autorg: 'Waiting',
-    //   minimize: 'Waiting',
-    //   heat: 'Waiting',
-    //   md: 'Waiting',
-    //   foxs: 'Waiting',
-    //   multifoxs: 'Waiting',
-    //   results: 'Waiting',
-    //   email: 'Waiting',
-    //   numEnsembles: 0
-    // }
+
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
       uuid: UUID,
@@ -457,6 +447,7 @@ const handleBilboMDAutoJob = async (
       time_submitted: now,
       user: user,
       steps: {
+        pdb2crd: {},
         pae: {},
         autorg: {},
         minimize: {},
