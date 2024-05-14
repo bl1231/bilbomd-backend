@@ -348,8 +348,7 @@ const handleBilboMDJob = async (
         foxs: {},
         multifoxs: {},
         results: {},
-        email: {},
-        numEnsembles: 0
+        email: {}
       }
     }
 
@@ -456,8 +455,7 @@ const handleBilboMDAutoJob = async (
         foxs: {},
         multifoxs: {},
         results: {},
-        email: {},
-        numEnsembles: 0
+        email: {}
       }
     })
 
