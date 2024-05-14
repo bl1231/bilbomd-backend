@@ -337,7 +337,19 @@ const handleBilboMDJob = async (
       rg_max: req.body.rg_max,
       status: 'Submitted',
       time_submitted: new Date(),
-      user: user
+      user: user,
+      steps: {
+        pae: {},
+        autorg: {},
+        minimize: {},
+        heat: {},
+        md: {},
+        foxs: {},
+        multifoxs: {},
+        results: {},
+        email: {},
+        numEnsembles: 0
+      }
     }
 
     let newJob: IBilboMDPDBJob | IBilboMDCRDJob | undefined
@@ -367,7 +379,7 @@ const handleBilboMDJob = async (
       logger.error(`Unsupported bilbomd_mode: ${bilbomdMode}`)
       return res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
     }
-
+    logger.info(newJob)
     // Save the job to MongoDB
     await newJob.save()
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
@@ -422,7 +434,18 @@ const handleBilboMDAutoJob = async (
     logger.info(`PAE File: ${paeFileName}`)
 
     const now = new Date()
-
+    // const steps = {
+    //   pae: 'Waiting',
+    //   autorg: 'Waiting',
+    //   minimize: 'Waiting',
+    //   heat: 'Waiting',
+    //   md: 'Waiting',
+    //   foxs: 'Waiting',
+    //   multifoxs: 'Waiting',
+    //   results: 'Waiting',
+    //   email: 'Waiting',
+    //   numEnsembles: 0
+    // }
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
       uuid: UUID,
@@ -432,7 +455,19 @@ const handleBilboMDAutoJob = async (
       conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
-      user: user
+      user: user,
+      steps: {
+        pae: {},
+        autorg: {},
+        minimize: {},
+        heat: {},
+        md: {},
+        foxs: {},
+        multifoxs: {},
+        results: {},
+        email: {},
+        numEnsembles: 0
+      }
     })
 
     // Save the job to the database
