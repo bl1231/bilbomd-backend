@@ -52,6 +52,7 @@ RUN python setup.py build_ext --inplace && \
 FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID=1001
 ARG GROUP_ID=62704
+ARG NPM_TOKEN
 # install vim
 RUN apt-get update && \
     apt-get install -y vim
@@ -80,8 +81,14 @@ WORKDIR /app
 # COPY package*.json .
 COPY --chown=bilbo:bilbomd package*.json .
 
+# Create .npmrc file using the build argument
+RUN echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" > /home/bilbo/.npmrc
+
 # Install dependencies
 RUN npm ci
+
+# Optionally, clean up the environment variable for security
+RUN unset NPM_TOKEN
 
 # Copy entire backend app
 # COPY . .
