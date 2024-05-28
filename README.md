@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.9.2
+  - Use @bl1231/bilbomd-mongodb-schema
+  - Update dependencies
 - 1.9.1
   - Add in some changes required for NERSC deployment
 - 1.9.0
