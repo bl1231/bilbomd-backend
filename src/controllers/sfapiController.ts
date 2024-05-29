@@ -177,6 +177,7 @@ const getProjectHours = async (req: Request, res: Response) => {
     if (!data) {
       return res.status(404).json({ error: 'No data for that project' })
     }
+    // logger.info(JSON.stringify(data))
     const project = data.find((p: ProjectStats) => p.repo_name === projectName)
 
     if (!project) {
