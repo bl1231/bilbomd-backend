@@ -177,33 +177,33 @@ const updateStepStatus = async (
       updatedSteps.pae = 'start'
     } else if (logLine.includes('start autorg')) {
       updatedSteps.autorg = 'start'
-    } else if (logLine.includes('start minimization')) {
+    } else if (logLine.includes('start minimize')) {
       updatedSteps.minimize = 'start'
-    } else if (logLine.includes('start heating')) {
+    } else if (logLine.includes('start heat')) {
       updatedSteps.heat = 'start'
-    } else if (logLine.includes('start molecular dynamics')) {
+    } else if (logLine.includes('start md')) {
       updatedSteps.md = 'start'
-    } else if (logLine.includes('start FoXS')) {
+    } else if (logLine.includes('start foxs')) {
       updatedSteps.foxs = 'start'
-    } else if (logLine.includes('start MultiFoXS')) {
+    } else if (logLine.includes('start multifoxs')) {
       updatedSteps.multifoxs = 'start'
-    } else if (logLine.includes('start gather results')) {
+    } else if (logLine.includes('start results')) {
       updatedSteps.results = 'start'
     } else if (logLine.includes('end pae')) {
       updatedSteps.pae = 'end'
     } else if (logLine.includes('end autorg')) {
       updatedSteps.autorg = 'end'
-    } else if (logLine.includes('end minimization')) {
+    } else if (logLine.includes('end minimize')) {
       updatedSteps.minimize = 'end'
-    } else if (logLine.includes('end heating')) {
+    } else if (logLine.includes('end heat')) {
       updatedSteps.heat = 'end'
-    } else if (logLine.includes('end molecular dynamics')) {
+    } else if (logLine.includes('end md')) {
       updatedSteps.md = 'end'
-    } else if (logLine.includes('end FoXS')) {
+    } else if (logLine.includes('end foxs')) {
       updatedSteps.foxs = 'end'
-    } else if (logLine.includes('end MultiFoXS')) {
+    } else if (logLine.includes('end multifoxs')) {
       updatedSteps.multifoxs = 'end'
-    } else if (logLine.includes('end gather results')) {
+    } else if (logLine.includes('end results')) {
       updatedSteps.results = 'end'
     } else if (logLine.includes('email notification sent to')) {
       updatedSteps.email = 'end'
@@ -211,17 +211,17 @@ const updateStepStatus = async (
       updatedSteps.pae = 'error'
     } else if (logLine.includes('error autorg')) {
       updatedSteps.autorg = 'error'
-    } else if (logLine.includes('error minimization')) {
+    } else if (logLine.includes('error minimize')) {
       updatedSteps.minimize = 'error'
-    } else if (logLine.includes('error heating')) {
+    } else if (logLine.includes('error heat')) {
       updatedSteps.heat = 'error'
-    } else if (logLine.includes('error molecular dynamics')) {
+    } else if (logLine.includes('error md')) {
       updatedSteps.md = 'error'
-    } else if (logLine.includes('error FoXS')) {
+    } else if (logLine.includes('error foxs')) {
       updatedSteps.foxs = 'error'
-    } else if (logLine.includes('error MultiFoXS')) {
+    } else if (logLine.includes('error multifoxs')) {
       updatedSteps.multifoxs = 'error'
-    } else if (logLine.includes('error gather results')) {
+    } else if (logLine.includes('error results')) {
       updatedSteps.results = 'error'
     }
   })
