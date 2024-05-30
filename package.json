@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@bl1231/bilbomd-mongodb-schema": "^1.0.18",
-    "@bull-board/api": "^5.18.3",
+    "@bull-board/api": "^5.19.2",
     "@bull-board/express": "^5.18.3",
     "bullmq": "^5.7.12",
     "cookie-parser": "~1.4.6",
