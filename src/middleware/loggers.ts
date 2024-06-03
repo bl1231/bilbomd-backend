@@ -7,7 +7,7 @@ const localTimezone = 'America/Los_Angeles'
 const customTimestamp = () => {
   return moment().tz(localTimezone).format('YYYY-MM-DD HH:mm:ss')
 }
-const logsFolder = `./logs`
+const logsFolder = `/bilbomd/logs`
 
 // const getLabel = (callingModule) => {
 //   const parts = callingModule.filename.split('/')
