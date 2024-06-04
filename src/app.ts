@@ -3,7 +3,7 @@ import express, { Express, Request, Response } from 'express'
 import path from 'path'
 import cors from 'cors'
 import { corsOptions } from './config/corsOptions'
-import { logger, requestLogger } from './middleware/loggers'
+import { logger, requestLogger, assignRequestId } from './middleware/loggers'
 import cookieParser from 'cookie-parser'
 import { router as adminRoutes } from './routes/admin'
 import mongoose from 'mongoose'
@@ -31,14 +31,15 @@ connectDB()
 //   next()
 // })
 // Debug - this should be logged by teh requestLogger below.
-app.use((req, res, next) => {
-  const protocol = req.get('X-Forwarded-Proto') || req.protocol
-  const host = req.get('X-Forwarded-Host') || req.get('Host')
-  logger.info(`${req.method} ${protocol}://${host}${req.originalUrl}`)
-  next()
-})
+// app.use((req, res, next) => {
+//   const protocol = req.get('X-Forwarded-Proto') || req.protocol
+//   const host = req.get('X-Forwarded-Host') || req.get('Host')
+//   logger.info(`${req.method} ${protocol}://${host}${req.originalUrl}`)
+//   next()
+// })
 
 // custom middleware logger
+app.use(assignRequestId)
 app.use(requestLogger)
 
 // Cross Origin Resource Sharing

@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "BilboMD Backend",
-    "version": "1.9.1",
+    "version": "1.9.2",
     "description": "API documentation for bilbomd-backend"
   },
   "servers": [
@@ -1392,6 +1392,27 @@
           "steps": {
             "type": "object",
             "properties": {
+              "pdb2crd": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
               "pae": {
                 "type": "object",
                 "properties": {
@@ -1403,6 +1424,10 @@
                       "Success",
                       "Error"
                     ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
                   },
                   "_id": {
                     "type": "string"
@@ -1421,6 +1446,10 @@
                       "Error"
                     ]
                   },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
                   "_id": {
                     "type": "string"
                   }
@@ -1437,6 +1466,31 @@
                       "Success",
                       "Error"
                     ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "initfoxs": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
                   },
                   "_id": {
                     "type": "string"
@@ -1455,6 +1509,10 @@
                       "Error"
                     ]
                   },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
                   "_id": {
                     "type": "string"
                   }
@@ -1471,6 +1529,31 @@
                       "Success",
                       "Error"
                     ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dcd2pdb": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
                   },
                   "_id": {
                     "type": "string"
@@ -1489,6 +1572,10 @@
                       "Error"
                     ]
                   },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
                   "_id": {
                     "type": "string"
                   }
@@ -1505,6 +1592,10 @@
                       "Success",
                       "Error"
                     ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
                   },
                   "_id": {
                     "type": "string"
@@ -1523,6 +1614,10 @@
                       "Error"
                     ]
                   },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
                   "_id": {
                     "type": "string"
                   }
@@ -1540,13 +1635,80 @@
                       "Error"
                     ]
                   },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
                   "_id": {
                     "type": "string"
                   }
                 }
               },
-              "numEnsembles": {
-                "type": "number"
+              "nersc_prepare_slurm_batch": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "nersc_submit_slurm_batch": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "nersc_job_status": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Waiting",
+                      "Running",
+                      "Success",
+                      "Error"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "required": false
+                  },
+                  "_id": {
+                    "type": "string"
+                  }
+                }
               }
             }
           },
