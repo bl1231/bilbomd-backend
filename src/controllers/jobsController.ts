@@ -243,7 +243,7 @@ const createNewJob = async (req: Request, res: Response) => {
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    logger.info('Created directory: %s', jobDir)
+    logger.info(`Created directory: ${jobDir}`)
 
     const storage = multer.diskStorage({
       destination: function (req, file, cb) {
@@ -485,7 +485,7 @@ const handleBilboMDAutoJob = async (
 
       // Need to wait here until the BullMQ job is finished
       await waitForJobCompletion(Pdb2CrdBullId, pdb2crdQueueEvents)
-      logger.info(`Pdb2Crd completed.`)
+      logger.info('Pdb2Crd completed.')
     }
     // ---------------------------------------------------------- //
 
@@ -569,10 +569,10 @@ const handleBilboMDScoperJob = async (
   } catch (error) {
     // Log more detailed information about the error
     if (error instanceof Error) {
-      logger.error('Error in handleBilboMDScoperJob:', error.message)
-      logger.error('Stack Trace:', error.stack)
+      logger.error(`Error in handleBilboMDScoperJob: ${error.message}`)
+      logger.error(`Stack Trace: ${error.stack}`)
     } else {
-      logger.error('Non-standard error object:', error)
+      logger.error(`Non-standard error object: {error}`)
     }
     res.status(500).json({ message: 'Failed to create handleBilboMDScoperJob job' })
   }
@@ -743,7 +743,7 @@ const deleteJob = async (req: Request, res: Response) => {
     const duration = end - start // Calculate the duration in milliseconds
     logger.info(`Total time to attempt removal of ${jobDir}: ${duration} milliseconds.`)
   } catch (error) {
-    logger.error('Error deleting directory %s', error)
+    logger.error(`Error deleting directory: ${error}`)
     res.status(500).send('Error deleting directory')
   }
 
@@ -878,7 +878,7 @@ const getJobById = async (req: Request, res: Response) => {
     // logger.info(bilbomdJob)
     res.status(200).json(bilbomdJob)
   } catch (error) {
-    logger.error('Error retrieving job:', error)
+    logger.error(`Error retrieving job: ${error}`)
     res.status(500).json({ message: 'Failed to retrieve job.' })
   }
 }
@@ -898,7 +898,7 @@ const calculateNumEnsembles = async (
       numEnsembles: numEnsembles
     }
   } catch (error) {
-    logger.info('calculateNumEnsembles Error:', error)
+    logger.info(`calculateNumEnsembles Error: ${error}`)
     return {
       ...bilbomdStep,
       numEnsembles: 0
@@ -946,7 +946,7 @@ const downloadJobResults = async (req: Request, res: Response) => {
       })
     } catch (newFileError) {
       // If neither file is found, log error and return a message
-      logger.error('No result files available for job ID %s.', req.params.id)
+      logger.error(`No result files available for job ID: ${req.params.id}`)
       return res.status(500).json({ message: 'No result files available.' })
     }
   }
@@ -1106,7 +1106,7 @@ const getAutoRg = async (req: Request, res: Response) => {
   const jobDir = path.join(uploadFolder, 'autorg_uploads', UUID)
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    logger.info('Create temporary AutoRg directory: %s', jobDir)
+    logger.info(`Create temporary AutoRg directory: ${jobDir}`)
 
     const storage = multer.diskStorage({
       destination: function (req, file, cb) {
@@ -1181,7 +1181,7 @@ const getAutoRg = async (req: Request, res: Response) => {
           }
         }
       } catch (error) {
-        logger.error('Error calculating AutoRg', error)
+        logger.error(`Error calculating AutoRg: ${error}`)
         res.status(500).json({ message: 'Failed to calculate AutoRg', error: error })
       }
     })
@@ -1209,12 +1209,12 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
       autoRg_json += dataString
     })
     autoRg.stderr?.on('data', (data: Buffer) => {
-      logger.error('spawnAutoRgCalculator stderr', data.toString())
+      logger.error(`spawnAutoRgCalculator stderr: ${data.toString()}`)
       console.log(data)
       errorStream.write(data.toString())
     })
     autoRg.on('error', (error) => {
-      logger.error('spawnAutoRgCalculator error:', error)
+      logger.error(`spawnAutoRgCalculator error: ${error}`)
       reject(error)
     })
     autoRg.on('exit', (code) => {
@@ -1273,38 +1273,6 @@ const writeJobParams = async (jobID: string): Promise<void> => {
   } catch (error) {
     logger.error(`Unable to save params.json: ${error}`)
   }
-
-  // const UUID = Job.uuid
-  // const jobParams: any = {
-  //   title: Job.title,
-  //   uuid: Job.uuid,
-  //   job_type: Job.__t,
-  //   pdb_file: Job.pdb_file,
-  //   psf_file: Job.psf_file,
-  //   pae_file: '',
-  //   crd_file: Job.crd_file,
-  //   constinp: Job.const_inp_file,
-  //   saxs_data: Job.data_file,
-  //   rg_min: Job.rg_min,
-  //   rg_max: Job.rg_max,
-  //   conf_sample: Job.conformational_sampling
-  // }
-  // if ('user' in Job) {
-  //   jobParams.username = Job.user.username
-  //   jobParams.email = Job.user.email
-  // }
-  // if ('pae_file' in Job) {
-  //   jobParams.pae_file = Job.pae_file
-  // }
-  // const nerscParams = JSON.stringify(jobParams, null, 2)
-  // try {
-  //   const jobDir = path.join(uploadFolder, UUID)
-  //   const paramsFile = path.join(jobDir, 'params.json')
-  //   fs.writeFileSync(paramsFile, nerscParams)
-  //   logger.info(`Saved ${paramsFile}`)
-  // } catch (error) {
-  //   logger.error(`Unable to save params.json ${error}`)
-  // }
 }
 
 export {

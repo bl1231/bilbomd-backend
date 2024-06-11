@@ -106,8 +106,7 @@ const generateMagickLink = async (req: Request, res: Response) => {
     foundUser.otp = otp
     await foundUser.save()
 
-    const message = 'Magicklink requested by %s send OTP: %s'
-    logger.info(message, foundUser.email, passcode)
+    logger.info(`Magicklink requested by ${foundUser.email} send OTP: ${passcode}`)
 
     if (config.sendEmailNotifications) {
       sendMagickLinkEmail(email, bilboMdUrl, passcode)
@@ -115,7 +114,7 @@ const generateMagickLink = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: `OTP created for ${email}` })
   } catch (error) {
-    logger.error(`magicklink error: ${error}`)
+    logger.error(`Magicklink error: ${error}`)
     res.status(500).json({ message: error })
   }
 }

@@ -12,12 +12,12 @@ const {
 const url = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOSTNAME}:${MONGO_PORT}/${MONGO_DB}?authSource=${MONGO_AUTH_SRC}`
 
 const connectDB = async () => {
-  logger.info('MongoDB URL: %s', url)
+  // logger.info(`MongoDB URL: ${url}`)
   try {
     mongoose.set('strictQuery', false)
     await mongoose.connect(url)
   } catch (error) {
-    logger.error('Error connecting to MongoDB: %s', error)
+    logger.error(`Error connecting to MongoDB: ${error}`)
   }
 }
 

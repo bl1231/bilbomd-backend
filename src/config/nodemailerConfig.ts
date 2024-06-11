@@ -47,13 +47,13 @@ const sendVerificationEmail = (email: string, url: string, code: string) => {
     .then(() => {
       logger.info('Verification Email sent successfully!')
     })
-    .catch((err) => {
-      logger.error('Error sending Verification email:', err)
+    .catch((error) => {
+      logger.error(`Error sending Verification email ${error}`)
     })
 }
 
 const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
-  logger.info('send magicklink email to %s', email)
+  logger.info(`Send MagickLink email to ${email}`)
   transporter.use(
     'compile',
     hbs({
@@ -82,10 +82,10 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
   transporter
     .sendMail(mailOptions)
     .then(() => {
-      logger.info('MagickLink Email sent to %s successfully!', email)
+      logger.info(`MagickLink Email sent to ${email} successfully!`)
     })
-    .catch((err) => {
-      logger.error('Error sending MagickLink email: %s', err)
+    .catch((error) => {
+      logger.error(`Error sending MagickLink email: ${error}`)
     })
 }
 

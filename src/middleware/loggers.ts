@@ -20,8 +20,8 @@ const loggerTransports = [
     filename: `${logsFolder}/bilbomd-backend-%DATE%.log`,
     datePattern: 'YYYY-MM-DD',
     zippedArchive: true,
-    maxSize: '20m',
-    maxFiles: '14d'
+    maxSize: '30m',
+    maxFiles: '180d'
   }),
   new DailyRotateFile({
     level: 'error',
