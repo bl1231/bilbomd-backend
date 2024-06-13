@@ -19,7 +19,7 @@
     "swagger": "npx ts-node src/openapi/swagger.ts"
   },
   "dependencies": {
-    "@bl1231/bilbomd-mongodb-schema": "^1.0.18",
+    "@bl1231/bilbomd-mongodb-schema": "^1.0.22",
     "@bull-board/api": "^5.18.3",
     "@bull-board/express": "^5.18.3",
     "bullmq": "^5.7.12",
@@ -42,6 +42,7 @@
     "moment-timezone": "^0.5.45",
     "mongoose": "^8.4.0",
     "mongoose-to-swagger": "^1.5.1",
+    "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.13",
     "nodemailer-express-handlebars": "^6.1.2",
@@ -51,6 +52,7 @@
     "typescript": "^5.4.5",
     "uuid": "^9.0.1",
     "winston": "^3.13.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "winston-mongodb": "^5.1.1"
   },
   "devDependencies": {
@@ -64,6 +66,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.6",
+    "@types/morgan": "^1.9.9",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.12.12",
     "@types/nodemailer": "^6.4.15",

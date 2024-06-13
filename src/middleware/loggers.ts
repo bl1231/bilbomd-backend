@@ -1,97 +1,63 @@
 import { createLogger, transports, format } from 'winston'
-import { Request, Response, NextFunction } from 'express'
+import DailyRotateFile from 'winston-daily-rotate-file'
 import moment from 'moment-timezone'
+import morgan from 'morgan'
+import { v4 as uuidv4 } from 'uuid'
+import { Request, Response, NextFunction } from 'express'
 
-const { splat, combine, timestamp, label, colorize, json, printf, prettyPrint } = format
+const { combine, timestamp, label, printf, colorize } = format
 const localTimezone = 'America/Los_Angeles'
-const customTimestamp = () => {
-  return moment().tz(localTimezone).format('YYYY-MM-DD HH:mm:ss')
-}
-const logsFolder = `./logs`
+const logsFolder = `/bilbomd/logs`
 
-// const getLabel = (callingModule) => {
-//   const parts = callingModule.filename.split('/')
-//   const thing = parts[parts.length - 2] + '/' + parts.pop()
-//   console.log(thing)
-//   return parts[parts.length - 2] + '/' + parts.pop()
-// }
+const customTimestamp = () => moment().tz(localTimezone).format('YYYY-MM-DD HH:mm:ss')
 
-// Transports for request Logger
-const loggerRequestTransports = [
-  new transports.File({
-    level: 'warn',
-    filename: `${logsFolder}/bilbomd-backend-req-warn.log`
+const logFormat = printf(({ level, message, label, timestamp }) => {
+  return `${timestamp} - ${level}: [${label}] ${message}`
+})
+
+const loggerTransports = [
+  new DailyRotateFile({
+    filename: `${logsFolder}/bilbomd-backend-%DATE%.log`,
+    datePattern: 'YYYY-MM-DD',
+    zippedArchive: true,
+    maxSize: '30m',
+    maxFiles: '180d'
   }),
-  new transports.File({
+  new DailyRotateFile({
     level: 'error',
-    filename: `${logsFolder}/bilbomd-backend-req-error.log`
+    filename: `${logsFolder}/bilbomd-backend-error-%DATE%.log`,
+    datePattern: 'YYYY-MM-DD',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '30d'
   }),
-  new transports.File({
-    level: 'info',
-    filename: `${logsFolder}/bilbomd-backend-req-info.log`
-  })
+  new transports.Console({ format: combine(colorize(), logFormat) })
 ]
 
-//Custom format using the printf format.
-const customFormat = printf(({ level, message, label, timestamp }) => {
-  return `${timestamp} - ${level}: [${label}]  ${message}`
-})
-
-// Format for console output
-const consoleFormat = combine(
-  colorize({ all: true }),
-  splat(),
-  timestamp({
-    format: customTimestamp
-  }),
-  label({ label: 'bilbomd-backend' }),
-  customFormat
-)
-
-// Format for log file
-const fileFormat = combine(timestamp({ format: customTimestamp }), splat(), json())
-
-// Create a Winston logger instance
 const logger = createLogger({
   level: 'info',
-  transports: [
-    new transports.Console({
-      format: consoleFormat
-    }),
-    new transports.File({
-      filename: `${logsFolder}/bilbomd-backend-error.log`,
-      level: 'error',
-      format: fileFormat
-    }),
-    new transports.File({
-      filename: `${logsFolder}/bilbomd-backend.log`,
-      format: fileFormat
-    })
-  ]
+  format: combine(
+    label({ label: 'bilbomd-backend' }),
+    timestamp({ format: customTimestamp }),
+    logFormat
+  ),
+  transports: loggerTransports
 })
 
-// Create a Winston logger instance
-const reqLogger = createLogger({
-  transports: loggerRequestTransports,
-  format: combine(timestamp({ format: customTimestamp }), json(), prettyPrint())
-})
+morgan.token('id', (req: Request) => req.id as string)
 
-// Define a middleware function for request logging
-const requestLogger = (req: Request, res: Response, next: NextFunction) => {
-  reqLogger.info(`${req.method} ${req.url}`)
+const requestLogger = morgan(
+  ':id :method :url :status :response-time ms - :res[content-length]',
+  {
+    stream: {
+      write: (message) => logger.info(message.trim())
+    }
+  }
+)
+
+const assignRequestId = (req: Request, res: Response, next: NextFunction) => {
+  req.id = uuidv4() // Assign a unique ID to each request
   next()
 }
 
-// Not sure this is working?
-// if (process.env.NODE_ENV !== 'production') {
-//   // loggerTransports.push(new transports.Console())
-
-//   loggerRequestTransports.push(
-//     new transports.File({
-//       level: 'info',
-//       filename: `${logsFolder}/requestInfo.log`
-//     })
-//   )
-// }
-
-export { logger, requestLogger, logsFolder }
+export { logger, requestLogger, logsFolder, assignRequestId }
