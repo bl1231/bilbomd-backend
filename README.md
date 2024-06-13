@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.9.3
+  - Add steps object to mongodb entry
+  - Some improvements to logging
 - 1.9.2
   - Use @bl1231/bilbomd-mongodb-schema
   - Update dependencies
