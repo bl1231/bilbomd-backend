@@ -544,7 +544,21 @@ const handleBilboMDScoperJob = async (
       data_file: files['dat_file'][0].originalname.toLowerCase(),
       status: 'Submitted',
       time_submitted: now,
-      user: user
+      user: user,
+      steps: {
+        pdb2crd: {},
+        pae: {},
+        autorg: {},
+        minimize: {},
+        initfoxs: {},
+        heat: {},
+        md: {},
+        dcd2pdb: {},
+        foxs: {},
+        multifoxs: {},
+        results: {},
+        email: {}
+      }
     })
     // logger.info(`in handleBilboMDScoperJob: ${newJob}`)
     // Save the job to the database
