@@ -25,19 +25,6 @@ app.set('trust proxy', 1)
 // Connect to MongoDB
 connectDB()
 
-// Temprarily log headers - DEBUG
-// app.use((req, res, next) => {
-//   console.log(req.headers)
-//   next()
-// })
-// Debug - this should be logged by teh requestLogger below.
-// app.use((req, res, next) => {
-//   const protocol = req.get('X-Forwarded-Proto') || req.protocol
-//   const host = req.get('X-Forwarded-Host') || req.get('Host')
-//   logger.info(`${req.method} ${protocol}://${host}${req.originalUrl}`)
-//   next()
-// })
-
 // custom middleware logger
 app.use(assignRequestId)
 app.use(requestLogger)

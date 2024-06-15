@@ -50,7 +50,7 @@
     "swagger-ui": "^5.17.14",
     "swagger-ui-express": "^5.0.0",
     "typescript": "^5.4.5",
-    "uuid": "^9.0.1",
+    "uuid": "^10.0.0",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
     "winston-mongodb": "^5.1.1"
