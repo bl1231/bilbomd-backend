@@ -37,11 +37,13 @@ FROM bilbomd-backend-step1 AS bilbomd-backend-step2
 RUN apt-get update && \
     apt-get install -y zip build-essential libarchive13
 
-# Install BioXYAS from source
+# Install BioXTAS from source
 WORKDIR /tmp
-# RUN git clone https://github.com/jbhopkins/bioxtasraw.git
-COPY bioxtas/bioxtasraw-master.zip .
-RUN unzip bioxtasraw-master.zip && rm bioxtasraw-master.zip
+# Download the BioXTAS RAW source code
+RUN wget https://github.com/jbhopkins/bioxtasraw/archive/refs/heads/master.zip -O bioxtasraw-master.zip \
+    && unzip bioxtasraw-master.zip \
+    && rm bioxtasraw-master.zip
+
 # Install BioXTAS RAW from source
 WORKDIR /tmp/bioxtasraw-master
 RUN python setup.py build_ext --inplace && \
@@ -51,11 +53,8 @@ RUN python setup.py build_ext --inplace && \
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID=1001
-ARG GROUP_ID=62704
+ARG GROUP_ID=1001
 ARG NPM_TOKEN
-# install vim
-RUN apt-get update && \
-    apt-get install -y vim
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
@@ -78,7 +77,6 @@ USER bilbo:bilbomd
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-# COPY package*.json .
 COPY --chown=bilbo:bilbomd package*.json .
 
 # Create .npmrc file using the build argument
@@ -91,23 +89,7 @@ RUN npm ci
 RUN unset NPM_TOKEN
 
 # Copy entire backend app
-# COPY . .
 COPY --chown=bilbo:bilbomd . .
-
-# NERSC considerations
-#
-# My understanding is that if I want to mount a CFS volume into
-# the container and be able to write to it (e.g. /bilbomd/uploads/) I need to 
-# run the container as "me" i.e. sclassen UID=62704
-#
-# If the entire image is built as root then I need to chown the entire /app
-# directory to my NERSC UID so that SPIN...running the container with UID=62704
-# will be able to write to /app
-#
-#   A large GID does not work with node:20.12.2-slim
-#
-# RUN chown -R 62704:104818 *
-# RUN chown -R $USER_ID:0 /app
 
 EXPOSE 3500
 
