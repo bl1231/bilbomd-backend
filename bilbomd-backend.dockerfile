@@ -54,7 +54,7 @@ RUN python setup.py build_ext --inplace && \
 FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID=1001
 ARG GROUP_ID=1001
-ARG NPM_TOKEN
+ARG GITHUB_TOKEN  # Ensure this argument is declared
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
@@ -80,13 +80,13 @@ WORKDIR /app
 COPY --chown=bilbo:bilbomd package*.json .
 
 # Create .npmrc file using the build argument
-RUN echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" > /home/bilbo/.npmrc
+RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
 
 # Install dependencies
 RUN npm ci
 
 # Optionally, clean up the environment variable for security
-RUN unset NPM_TOKEN
+RUN unset GITHUB_TOKEN
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
