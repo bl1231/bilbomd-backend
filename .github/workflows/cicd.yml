@@ -46,6 +46,8 @@ jobs:
         file: bilbomd-backend.dockerfile
         push: true
         tags: ghcr.io/${{ github.repository }}:bilbomd-backend-latest
+        build-args: |
+          NPM_TOKEN=${{ secrets.NPM_TOKEN }}
 
     - name: Build and push bilbomd-spin-backend Docker image
       uses: docker/build-push-action@v3
@@ -54,3 +56,5 @@ jobs:
         file: bilbomd-spin-backend.dockerfile
         push: true
         tags: ghcr.io/${{ github.repository }}:bilbomd-spin-backend-latest
+        build-args: |
+          NPM_TOKEN=${{ secrets.NPM_TOKEN }}

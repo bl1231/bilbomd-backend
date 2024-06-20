@@ -37,11 +37,8 @@ FROM bilbomd-backend-step1 AS bilbomd-backend-step2
 RUN apt-get update && \
     apt-get install -y zip build-essential libarchive13
 
-# Install BioXYAS from source
+# Install BioXTAS from source
 WORKDIR /tmp
-# RUN git clone https://github.com/jbhopkins/bioxtasraw.git
-# COPY bioxtas/bioxtasraw-master.zip .
-# RUN unzip bioxtasraw-master.zip && rm bioxtasraw-master.zip
 # Download the BioXTAS RAW source code
 RUN wget https://github.com/jbhopkins/bioxtasraw/archive/refs/heads/master.zip -O bioxtasraw-master.zip \
     && unzip bioxtasraw-master.zip \
