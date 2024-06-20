@@ -60,12 +60,10 @@ RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
 
 # Create a user and group with the provided IDs
-RUN mkdir /home/bilbo
-
-RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
+RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -m -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
-RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
+RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo || true
 
 # update NPM
 RUN npm install -g npm@10.8.1
@@ -77,7 +75,7 @@ USER bilbo:bilbomd
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-COPY --chown=bilbo:bilbomd package*.json .
+COPY --chown=bilbo:bilbomd package*.json ./
 
 # Create .npmrc file using the build argument
 RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
@@ -89,7 +87,7 @@ RUN echo "Contents of /home/bilbo/.npmrc:" && cat /home/bilbo/.npmrc
 RUN npm ci
 
 # Optionally, clean up the environment variable for security
-RUN unset GITHUB_TOKEN
+RUN rm /home/bilbo/.npmrc && unset GITHUB_TOKEN
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
