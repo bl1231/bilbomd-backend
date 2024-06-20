@@ -8,9 +8,9 @@ RUN apt-get clean && \
     apt-get install -y ncat ca-certificates wget libgl1-mesa-dev
 
 # Download and install Miniforge3
-RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
-    bash Miniforge3-$(uname)-$(uname -m).sh -b -p "/miniforge3" && \
-    rm Miniforge3-$(uname)-$(uname -m).sh
+RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname -s)-$(uname -m).sh" && \
+    bash Miniforge3-$(uname -s)-$(uname -m).sh -b -p "/miniforge3" && \
+    rm Miniforge3-$(uname -s)-$(uname -m).sh
 
 # Add Conda to PATH
 ENV PATH="/miniforge3/bin/:${PATH}"
@@ -54,44 +54,40 @@ RUN python setup.py build_ext --inplace && \
 FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID=1001
 ARG GROUP_ID=1001
-ARG NPM_TOKEN
+ARG GITHUB_TOKEN
+
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
 
 # Create a user and group with the provided IDs
-RUN mkdir /home/bilbo
-
 RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
 RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
 
-# update NPM
+# Update npm and install global packages
 RUN npm install -g npm@10.8.1
 
 # Switch to the non-root user
 USER bilbo:bilbomd
 
-# switch back so we can install bilbomd-backend
-WORKDIR /app
-
 # Copy package.json and package-lock.json
-COPY --chown=bilbo:bilbomd package*.json .
+COPY --chown=bilbo:bilbomd package*.json ./
 
-# Create .npmrc file using the build argument
-RUN echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" > /home/bilbo/.npmrc
+# Create .npmrc file using the GitHub token
+RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
 
 # Install dependencies
 RUN npm ci
 
 # Optionally, clean up the environment variable for security
-RUN unset NPM_TOKEN
+RUN rm /home/bilbo/.npmrc && unset GITHUB_TOKEN
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
 
 EXPOSE 3500
 
-# this can be overridden in docker-compose.dev.yml
-CMD [ "npm", "start" ]
+# Override CMD in docker-compose.dev.yml if needed
+CMD ["npm", "start"]
