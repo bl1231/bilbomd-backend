@@ -33,14 +33,31 @@ jobs:
         run: npm run build
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v1
 
-      - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v2
+      - name: Cache Miniforge and BioXTAS
+        uses: actions/cache@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          path: |
+            ./cache/Miniforge3-$(uname)-$(uname -m).sh
+            ./cache/bioxtasraw-master.zip
+          key: ${{ runner.os }}-miniforge-bioxtas-${{ hashFiles('Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-miniforge-bioxtas-
+
+      - name: Download Miniforge3 if not cached
+        run: |
+          mkdir -p ./cache
+          if [ ! -f ./cache/Miniforge3-$(uname)-$(uname -m).sh ]; then
+            wget -O ./cache/Miniforge3-$(uname)-$(uname -m).sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+          fi
+
+      - name: Download BioXTAS if not cached
+        run: |
+          mkdir -p ./cache
+          if [ ! -f ./cache/bioxtasraw-master.zip ]; then
+            wget -O ./cache/bioxtasraw-master.zip "https://github.com/jbhopkins/bioxtasraw/archive/refs/heads/master.zip"
+          fi
 
       - name: Build and push bilbomd-backend Docker image
         uses: docker/build-push-action@v3
