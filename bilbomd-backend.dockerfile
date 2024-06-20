@@ -40,8 +40,13 @@ RUN apt-get update && \
 # Install BioXYAS from source
 WORKDIR /tmp
 # RUN git clone https://github.com/jbhopkins/bioxtasraw.git
-COPY bioxtas/bioxtasraw-master.zip .
-RUN unzip bioxtasraw-master.zip && rm bioxtasraw-master.zip
+# COPY bioxtas/bioxtasraw-master.zip .
+# RUN unzip bioxtasraw-master.zip && rm bioxtasraw-master.zip
+# Download the BioXTAS RAW source code
+RUN wget https://github.com/jbhopkins/bioxtasraw/archive/refs/heads/master.zip -O bioxtasraw-master.zip \
+    && unzip bioxtasraw-master.zip \
+    && rm bioxtasraw-master.zip
+
 # Install BioXTAS RAW from source
 WORKDIR /tmp/bioxtasraw-master
 RUN python setup.py build_ext --inplace && \
