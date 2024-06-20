@@ -1,4 +1,3 @@
-# -----------------------------------------------------------------------------
 # Build stage 1 - Install Miniforge3
 FROM node:20-slim as bilbomd-backend-step1
 
@@ -16,8 +15,8 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mini
 ENV PATH="/miniforge3/bin/:${PATH}"
 
 # Update conda
-RUN conda update -n base -c conda-forge conda
-RUN conda update -n base -c defaults conda
+RUN conda update -n base -c conda-forge conda && \
+    conda update -n base -c defaults conda
 
 # Verify Miniconda3 installation
 RUN conda --version
@@ -55,15 +54,17 @@ FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG GITHUB_TOKEN  # Ensure this argument is declared
+RUN mkdir -p /home/bilbo  # Create bilbo's home directory
 RUN mkdir -p /app/node_modules
 RUN mkdir -p /bilbomd/uploads
 WORKDIR /app
 
 # Create a user and group with the provided IDs
-RUN groupadd -g $GROUP_ID bilbomd && useradd -u $USER_ID -g $GROUP_ID -m -d /home/bilbo -s /bin/bash bilbo
+RUN groupadd -g $GROUP_ID bilbomd && \
+    useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
-RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo || true
+RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
 
 # update NPM
 RUN npm install -g npm@10.8.1
@@ -75,7 +76,7 @@ USER bilbo:bilbomd
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-COPY --chown=bilbo:bilbomd package*.json ./
+COPY --chown=bilbo:bilbomd package*.json .
 
 # Create .npmrc file using the build argument
 RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
@@ -87,7 +88,7 @@ RUN echo "Contents of /home/bilbo/.npmrc:" && cat /home/bilbo/.npmrc
 RUN npm ci
 
 # Optionally, clean up the environment variable for security
-RUN rm /home/bilbo/.npmrc && unset GITHUB_TOKEN
+RUN unset GITHUB_TOKEN
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
