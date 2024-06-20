@@ -52,12 +52,12 @@ ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG GITHUB_TOKEN
 
-RUN mkdir -p /home/bilbo /app/node_modules /bilbomd/uploads
+RUN mkdir -p /app/node_modules /bilbomd/uploads
 WORKDIR /app
 
 # Create a user and group with the provided IDs
 RUN groupadd -g $GROUP_ID bilbomd && \
-    useradd -u $USER_ID -g $GROUP_ID -d /home/bilbo -s /bin/bash bilbo
+    useradd -u $USER_ID -g $GROUP_ID -m -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
 RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
@@ -76,6 +76,9 @@ RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
 
 # Install dependencies
 RUN npm ci
+
+# Remove .npmrc file for security
+RUN rm /home/bilbo/.npmrc
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .

@@ -67,3 +67,13 @@ jobs:
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=1001
             GROUP_ID=1001
+
+      - name: Debug - List contents of current directory
+        run: ls -la
+
+      - name: Debug - Display Dockerfile contents
+        run: |
+          echo "bilbomd-backend.dockerfile:"
+          cat bilbomd-backend.dockerfile
+          echo "bilbomd-spin-backend.dockerfile:"
+          cat bilbomd-spin-backend.dockerfile
