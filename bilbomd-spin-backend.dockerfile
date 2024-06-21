@@ -48,7 +48,7 @@ RUN python setup.py build_ext --inplace && \
 # -----------------------------------------------------------------------------
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
-ARG USER_ID=62704
+ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG GITHUB_TOKEN
 
