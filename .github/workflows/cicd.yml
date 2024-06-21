@@ -50,6 +50,7 @@ jobs:
           context: .
           file: bilbomd-backend.dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ github.repository }}/bilbomd-backend:latest
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
@@ -62,6 +63,7 @@ jobs:
           context: .
           file: bilbomd-spin-backend.dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
