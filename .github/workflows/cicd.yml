@@ -67,7 +67,7 @@ jobs:
           tags: ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-            USER_ID=1001
+            USER_ID=62704
             GROUP_ID=1001
 
       - name: Debug - List contents of current directory
