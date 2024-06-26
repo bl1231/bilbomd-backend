@@ -44,6 +44,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/bilbomd-backend
+            ghcr.io/${{ github.repository }}/bilbomd-spin-backend
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Generate version
+        id: version
+        run: echo "VERSION=$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Build and push bilbomd-backend Docker image
         uses: docker/build-push-action@v4
         with:
@@ -51,31 +66,31 @@ jobs:
           file: bilbomd-backend.dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ github.repository }}/bilbomd-backend:latest
+          tags: |
+            ghcr.io/${{ github.repository }}/bilbomd-backend:${{ steps.version.outputs.VERSION }}
+            ghcr.io/${{ github.repository }}/bilbomd-backend:latest
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=1001
             GROUP_ID=1001
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Build and push bilbomd-spin-backend Docker image
+      - name: Build and push bilbomd-spin-backend Docker image 
         uses: docker/build-push-action@v4
         with:
           context: .
           file: bilbomd-spin-backend.dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
+          platforms: linux/amd64,linux/arm64 
+          tags: |
+            ghcr.io/${{ github.repository }}/bilbomd-spin-backend:${{ steps.version.outputs.VERSION }}
+            ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=62704
             GROUP_ID=1001
-
-      - name: Debug - List contents of current directory
-        run: ls -la
-
-      - name: Debug - Display Dockerfile contents
-        run: |
-          echo "bilbomd-backend.dockerfile:"
-          cat bilbomd-backend.dockerfile
-          echo "bilbomd-spin-backend.dockerfile:"
-          cat bilbomd-spin-backend.dockerfile
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
