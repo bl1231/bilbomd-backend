@@ -3,7 +3,7 @@ name: Build and Push Docker Images to GitHub Container Registry
 on:
   push:
     branches:
-      - 478-test-cicd-bilbomd-backend
+      - main
 
 jobs:
   build-and-push-images:
