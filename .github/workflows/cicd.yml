@@ -3,7 +3,7 @@ name: Build and Push Docker Images to GitHub Container Registry
 on:
   push:
     branches:
-      - main
+      - 478-test-cicd-bilbomd-backend
 
 jobs:
   build-and-push-images:
@@ -59,23 +59,6 @@ jobs:
         id: version
         run: echo "VERSION=$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Build and push bilbomd-backend Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: bilbomd-backend.dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/${{ github.repository }}/bilbomd-backend:${{ steps.version.outputs.VERSION }}
-            ghcr.io/${{ github.repository }}/bilbomd-backend:latest
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-            USER_ID=1001
-            GROUP_ID=1001
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build and push bilbomd-spin-backend Docker image 
         uses: docker/build-push-action@v4
@@ -83,7 +66,7 @@ jobs:
           context: .
           file: bilbomd-spin-backend.dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64 
+          platforms: linux/amd64
           tags: |
             ghcr.io/${{ github.repository }}/bilbomd-spin-backend:${{ steps.version.outputs.VERSION }}
             ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
