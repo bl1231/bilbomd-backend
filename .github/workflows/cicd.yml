@@ -65,7 +65,7 @@ jobs:
           context: .
           file: bilbomd-spin-backend.dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: |
             ghcr.io/${{ github.repository }}/bilbomd-spin-backend:${{ steps.version.outputs.VERSION }}
             ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
