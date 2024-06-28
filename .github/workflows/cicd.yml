@@ -59,8 +59,7 @@ jobs:
         id: version
         run: echo "VERSION=$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-
-      - name: Build and push bilbomd-spin-backend Docker image 
+      - name: Build and push bilbomd-spin-backend Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -73,7 +72,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-            USER_ID=62704
-            GROUP_ID=1001
+            USER_ID=${{ vars.USER_ID }}
+            GROUP_ID=${{ vars.GROUP_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
