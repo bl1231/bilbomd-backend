@@ -2,6 +2,7 @@ import IORedis, { RedisOptions } from 'ioredis'
 import { Queue, QueueEvents } from 'bullmq'
 import { logger } from '../middleware/loggers'
 import { BullMQPdb2Crd } from '../types/bilbomd'
+import { config } from '../config/config'
 
 const redisOptions: RedisOptions = {
   port:
@@ -17,7 +18,7 @@ const redis = new IORedis(redisOptions)
 const pdb2crdQueue = new Queue('pdb2crd', {
   connection: redis,
   defaultJobOptions: {
-    attempts: 3
+    attempts: config.bullmqAttempts
   }
 })
 

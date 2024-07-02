@@ -2,6 +2,7 @@ import IORedis, { RedisOptions } from 'ioredis'
 import { Job as BullMQJob, Queue } from 'bullmq'
 import { logger } from '../middleware/loggers'
 import { BilboMDBullMQ, BullMQData, BilboMDScoperSteps } from '../types/bilbomd'
+import { config } from '../config/config'
 
 const redisOptions: RedisOptions = {
   port:
@@ -17,7 +18,7 @@ const redis = new IORedis(redisOptions)
 const scoperQueue = new Queue('bilbomd-scoper', {
   connection: redis,
   defaultJobOptions: {
-    attempts: 2
+    attempts: config.bullmqAttempts
   }
 })
 

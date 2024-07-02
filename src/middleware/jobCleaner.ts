@@ -2,40 +2,19 @@ import mongoose from 'mongoose'
 import { connectDB } from '../config/dbConn'
 import path from 'path'
 import fs from 'fs-extra'
-// import IORedis, { RedisOptions } from 'ioredis'
-// import { Queue } from 'bullmq'
-// import { Job } from '../model/Job'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from './loggers'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
-// const redisOptions: RedisOptions = {
-//   port:
-//     process.env.REDIS_PORT && !isNaN(parseInt(process.env.REDIS_PORT, 10))
-//       ? parseInt(process.env.REDIS_PORT, 10)
-//       : 6379,
-//   host: process.env.REDIS_HOST || 'localhost',
-//   password: process.env.REDIS_PASSWORD || '',
-//   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
-// }
-// const redis = new IORedis(redisOptions)
 
-// const bilbomdQueue = new Queue('bilbomd', {
-//   connection: redis,
-//   defaultJobOptions: {
-//     attempts: 3
-//   }
-// })
 
 export const deleteOldJobs = async () => {
   try {
-    // Connect to MongoDB (if not already connected)
     if (mongoose.connection.readyState !== 1) {
       connectDB()
     }
 
-    // Delete old jobs from MongoDB
     const maxAge = 30 * 24 * 60 * 60
     const thresholdDate = new Date(Date.now() - maxAge * 1000)
 
@@ -68,18 +47,6 @@ export const deleteOldJobs = async () => {
     const deletedJobsCount = deleteResult.deletedCount
     logger.warn(`Deleted ${deletedJobsCount} jobs from MongoDB`)
 
-    // Delete old jobs from BullMQ queue
-    // const limit = 100
-    // logger.warn(
-    //   `Cleaning up to ${limit} jobs older than ${maxAge} sec. from bilbomd queue.`
-    // )
-    // const deletedJobs = await bilbomdQueue.clean(maxAge, limit)
-
-    // if (deletedJobs.length > 0) {
-    //   logger.warn(`Cleaned ${deletedJobs.length} jobs from BullMQ`)
-    // } else {
-    //   logger.warn('No jobs were cleaned from BullMQ')
-    // }
   } catch (error) {
     console.error('Error deleting old jobs:', error)
   }
