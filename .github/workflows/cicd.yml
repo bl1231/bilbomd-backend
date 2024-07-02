@@ -3,7 +3,11 @@ name: Build and Push Docker Images to GitHub Container Registry
 on:
   push:
     branches:
-      - 478-test-cicd-bilbomd-backend
+      - 511-update-docker-cicd-workflow-triggers  # change  to the current branch name if you want to build an image before merging to main
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-and-push-images:
