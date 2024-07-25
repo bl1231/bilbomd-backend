@@ -4,7 +4,7 @@ import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
 import { Queue as QueueMQ } from 'bullmq'
-import { logger } from '../middleware/loggers'
+// import { logger } from '../middleware/loggers'
 import verifyJWT from '../middleware/verifyJWT'
 
 const basePath = '/admin/bullmq'
