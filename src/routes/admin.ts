@@ -41,7 +41,6 @@ createBullBoard({
 
 router.use(verifyJWT)
 
-logger.info('here1')
 router.use('/', serverAdapter.getRouter())
 
 export { router, bilbomdQueue, bilbomdScoperQueue }

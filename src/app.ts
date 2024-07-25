@@ -16,7 +16,9 @@ import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
 // Instantiate the app
 const app: Express = express()
 
-logger.info(`Starting in ${process.env.NODE_ENV} mode`)
+const environment: string = process.env.NODE_ENV || 'development'
+
+logger.info(`Starting in ${environment} mode`)
 
 // Trust the first proxy in front of the app
 // ChatGPT suggested this
