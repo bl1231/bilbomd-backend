@@ -14,17 +14,6 @@ import {
   waitForJobCompletion,
   pdb2crdQueueEvents
 } from '../queues/pdb2crd'
-// import {
-//   Job,
-//   BilboMdPDBJob,
-//   IBilboMDPDBJob,
-//   BilboMdCRDJob,
-//   IBilboMDCRDJob,
-//   BilboMdAutoJob,
-//   IBilboMDAutoJob,
-//   BilboMdScoperJob,
-//   IBilboMDScoperJob
-// } from '../model/Job'
 import {
   Job,
   IJob,

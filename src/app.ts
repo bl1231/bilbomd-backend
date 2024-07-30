@@ -52,6 +52,8 @@ app.use('/', require('./routes/root'))
 
 app.use('/admin/bullmq', adminRoutes)
 
+// NERSC Superfacility API route
+// only used to access the publically available NERSC API
 app.use('/sfapi', require('./routes/sfapi'))
 
 // Group version 1 routes under /api/v1
@@ -67,6 +69,7 @@ v1Router.use('/users', require('./routes/users'))
 v1Router.use('/af2pae', require('./routes/af2pae'))
 v1Router.use('/autorg', require('./routes/autorg'))
 v1Router.use('/bullmq', require('./routes/bullmq'))
+v1Router.use('/webhooks', require('./routes/webhooks'))
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
