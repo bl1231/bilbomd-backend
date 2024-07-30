@@ -1,6 +1,6 @@
 import { logger } from '../middleware/loggers'
 import { Request, Response } from 'express'
-import { queueJob } from 'queues/webhooks'
+import { queueJob } from '../queues/webhooks'
 import { v4 as uuid } from 'uuid'
 
 // Define a type for the expected structure of the webhook payload
