@@ -1,4 +1,5 @@
 import { allowedOrigins } from './allowedOrigins'
+import { logger } from '../middleware/loggers'
 
 const corsOptions = {
   origin: (
@@ -10,6 +11,7 @@ const corsOptions = {
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true)
     } else {
+      logger.error('CORS error: Origin not allowed:', origin)
       callback(new Error('Not allowed by CORS'), false)
     }
   },
