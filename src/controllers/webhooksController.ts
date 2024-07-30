@@ -1,5 +1,7 @@
 import { logger } from '../middleware/loggers'
 import { Request, Response } from 'express'
+import { queueJob } from 'queues/webhooks'
+import { v4 as uuid } from 'uuid'
 
 // Define a type for the expected structure of the webhook payload
 interface WebhookPayload {
@@ -48,14 +50,21 @@ const handleWebhook = (req: Request, res: Response): void => {
   }
 }
 
-// Example function to handle a Docker build event
 const handleDockerBuild = (payload: WebhookPayload): void => {
-  // Implement logic to handle the Docker build event
+  const UUID = uuid()
+
   logger.info(
     `Handling Docker build event for repository: ${payload.repository?.full_name}`
   )
   logger.info(`payload: ${JSON.stringify(payload)}`)
-  // More processing logic...
+
+  const BullId = queueJob({
+    type: 'docker-build',
+    title: 'Docker Build',
+    uuid: UUID
+  })
+
+  logger.info(`Docker Build Job assigned BullMQ ID: ${BullId}`)
 }
 
 // Example function to handle a deploy event
