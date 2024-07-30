@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.9",
-    "@babel/preset-env": "^7.24.8",
+    "@babel/preset-env": "^7.25.2",
     "@jest/globals": "^29.7.0",
     "@shelf/jest-mongodb": "^4.3.2",
     "@types/cookie-parser": "^1.4.7",
