@@ -54,7 +54,7 @@ const handleDockerBuild = (payload: WebhookPayload): void => {
   logger.info(
     `Handling Docker build event for repository: ${payload.repository?.full_name}`
   )
-  logger.info(`payload: ${payload}`)
+  logger.info(`payload: ${JSON.stringify(payload)}`)
   // More processing logic...
 }
 
