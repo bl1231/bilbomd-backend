@@ -52,9 +52,9 @@ const handleWebhook = (req: Request, res: Response): void => {
 const handleDockerBuild = (payload: WebhookPayload): void => {
   // Implement logic to handle the Docker build event
   logger.info(
-    'Handling Docker build event for repository:',
-    payload.repository?.full_name
+    `Handling Docker build event for repository: ${payload.repository?.full_name}`
   )
+  logger.info(`payload: ${payload}`)
   // More processing logic...
 }
 
