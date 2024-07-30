@@ -50,7 +50,7 @@ const handleWebhook = (req: Request, res: Response): void => {
   }
 }
 
-const handleDockerBuild = (payload: WebhookPayload): void => {
+const handleDockerBuild = async (payload: WebhookPayload) => {
   const UUID = uuid()
 
   logger.info(
@@ -58,7 +58,7 @@ const handleDockerBuild = (payload: WebhookPayload): void => {
   )
   logger.info(`payload: ${JSON.stringify(payload)}`)
 
-  const BullId = queueJob({
+  const BullId = await queueJob({
     type: 'docker-build',
     title: 'Docker Build',
     uuid: UUID
