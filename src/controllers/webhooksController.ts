@@ -41,20 +41,23 @@ const handleWebhook = (req: Request, res: Response): void => {
 
 const handleDockerBuild = async (payload: WebhookPayload) => {
   const UUID = uuid()
+  const repoName = payload.repository.full_name
+  const pkgName = payload.package.name
+  const pkgTag = payload.package.package_version.container_metadata.tag.name
 
-  logger.info(
-    `Handling Docker build event for repository: ${payload.repository?.full_name}`
-  )
-  // logger.info(`payload: ${JSON.stringify(payload)}`)
-  logger.info(`TAG: ${payload.package.package_version.container_metadata.tag.name}`)
+  logger.info(`REPO: ${repoName}`)
+  logger.info(`PKG NAME: ${pkgName}`)
+  logger.info(`TAG: ${pkgTag}`)
 
-  const BullId = await queueJob({
-    type: 'docker-build',
-    title: 'Docker Build',
-    uuid: UUID
-  })
-
-  logger.info(`Docker Build Job assigned BullMQ ID: ${BullId}`)
+  // Only queue a job for the specified package and tag
+  if (pkgName === 'bilbomd-worker/bilbomd-spin-worker' && pkgTag === 'latest') {
+    const BullId = await queueJob({
+      type: 'docker-build',
+      title: 'Docker Build',
+      uuid: UUID
+    })
+    logger.info(`Docker Build Job assigned BullMQ ID: ${BullId}`)
+  }
 }
 
 // Example function to handle a deploy event
