@@ -1,7 +1,7 @@
 import IORedis, { RedisOptions } from 'ioredis'
 import { Queue } from 'bullmq'
 import { logger } from '../middleware/loggers'
-import { BullMQData } from 'types/webhooks'
+import { BullMQData } from '../types/webhooks'
 import { config } from '../config/config'
 
 const redisOptions: RedisOptions = {

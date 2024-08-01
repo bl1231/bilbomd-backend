@@ -2,18 +2,7 @@ import { logger } from '../middleware/loggers'
 import { Request, Response } from 'express'
 import { queueJob } from '../queues/webhooks'
 import { v4 as uuid } from 'uuid'
-
-// Define a type for the expected structure of the webhook payload
-interface WebhookPayload {
-  // Define the expected fields in the payload
-  action?: string
-  repository?: {
-    name: string
-    full_name: string
-    // Add more fields as needed
-  }
-  // Add other relevant fields based on your use case
-}
+import { WebhookPayload } from '../types//github-payload'
 
 // Define the function to handle incoming webhooks
 const handleWebhook = (req: Request, res: Response): void => {
@@ -56,7 +45,8 @@ const handleDockerBuild = async (payload: WebhookPayload) => {
   logger.info(
     `Handling Docker build event for repository: ${payload.repository?.full_name}`
   )
-  logger.info(`payload: ${JSON.stringify(payload)}`)
+  // logger.info(`payload: ${JSON.stringify(payload)}`)
+  logger.info(`TAG: ${payload.package.package_version.container_metadata.tag.name}`)
 
   const BullId = await queueJob({
     type: 'docker-build',
