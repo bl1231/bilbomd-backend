@@ -2,9 +2,9 @@ import { Request, Response } from 'express';
 import { logger } from '../middleware/loggers'
 
 export const getConfigsStuff = (req: Request, res: Response) => {
-  logger.info(`process.env.VITE_SFAPI_TOKEN_EXPIRES: ${process.env.VITE_SFAPI_TOKEN_EXPIRES}`)
+  logger.info(`process.env.SFAPI_TOKEN_EXPIRES: ${process.env.SFAPI_TOKEN_EXPIRES}`)
   // Retrieve the expiration date from the environment variable
-  const tokenExpires = process.env.VITE_SFAPI_TOKEN_EXPIRES;
+  const tokenExpires = process.env.SFAPI_TOKEN_EXPIRES;
 
   // If the environment variable is not set, return an error
   if (!tokenExpires) {
