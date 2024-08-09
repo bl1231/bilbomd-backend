@@ -126,4 +126,104 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
 //     })
 // }
 
-export { sendVerificationEmail, sendMagickLinkEmail }
+//#region to form a template and send otp for email change
+// const sendOtpEmail = (email: string, otp: string) => {
+//   logger.info(`Sending OTP email to ${email}`)
+  
+//   transporter.use(
+//     'compile',
+//     hbs({
+//       viewEngine: {
+//         extname: '.handlebars',
+//         layoutsDir: viewPath,
+//         defaultLayout: false,
+//         partialsDir: partialsPath
+//       },
+//       viewPath: viewPath,
+//       extName: '.handlebars'
+//     })
+//   )
+
+//   const mailOptions = {
+//     from: user,
+//     to: email,
+//     subject: 'Your OTP Code',
+//     template: 'otp',
+//     context: {
+//       onetimepasscode: otp
+//     }
+//   }
+
+//   transporter
+//     .sendMail(mailOptions)
+//     .then(() => {
+//       logger.info(`OTP Email sent to ${email} successfully!`)
+//     })
+//     .catch((error) => {
+//       logger.error(`Error sending OTP email: ${error}`)
+//     })
+// }
+
+// Function to send OTP email
+// const sendOtpEmail = (email: string, otp: string) => {
+//   logger.info(`Sending OTP email to ${email}`);
+  
+//   transporter.use(
+//     'compile',
+//     hbs({
+//       viewEngine: {
+//         extname: '.handlebars',
+//         layoutsDir: viewPath,
+//         defaultLayout: false,
+//         partialsDir: partialsPath,
+//       },
+//       viewPath: viewPath,
+//       extName: '.handlebars',
+//     })
+//   );
+
+//   const mailOptions = {
+//     from: user,
+//     to: email,
+//     subject: 'Your OTP Code',
+//     template: 'otp',
+//     context: {
+//       onetimepasscode: otp,
+//     },
+//   };
+
+//   transporter
+//     .sendMail(mailOptions)
+//     .then(() => {
+//       logger.info(`OTP Email sent to ${email} successfully!`);
+//     })
+//     .catch((error) => {
+//       logger.error(`Error sending OTP email: ${error}`);
+//     });
+// };
+//#endregion
+/**
+ * @openmpi
+ * Function takes two arguments and its going to send the confirmation otp without any template
+ */
+const sendOtpEmail = (email: string, otp: string) => {
+  logger.info(`Sending OTP email to ${email}`);
+  
+  const mailOptions = {
+    from: user,
+    to: email,
+    subject: 'Your OTP Code',
+    text: `Your OTP is: ${otp}`, // Use plain text instead of a template
+  };
+
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      logger.info(`OTP Email sent to ${email} successfully!`);
+    })
+    .catch((error) => {
+      logger.error(`Error sending OTP email: ${error}`);
+    });
+};
+
+export { sendVerificationEmail, sendMagickLinkEmail,sendOtpEmail }

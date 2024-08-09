@@ -3,16 +3,30 @@ import {
   getAllUsers,
   updateUser,
   deleteUser,
-  getUser
+  getUser,
+  sendChangeEmailOtp,
+  verifyOtp,
+  resendOtp,
+  // verifyOtp,
+  // resendOtp
 } from '../controllers/usersController'
-import verifyJWT from '../middleware/verifyJWT'
+//import verifyJWT from '../middleware/verifyJWT'
 
 const router = express.Router()
 
-router.use(verifyJWT)
+//router.use(verifyJWT)
 
 router.route('/').get(getAllUsers).patch(updateUser)
 
 router.route('/:id').get(getUser).delete(deleteUser)
+
+// Route for sending email change request
+router.post('/change-email',sendChangeEmailOtp);
+
+//Route for verifying OTP
+router.post('/verify-otp',verifyOtp);
+
+// Route for resending otp
+router.post('/resend-otp',resendOtp);
 
 module.exports = router

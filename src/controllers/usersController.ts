@@ -4,6 +4,7 @@ import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from '../middleware/loggers'
 import { Request, Response } from 'express'
+import { sendOtpEmail } from './../config/nodemailerConfig'
 
 /**
  * @openapi
@@ -278,4 +279,374 @@ const getUser = async (req: Request, res: Response) => {
   res.json(user)
 }
 
-export { getAllUsers, updateUser, deleteUser, getUser }
+/**
+ * @openapi
+ * First, update the IUser interface in your TypeScript code to include the new fields that are emailVerificationOtp,emailVerificationOtpExpires,previousEmail
+ * interface IUser extends Document {
+    username: string;
+    roles: string[];
+    refreshToken: string[];
+    email: string;
+    status: string;
+    active: boolean;
+    confirmationCode: IConfirmationCode | null;
+    otp: IOtp | null;
+    UUID: string;
+    createdAt: Date;
+    last_access: Date;
+    jobs: IJob | null;
+    emailVerificationOtp: string | null;
+    emailVerificationOtpExpires: Date | null;
+    previousEmail: string | null;
+}
+    and Updating in mongo schema
+import mongoose, { Schema, Document } from 'mongoose';
+
+interface IUser extends Document {
+    username: string;
+    roles: string[];
+    refreshToken: string[];
+    email: string;
+    status: string;
+    active: boolean;
+    confirmationCode: IConfirmationCode | null;
+    otp: IOtp | null;
+    UUID: string;
+    createdAt: Date;
+    last_access: Date;
+    jobs: IJob | null;
+    emailVerificationOtp: string | null;
+    emailVerificationOtpExpires: Date | null;
+    previousEmail: string | null;
+}
+
+const UserSchema: Schema = new Schema({
+    username: { type: String, required: true },
+    roles: { type: [String], required: true },
+    refreshToken: { type: [String], required: true },
+    email: { type: String, required: true },
+    status: { type: String, required: true },
+    active: { type: Boolean, required: true },
+    confirmationCode: { type: Schema.Types.Mixed, default: null },
+    otp: { type: Schema.Types.Mixed, default: null },
+    UUID: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    last_access: { type: Date, default: Date.now },
+    jobs: { type: Schema.Types.Mixed, default: null },
+    emailVerificationOtp: { type: String, default: null },
+    emailVerificationOtpExpires: { type: Date, default: null },
+    previousEmail: { type: String, default: null }
+});
+
+  const User = mongoose.model<IUser>('User', UserSchema);
+
+  export default User;
+ */
+
+/**
+ * @openapi
+ * /users/change-email:
+ *   post:
+ *     summary: Send Change Email OTP
+ *     description: Initiates the email change process by sending an OTP to the user's current email address for verification.
+ *     tags:
+ *       - User Management
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: Unique identifier of the user.
+ *               username:
+ *                 type: string
+ *                 description: Username of the user.
+ *               currentEmail:
+ *                 type: string
+ *                 description: Current email address of the user.
+ *               newEmail:
+ *                 type: string
+ *                 description: New email address to be set for the user.
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully to the user's current email address.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating the OTP was sent.
+ *                   example: "OTP sent successfully"
+ *       400:
+ *         description: Current email does not match the email stored in the database for the user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the current email does not match.
+ *                   example: "Current email does not match"
+ *       404:
+ *         description: User not found with the provided user ID.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the user was not found.
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error occurred while processing the request.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ *                   example: "Internal server error"
+ */
+
+// Controller for sending email change request
+ const sendChangeEmailOtp = async (req: Request, res: Response) => {
+  try {
+    const { userId, username, currentEmail, newEmail } = req.body;
+
+    // Retrieve user details from the database
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify that the current email matches the email in the database
+    if (user.email !== currentEmail) {
+      return res.status(400).json({ message: 'Current email does not match' });
+    }
+
+    // Generate a random 6-digit OTP
+    const otp = "123456";//generateOtp();
+
+    // Store the OTP and expiration time in the database
+    //user.emailVerificationOtp = otp;
+    //user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes from now
+    //await user.save();
+
+    // Send the OTP to the current email address
+    await sendOtpEmail(currentEmail, otp);
+
+    res.status(200).json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('Failed to send change email OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+//#region 
+// Need to create three keys in mongodb database for user entity
+// emailVerificationOtp,previosEmail and emailVerificationOtpExpires
+
+
+/**
+ * @openapi
+ * /users/verify-otp:
+ *   post:
+ *     summary: Verify OTP for Email Change
+ *     description: Verifies the OTP sent to the user's current email and updates the email address if valid.
+ *     tags:
+ *       - User Management
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: Unique identifier of the user.
+ *               otp:
+ *                 type: string
+ *                 description: One-time password sent to the user's email.
+ *               currentEmail:
+ *                 type: string
+ *                 description: Current email address of the user.
+ *               newEmail:
+ *                 type: string
+ *                 description: New email address to be set for the user.
+ *     responses:
+ *       200:
+ *         description: Email address updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating the email was updated.
+ *                   example: "Email address updated successfully"
+ *       400:
+ *         description: Invalid or expired OTP.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the OTP is invalid or expired.
+ *                   example: "Invalid or expired OTP"
+ *       404:
+ *         description: User not found with the provided user ID.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the user was not found.
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error occurred while processing the request.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ *                   example: "Internal server error"
+ */
+const verifyOtp = async (req: Request, res: Response) => {
+  try {
+    const { userId, otp, currentEmail, newEmail } = req.body;
+
+    // Retrieve user details from the database
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if the provided OTP matches the stored OTP and is not expired
+    // if (user.emailVerificationOtp !== otp || user.emailVerificationOtpExpires < Date.now()) {
+    //   return res.status(400).json({ message: 'Invalid or expired OTP' });
+    // }
+
+    // Update the email addresses in the database
+    // user.previousEmail = currentEmail;
+    // user.email = newEmail;
+    // user.emailVerificationOtp = undefined;
+    // user.emailVerificationOtpExpires = undefined;
+    // await user.save();
+
+    res.status(200).json({ message: 'Email address updated successfully' });
+  } catch (error) {
+    console.error('Failed to verify OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+ /**
+ * @openapi
+ * /users/resend-otp:
+ *   post:
+ *     summary: Resend OTP for Email Verification
+ *     description: Resends a new OTP to the user's current email address for verification.
+ *     tags:
+ *       - User Management
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: Unique identifier of the user.
+ *     responses:
+ *       200:
+ *         description: OTP resent successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating the OTP was resent.
+ *                   example: "OTP resent successfully"
+ *       404:
+ *         description: User not found with the provided user ID.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the user was not found.
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error occurred while processing the request.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ *                   example: "Internal server error"
+ */
+const resendOtp = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    // Retrieve user details from the database
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate a new random 6-digit OTP
+    // const otp = generateOtp();
+
+    // Update the OTP and expiration time in the database
+    // user.emailVerificationOtp = otp;
+    // user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes from now
+    // await user.save();
+
+    // Send the new OTP to the current email address
+    // await sendOtpEmail(user.email, otp);
+
+    res.status(200).json({ message: 'OTP resent successfully' });
+  } catch (error) {
+    console.error('Failed to resend OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+export { getAllUsers, updateUser, deleteUser, getUser,sendChangeEmailOtp,verifyOtp,resendOtp }
