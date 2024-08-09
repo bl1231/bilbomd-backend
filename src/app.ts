@@ -67,6 +67,7 @@ v1Router.use('/users', require('./routes/users'))
 v1Router.use('/af2pae', require('./routes/af2pae'))
 v1Router.use('/autorg', require('./routes/autorg'))
 v1Router.use('/bullmq', require('./routes/bullmq'))
+v1Router.use('/configs', require('./routes/configs'))
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
