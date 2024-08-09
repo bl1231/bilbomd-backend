@@ -6,15 +6,13 @@ import {
   getUser,
   sendChangeEmailOtp,
   verifyOtp,
-  resendOtp,
-  // verifyOtp,
-  // resendOtp
+  resendOtp
 } from '../controllers/usersController'
-//import verifyJWT from '../middleware/verifyJWT'
+import verifyJWT from '../middleware/verifyJWT'
 
 const router = express.Router()
 
-//router.use(verifyJWT)
+router.use(verifyJWT)
 
 router.route('/').get(getAllUsers).patch(updateUser)
 
