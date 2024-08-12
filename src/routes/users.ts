@@ -4,8 +4,8 @@ import {
   updateUser,
   deleteUser,
   getUser
-} from '../controllers/usersController'
-import verifyJWT from '../middleware/verifyJWT'
+} from '../controllers/usersController.js'
+import verifyJWT from '../middleware/verifyJWT.js'
 
 const router = express.Router()
 
@@ -15,4 +15,4 @@ router.route('/').get(getAllUsers).patch(updateUser)
 
 router.route('/:id').get(getUser).delete(deleteUser)
 
-module.exports = router
+export default router

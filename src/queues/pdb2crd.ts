@@ -1,8 +1,8 @@
-import IORedis, { RedisOptions } from 'ioredis'
+import { Redis, RedisOptions } from 'ioredis'
 import { Queue, QueueEvents } from 'bullmq'
-import { logger } from '../middleware/loggers'
-import { BullMQPdb2Crd } from '../types/bilbomd'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { BullMQPdb2Crd } from '../types/bilbomd.js'
+import { config } from '../config/config.js'
 
 const redisOptions: RedisOptions = {
   port:
@@ -13,7 +13,7 @@ const redisOptions: RedisOptions = {
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
 
-const redis = new IORedis(redisOptions)
+const redis = new Redis(redisOptions)
 
 const pdb2crdQueue = new Queue('pdb2crd', {
   connection: redis,
@@ -36,7 +36,7 @@ const waitForJobCompletion = async (
   pdb2crdQueueEvents: QueueEvents
 ): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    const onCompleted = (event: { jobId: string; returnvalue?: any }) => {
+    const onCompleted = (event: { jobId: string; returnvalue?: unknown }) => {
       if (event.jobId === jobId) {
         pdb2crdQueueEvents.off('completed', onCompleted)
         pdb2crdQueueEvents.off('failed', onFailed)

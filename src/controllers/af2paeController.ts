@@ -1,13 +1,12 @@
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import multer from 'multer'
 import fs from 'fs-extra'
 import path from 'path'
-import { Express, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { v4 as uuid } from 'uuid'
 import { spawn, ChildProcess } from 'node:child_process'
-// import { User } from '../model/User'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { queueJob, waitForJobCompletion, pdb2crdQueueEvents } from '../queues/pdb2crd'
+import { queueJob, waitForJobCompletion, pdb2crdQueueEvents } from '../queues/pdb2crd.js'
 
 const uploadFolder: string = process.env.DATA_VOL ?? '/bilbomd/uploads'
 
@@ -111,7 +110,7 @@ const downloadConstFile = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error('No %s available.', constFile)
+    logger.error(`No ${constFile} available. ${error}`)
     return res.status(500).json({ message: `No ${constFile} available.` })
   }
 }

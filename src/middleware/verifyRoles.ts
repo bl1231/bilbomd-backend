@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
 
-// type UserRole = 'User' | 'Manager' | 'Admin'
-
 const verifyRoles = (...allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.roles) return res.sendStatus(401) // Unauthorized

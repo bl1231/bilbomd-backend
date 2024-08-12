@@ -1,7 +1,7 @@
 import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import fs from 'fs'
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import { Request, Response, NextFunction } from 'express'
 
 const tokenUrl = 'https://oidc.nersc.gov/c2id/token'

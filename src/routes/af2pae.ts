@@ -1,6 +1,6 @@
 import express from 'express'
-import { createNewConstFile, downloadConstFile } from '../controllers/af2paeController'
-import verifyJWT from '../middleware/verifyJWT'
+import { createNewConstFile, downloadConstFile } from '../controllers/af2paeController.js'
+import verifyJWT from '../middleware/verifyJWT.js'
 
 const router = express.Router()
 
@@ -10,4 +10,4 @@ router.route('/').get(downloadConstFile).post(createNewConstFile)
 
 // router.route('/:uuid/const.inp').get(downloadConstFile)
 
-module.exports = router
+export default router
