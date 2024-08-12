@@ -1,7 +1,7 @@
 import pluginJs from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import jestPlugin from 'eslint-plugin-jest'
-import importPlugin from 'eslint-plugin-import' // Add this import
+import importPlugin from 'eslint-plugin-import'
 
 export default [
   { files: ['**/*.{ts}'] },
@@ -11,7 +11,7 @@ export default [
   {
     plugins: {
       jest: jestPlugin,
-      import: importPlugin // Add the import plugin
+      import: importPlugin
     }
   },
   {

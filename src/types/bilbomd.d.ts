@@ -1,5 +1,4 @@
 import { Job as BullMQJob } from 'bullmq'
-// import { Job as MongoDBJob } from 'model/Job'
 import { Job as MongoDBJob } from '@bl1231/bilbomd-mongodb-schema'
 
 export type BilboMDSteps = {
@@ -69,26 +68,3 @@ export type BilboMDJob = {
   classic?: BilboMDSteps
   auto?: BilboMDSteps
 }
-
-// export interface IJob {
-//   id: string
-//   _id: string
-//   __t: string
-//   conformational_sampling: number
-//   const_inp_file: string
-//   crd_file: string
-//   createdAt: string
-//   data_file: string
-//   psf_file: string
-//   pdb_file: string
-//   rg_max: number
-//   rg_min: number
-//   status: string
-//   time_completed: string
-//   time_started: string
-//   time_submitted: string
-//   title: string
-//   updatedAt: string
-//   user: string
-//   uuid: string
-// }
