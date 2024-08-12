@@ -1,4 +1,4 @@
-import IORedis, { RedisOptions } from 'ioredis'
+import { Redis, RedisOptions } from 'ioredis'
 import { Job as BullMQJob, Queue } from 'bullmq'
 import { logger } from '../middleware/loggers.js'
 import { BilboMDBullMQ, BullMQData, BilboMDSteps } from '../types/bilbomd.js'
@@ -13,7 +13,7 @@ const redisOptions: RedisOptions = {
   // password: process.env.REDIS_PASSWORD || '',
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
-const redis = new IORedis(redisOptions)
+const redis = new Redis(redisOptions)
 
 const bilbomdQueue = new Queue('bilbomd', {
   connection: redis,

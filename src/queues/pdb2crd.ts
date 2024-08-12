@@ -1,4 +1,4 @@
-import IORedis, { RedisOptions } from 'ioredis'
+import { Redis, RedisOptions } from 'ioredis'
 import { Queue, QueueEvents } from 'bullmq'
 import { logger } from '../middleware/loggers.js'
 import { BullMQPdb2Crd } from '../types/bilbomd.js'
@@ -13,7 +13,7 @@ const redisOptions: RedisOptions = {
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
 
-const redis = new IORedis(redisOptions)
+const redis = new Redis(redisOptions)
 
 const pdb2crdQueue = new Queue('pdb2crd', {
   connection: redis,
