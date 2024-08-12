@@ -1,4 +1,3 @@
-// import { logger } from '../middleware/loggers'
 import {
   getActiveCount as getActiveCountBilbomd,
   getWaitingCount as getWaitingCountBilbomd,

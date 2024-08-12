@@ -14,17 +14,6 @@ import {
   waitForJobCompletion,
   pdb2crdQueueEvents
 } from '../queues/pdb2crd.js'
-// import {
-//   Job,
-//   BilboMdPDBJob,
-//   IBilboMDPDBJob,
-//   BilboMdCRDJob,
-//   IBilboMDCRDJob,
-//   BilboMdAutoJob,
-//   IBilboMDAutoJob,
-//   BilboMdScoperJob,
-//   IBilboMDScoperJob
-// } from '../model/Job'
 import {
   Job,
   IJob,
@@ -37,8 +26,6 @@ import {
   BilboMdScoperJob,
   IBilboMDScoperJob
 } from '@bl1231/bilbomd-mongodb-schema'
-
-// import { User, IUser } from '../model/User'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'

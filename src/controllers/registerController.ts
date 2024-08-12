@@ -1,6 +1,5 @@
 import { logger } from '../middleware/loggers.js'
 import { config } from '../config/config.js'
-// import { User } from '../model/User'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { v4 as uuid } from 'uuid'
 import { Request, Response } from 'express'
