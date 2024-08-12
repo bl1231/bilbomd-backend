@@ -30,6 +30,8 @@ const app: Express = express()
 
 const environment: string = process.env.NODE_ENV || 'development'
 
+const viewsPath = '/app/views'
+
 logger.info(`Starting in ${environment} mode`)
 
 // Trust the first proxy in front of the app
@@ -98,8 +100,7 @@ new CronJob('11 1 * * *', deleteOldJobs, null, true, 'America/Los_Angeles')
 app.all('*', (req: Request, res: Response) => {
   res.status(404)
   if (req.accepts('html')) {
-    console.log('__dirname:', __dirname)
-    res.sendFile(path.join(__dirname, 'views', '404.html'))
+    res.sendFile(path.join(viewsPath, '404.html'))
   } else if (req.accepts('json')) {
     res.json({ error: '404 Not Found' })
   } else {
