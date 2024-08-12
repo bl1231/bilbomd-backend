@@ -7,9 +7,9 @@ import {
   downloadJobResults,
   getJobById,
   getLogForStep
-} from '../controllers/jobsController'
-import { downloadPDB, getFoxsData } from '../controllers/downloadController'
-import verifyJWT from '../middleware/verifyJWT'
+} from '../controllers/jobsController.js'
+import { downloadPDB, getFoxsData } from '../controllers/downloadController.js'
+import verifyJWT from '../middleware/verifyJWT.js'
 
 const router = express.Router()
 

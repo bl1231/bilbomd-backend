@@ -1,10 +1,10 @@
-import { logger } from '../middleware/loggers'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { config } from '../config/config.js'
 // import { User } from '../model/User'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { v4 as uuid } from 'uuid'
 import { Request, Response } from 'express'
-import { sendVerificationEmail } from '../config/nodemailerConfig'
+import { sendVerificationEmail } from '../config/nodemailerConfig.js'
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 

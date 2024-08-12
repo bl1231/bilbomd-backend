@@ -1,4 +1,4 @@
-import { logger } from './loggers'
+import { logger } from './loggers.js'
 
 const cronTest = () => {
   const thresholdDate = new Date()

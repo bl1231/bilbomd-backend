@@ -2,28 +2,28 @@ import 'dotenv/config'
 import express, { Express, Request, Response } from 'express'
 import path from 'path'
 import cors from 'cors'
-import { corsOptions } from './config/corsOptions'
-import { logger, requestLogger, assignRequestId } from './middleware/loggers'
+import { corsOptions } from './config/corsOptions.js'
+import { logger, requestLogger, assignRequestId } from './middleware/loggers.js'
 import cookieParser from 'cookie-parser'
-import { router as adminRoutes } from './routes/admin'
+import { router as adminRoutes } from './routes/admin.js'
 import mongoose from 'mongoose'
-import { connectDB } from './config/dbConn'
+import { connectDB } from './config/dbConn.js'
 import { CronJob } from 'cron'
-import { deleteOldJobs } from './middleware/jobCleaner'
-import swaggerUi from 'swagger-ui-express'
-import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
-import rootRoutes from './routes/root'
-import sfapiRoutes from './routes/sfapi'
-import registerRoutes from './routes/register'
-import verifyRoutes from './routes/verify'
-import magicklinkRoutes from './routes/magicklink'
-import authRoutes from './routes/auth'
-import jobsRoutes from './routes/jobs'
-import usersRoutes from './routes/users'
-import af2paeRoutes from './routes/af2pae'
-import autorgRoutes from './routes/autorg'
-import bullmqRoutes from './routes/bullmq'
-import configsRoutes from './routes/configs'
+import { deleteOldJobs } from './middleware/jobCleaner.js'
+// import swaggerUi from 'swagger-ui-express'
+// import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
+import rootRoutes from './routes/root.js'
+import sfapiRoutes from './routes/sfapi.js'
+import registerRoutes from './routes/register.js'
+import verifyRoutes from './routes/verify.js'
+import magicklinkRoutes from './routes/magicklink.js'
+import authRoutes from './routes/auth.js'
+import jobsRoutes from './routes/jobs.js'
+import usersRoutes from './routes/users.js'
+import af2paeRoutes from './routes/af2pae.js'
+import autorgRoutes from './routes/autorg.js'
+import bullmqRoutes from './routes/bullmq.js'
+import configsRoutes from './routes/configs.js'
 
 // Instantiate the app
 const app: Express = express()
@@ -86,7 +86,7 @@ app.use('/api/v1', v1Router)
 
 // Swagger documentation for Version 1
 // Adjust Swagger documentation path
-app.use('/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
+// app.use('/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
 
 // app.use('/v1/api-docs', express.static('./openapi/v1/swagger_v1.json'))
 // app.use('/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))

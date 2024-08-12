@@ -1,4 +1,4 @@
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
 import { Job, IJob, IBilboMDScoperJob } from '@bl1231/bilbomd-mongodb-schema'

@@ -3,12 +3,12 @@ import {
   getActiveCount as getActiveCountBilbomd,
   getWaitingCount as getWaitingCountBilbomd,
   getWorkers as getWorkersBilbomd
-} from '../queues/bilbomd'
+} from '../queues/bilbomd.js'
 import {
   getActiveCount as getActiveCountScoper,
   getWaitingCount as getWaitingCountScoper,
   getWorkers as getWorkersScoper
-} from '../queues/scoper'
+} from '../queues/scoper.js'
 import { Request, Response } from 'express'
 
 interface QueueStatus {

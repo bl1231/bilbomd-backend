@@ -1,10 +1,10 @@
-import { logger } from '../middleware/loggers'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { config } from '../config/config.js'
 import crypto from 'crypto'
 // import { User } from '../model/User'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
-import { sendMagickLinkEmail } from '../config/nodemailerConfig'
+import { sendMagickLinkEmail } from '../config/nodemailerConfig.js'
 const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
 /**

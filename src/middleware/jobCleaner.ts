@@ -1,13 +1,11 @@
 import mongoose from 'mongoose'
-import { connectDB } from '../config/dbConn'
+import { connectDB } from '../config/dbConn.js'
 import path from 'path'
 import fs from 'fs-extra'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
-import { logger } from './loggers'
+import { logger } from './loggers.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
-
-
 
 export const deleteOldJobs = async () => {
   try {
@@ -46,7 +44,6 @@ export const deleteOldJobs = async () => {
     const deleteResult = await Job.deleteMany({ createdAt: { $lt: thresholdDate } })
     const deletedJobsCount = deleteResult.deletedCount
     logger.warn(`Deleted ${deletedJobsCount} jobs from MongoDB`)
-
   } catch (error) {
     console.error('Error deleting old jobs:', error)
   }

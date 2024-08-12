@@ -1,5 +1,5 @@
-import { logger } from '../middleware/loggers'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { config } from '../config/config.js'
 import mongoose from 'mongoose'
 import multer from 'multer'
 import fs from 'fs-extra'
@@ -7,13 +7,13 @@ import readline from 'readline'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
 import { spawn } from 'child_process'
-import { queueJob, getBullMQJob } from '../queues/bilbomd'
-import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper'
+import { queueJob, getBullMQJob } from '../queues/bilbomd.js'
+import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper.js'
 import {
   queueJob as queuePdb2CrdJob,
   waitForJobCompletion,
   pdb2crdQueueEvents
-} from '../queues/pdb2crd'
+} from '../queues/pdb2crd.js'
 // import {
 //   Job,
 //   BilboMdPDBJob,

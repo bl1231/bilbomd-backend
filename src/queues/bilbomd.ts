@@ -1,8 +1,8 @@
 import IORedis, { RedisOptions } from 'ioredis'
 import { Job as BullMQJob, Queue } from 'bullmq'
-import { logger } from '../middleware/loggers'
-import { BilboMDBullMQ, BullMQData, BilboMDSteps } from '../types/bilbomd'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { BilboMDBullMQ, BullMQData, BilboMDSteps } from '../types/bilbomd.js'
+import { config } from '../config/config.js'
 
 const redisOptions: RedisOptions = {
   port:

@@ -1,6 +1,6 @@
 import express from 'express'
-import { getStatus, getUser, getProjectHours } from '../controllers/sfapiController'
-import { ensureSFAuthenticated } from '../middleware/tokenManager'
+import { getStatus, getUser, getProjectHours } from '../controllers/sfapiController.js'
+import { ensureSFAuthenticated } from '../middleware/tokenManager.js'
 // import verifyJWT from '../middleware/verifyJWT'
 
 const router = express.Router()

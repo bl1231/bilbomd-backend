@@ -1,5 +1,5 @@
 import express from 'express'
-import { verifyNewUser, resendVerificationCode } from '../controllers/verifyController'
+import { verifyNewUser, resendVerificationCode } from '../controllers/verifyController.js'
 const router = express.Router()
 
 router.route('/').post(verifyNewUser)

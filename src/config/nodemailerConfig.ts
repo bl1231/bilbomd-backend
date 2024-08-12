@@ -1,4 +1,4 @@
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import nodemailer from 'nodemailer'
 import hbs from 'nodemailer-express-handlebars'
 import path from 'path'

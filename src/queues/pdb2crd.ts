@@ -1,8 +1,8 @@
 import IORedis, { RedisOptions } from 'ioredis'
 import { Queue, QueueEvents } from 'bullmq'
-import { logger } from '../middleware/loggers'
-import { BullMQPdb2Crd } from '../types/bilbomd'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { BullMQPdb2Crd } from '../types/bilbomd.js'
+import { config } from '../config/config.js'
 
 const redisOptions: RedisOptions = {
   port:
