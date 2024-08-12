@@ -15,4 +15,4 @@ router.route('/').get(getAllUsers).patch(updateUser)
 
 router.route('/:id').get(getUser).delete(deleteUser)
 
-module.exports = router
+export default router

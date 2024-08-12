@@ -111,7 +111,7 @@ const downloadConstFile = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error('No %s available.', constFile)
+    logger.error(`No ${constFile} available. ${error}`)
     return res.status(500).json({ message: `No ${constFile} available.` })
   }
 }

@@ -255,6 +255,7 @@ const refresh = async (req: Request, res: Response) => {
       res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
+    logger.error(`Error occurred while verifying token: ${error}`)
     res.status(403).json({ message: 'Forbidden' })
   }
 }

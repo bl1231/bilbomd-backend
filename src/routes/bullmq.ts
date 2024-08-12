@@ -8,4 +8,4 @@ router.use(verifyJWT)
 
 router.route('/').get(getQueueStatus)
 
-module.exports = router
+export default router

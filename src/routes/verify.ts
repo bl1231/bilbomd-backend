@@ -5,4 +5,4 @@ const router = express.Router()
 router.route('/').post(verifyNewUser)
 router.route('/resend').post(resendVerificationCode)
 
-module.exports = router
+export default router

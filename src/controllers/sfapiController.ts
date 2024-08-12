@@ -1,5 +1,4 @@
-// eslint-disable-next-line no-unused-vars
-import { Express, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import axios, { AxiosResponse } from 'axios'
 import { logger } from '../middleware/loggers'
 

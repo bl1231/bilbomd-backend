@@ -8,4 +8,4 @@ router.use(verifyJWT)
 
 router.route('/').post(getAutoRg)
 
-module.exports = router
+export default router

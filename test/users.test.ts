@@ -137,14 +137,14 @@ describe('GET /v1/users', () => {
     await User.deleteOne({ _id: testUser2._id })
   })
   test('should return error if we are unauthorized', async () => {
-    let res = await request(server).get('/v1/users')
+    const res = await request(server).get('/v1/users')
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('Unauthorized')
   })
   test('should return users', async () => {
     const token = generateValidToken()
     // console.log('token--->', token)
-    let res = await await request(server)
+    const res = await await request(server)
       .get('/v1/users')
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'application/json')
@@ -176,13 +176,13 @@ describe('PATCH /v1/users', () => {
     await User.deleteOne({ _id: testUser1._id })
   })
   test('should return error if we are unauthorized', async () => {
-    let res = await request(server).patch('/v1/users')
+    const res = await request(server).patch('/v1/users')
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('Unauthorized')
   })
   test('should return error if you dont provide valid user object', async () => {
     const token = generateValidToken()
-    let res = await await request(server)
+    const res = await await request(server)
       .patch('/v1/users')
       .send({})
       .set('Authorization', `Bearer ${token}`)
@@ -202,7 +202,7 @@ describe('PATCH /v1/users', () => {
       email: testUser1.email
     }
 
-    let res = await await request(server)
+    const res = await await request(server)
       .patch('/v1/users')
       .send(user)
       .set('Authorization', `Bearer ${token}`)
@@ -219,7 +219,7 @@ describe('PATCH /v1/users', () => {
       email: 'updated@example.com'
     }
 
-    let res = await await request(server)
+    const res = await await request(server)
       .patch('/v1/users')
       .send(user)
       .set('Authorization', `Bearer ${token}`)
@@ -251,12 +251,12 @@ describe('DELETE /v1/users', () => {
   })
   test('should return error if we are unauthorized', async () => {
     const id = new mongoose.Types.ObjectId().toString()
-    let res = await request(server).delete('/v1/users').send({ id })
+    const res = await request(server).delete('/v1/users').send({ id })
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('Unauthorized')
   })
   test('should return error if id not specified', async () => {
-    let res = await request(server)
+    const res = await request(server)
       .delete('/v1/users')
       .send({})
       .set('Authorization', `Bearer ${token}`)
@@ -266,7 +266,7 @@ describe('DELETE /v1/users', () => {
   })
   test('should return error if user has a Job', async () => {
     await createNewJob(testUser1)
-    let res = await request(server)
+    const res = await request(server)
       .delete('/v1/users')
       .send({ id: testUser1._id })
       .set('Authorization', `Bearer ${token}`)
@@ -277,7 +277,7 @@ describe('DELETE /v1/users', () => {
   })
   test('should return error if user does not exist', async () => {
     const id = new mongoose.Types.ObjectId().toString()
-    let res = await request(server)
+    const res = await request(server)
       .delete('/v1/users')
       .send({ id })
       .set('Authorization', `Bearer ${token}`)
@@ -286,7 +286,7 @@ describe('DELETE /v1/users', () => {
     expect(res.body.message).toBe('User not found')
   })
   test('should return success if user is deleted', async () => {
-    let res = await request(server)
+    const res = await request(server)
       .delete('/v1/users')
       .send({ id: testUser1._id })
       .set('Authorization', `Bearer ${token}`)

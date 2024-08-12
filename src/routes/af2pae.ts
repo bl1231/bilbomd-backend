@@ -10,4 +10,4 @@ router.route('/').get(downloadConstFile).post(createNewConstFile)
 
 // router.route('/:uuid/const.inp').get(downloadConstFile)
 
-module.exports = router
+export default router

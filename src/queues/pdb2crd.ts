@@ -36,7 +36,7 @@ const waitForJobCompletion = async (
   pdb2crdQueueEvents: QueueEvents
 ): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    const onCompleted = (event: { jobId: string; returnvalue?: any }) => {
+    const onCompleted = (event: { jobId: string; returnvalue?: unknown }) => {
       if (event.jobId === jobId) {
         pdb2crdQueueEvents.off('completed', onCompleted)
         pdb2crdQueueEvents.off('failed', onFailed)

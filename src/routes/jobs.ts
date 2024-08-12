@@ -26,4 +26,4 @@ router.route('/:id/logs').get(getLogForStep)
 router.route('/bilbomd-auto').post(createNewJob)
 router.route('/bilbomd-scoper').post(createNewJob)
 
-module.exports = router
+export default router

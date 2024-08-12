@@ -1,12 +1,9 @@
 import { logger } from '../middleware/loggers'
 import fs from 'fs-extra'
 import path from 'path'
-// import { Job } from '../model/Job'
-// import { IJob, IBilboMDScoperJob } from '../model/Job'
 import { Job, IJob, IBilboMDScoperJob } from '@bl1231/bilbomd-mongodb-schema'
 import { FoxsData, FoxsDataPoint } from 'types/foxs'
-// eslint-disable-next-line no-unused-vars
-import { Express, Request, Response } from 'express'
+import { Request, Response } from 'express'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -34,7 +31,7 @@ const downloadPDB = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error(`No ${pdbFile} available.`)
+    logger.error(`No ${pdbFile} available. ${error}`)
     return res.status(500).json({ message: `No ${pdbFile} available.` })
   }
 }
@@ -120,7 +117,7 @@ const getFoxsScoperData = async (job: IBilboMDScoperJob, res: Response) => {
 
 const getFoxsBilboData = async (job: IJob, res: Response) => {
   try {
-    let data: FoxsData[] = []
+    const data: FoxsData[] = []
 
     const jobDir = path.join(uploadFolder, job.uuid)
     const resultsDir = path.join(uploadFolder, job.uuid, 'results')
@@ -226,6 +223,7 @@ const readTopKNum = async (file: string) => {
     const pdbNumber = match ? parseInt(match[1], 10) : null
     return pdbNumber
   } catch (error) {
+    logger.error(`Error reading top K file: ${error}`)
     throw new Error('Could not determine top K PDB number')
   }
 }

@@ -6,7 +6,7 @@ import fs from 'fs-extra'
 import readline from 'readline'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
-const spawn = require('child_process').spawn
+import { spawn } from 'child_process'
 import { queueJob, getBullMQJob } from '../queues/bilbomd'
 import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper'
 import {
@@ -861,7 +861,7 @@ const getJobById = async (req: Request, res: Response) => {
 
     let bullmq: BilboMDBullMQ | undefined
     // Instantiate a bilbomdJob object with id and MongoDB info
-    let bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
+    const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
     if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD' || job.__t === 'BilboMd') {
       bullmq = await getBullMQJob(job.uuid)
@@ -946,6 +946,7 @@ const downloadJobResults = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
+    logger.error(`Error accessing default result file: ${error}`)
     // If the default file is not found, try the new file name
     try {
       await fs.promises.access(newResultFile)
@@ -959,6 +960,7 @@ const downloadJobResults = async (req: Request, res: Response) => {
         }
       })
     } catch (newFileError) {
+      logger.error(`Error accessing new result file: ${newFileError}`)
       // If neither file is found, log error and return a message
       logger.error(`No result files available for job ID: ${req.params.id}`)
       return res.status(500).json({ message: 'No result files available.' })

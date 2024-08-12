@@ -90,7 +90,7 @@ beforeAll(async () => {
   await User.deleteMany()
   await Job.deleteMany()
   // Create test user for setup (ignoring the warning)
-  // eslint-disable-next-line no-unused-vars
+   
   testUser1 = await User.create({
     username: 'testuser1',
     email: 'testuser1@example.com',

@@ -12,6 +12,18 @@ import { CronJob } from 'cron'
 import { deleteOldJobs } from './middleware/jobCleaner'
 import swaggerUi from 'swagger-ui-express'
 import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
+import rootRoutes from './routes/root'
+import sfapiRoutes from './routes/sfapi'
+import registerRoutes from './routes/register'
+import verifyRoutes from './routes/verify'
+import magicklinkRoutes from './routes/magicklink'
+import authRoutes from './routes/auth'
+import jobsRoutes from './routes/jobs'
+import usersRoutes from './routes/users'
+import af2paeRoutes from './routes/af2pae'
+import autorgRoutes from './routes/autorg'
+import bullmqRoutes from './routes/bullmq'
+import configsRoutes from './routes/configs'
 
 // Instantiate the app
 const app: Express = express()
@@ -48,26 +60,26 @@ app.use(cookieParser())
 app.use('/', express.static('public'))
 
 // Root routes (no version)
-app.use('/', require('./routes/root'))
+app.use('/', rootRoutes)
 
 app.use('/admin/bullmq', adminRoutes)
 
-app.use('/sfapi', require('./routes/sfapi'))
+app.use('/sfapi', sfapiRoutes)
 
 // Group version 1 routes under /api/v1
 const v1Router = express.Router()
 
 // Register v1 routes
-v1Router.use('/register', require('./routes/register'))
-v1Router.use('/verify', require('./routes/verify'))
-v1Router.use('/magicklink', require('./routes/magicklink'))
-v1Router.use('/auth', require('./routes/auth'))
-v1Router.use('/jobs', require('./routes/jobs'))
-v1Router.use('/users', require('./routes/users'))
-v1Router.use('/af2pae', require('./routes/af2pae'))
-v1Router.use('/autorg', require('./routes/autorg'))
-v1Router.use('/bullmq', require('./routes/bullmq'))
-v1Router.use('/configs', require('./routes/configs'))
+v1Router.use('/register', registerRoutes)
+v1Router.use('/verify', verifyRoutes)
+v1Router.use('/magicklink', magicklinkRoutes)
+v1Router.use('/auth', authRoutes)
+v1Router.use('/jobs', jobsRoutes)
+v1Router.use('/users', usersRoutes)
+v1Router.use('/af2pae', af2paeRoutes)
+v1Router.use('/autorg', autorgRoutes)
+v1Router.use('/bullmq', bullmqRoutes)
+v1Router.use('/configs', configsRoutes)
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)

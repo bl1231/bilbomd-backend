@@ -17,4 +17,4 @@ router.use(ensureSFAuthenticated)
 router.route('/account').get(getUser)
 router.route('/account/projects/:repocode').get(getProjectHours)
 
-module.exports = router
+export default router
