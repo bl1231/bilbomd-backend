@@ -1,7 +1,6 @@
-// eslint-disable-next-line no-unused-vars
-import { Express, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import axios, { AxiosResponse } from 'axios'
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 
 const baseURL = 'https://api.nersc.gov/api/v1.2'
 

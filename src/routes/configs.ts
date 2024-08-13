@@ -1,11 +1,11 @@
 import express from 'express'
-import { getAutoRg } from '../controllers/jobsController.js'
+import { getConfigsStuff } from '../controllers/configsController.js'
 import verifyJWT from '../middleware/verifyJWT.js'
 
 const router = express.Router()
 
 router.use(verifyJWT)
 
-router.route('/').post(getAutoRg)
+router.route('/').get(getConfigsStuff)
 
 export default router

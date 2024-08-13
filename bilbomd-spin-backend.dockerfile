@@ -75,7 +75,7 @@ COPY --chown=bilbo:bilbomd package*.json .
 RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --force
 
 # Remove .npmrc file for security
 RUN rm /home/bilbo/.npmrc

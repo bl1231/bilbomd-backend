@@ -3,7 +3,6 @@ name: Build and Push Docker Images to GitHub Container Registry
 on:
   push:
     branches:
-      - 511-update-docker-cicd-workflow-triggers  # change  to the current branch name if you want to build an image before merging to main
       - main
   pull_request:
     branches:
@@ -31,7 +30,7 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --force
 
       - name: Build the project
         run: npm run build

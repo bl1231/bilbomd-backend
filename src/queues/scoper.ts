@@ -1,8 +1,8 @@
-import IORedis, { RedisOptions } from 'ioredis'
+import { Redis, RedisOptions } from 'ioredis'
 import { Job as BullMQJob, Queue } from 'bullmq'
-import { logger } from '../middleware/loggers'
-import { BilboMDBullMQ, BullMQData, BilboMDScoperSteps } from '../types/bilbomd'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { BilboMDBullMQ, BullMQData, BilboMDScoperSteps } from '../types/bilbomd.js'
+import { config } from '../config/config.js'
 
 const redisOptions: RedisOptions = {
   port:
@@ -13,7 +13,7 @@ const redisOptions: RedisOptions = {
   // password: process.env.REDIS_PASSWORD || '',
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
-const redis = new IORedis(redisOptions)
+const redis = new Redis(redisOptions)
 
 const scoperQueue = new Queue('bilbomd-scoper', {
   connection: redis,

@@ -1,8 +1,6 @@
-// import { User } from '../model/User'
-// import { Job } from '../model/Job'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import { Request, Response } from 'express'
 
 /**

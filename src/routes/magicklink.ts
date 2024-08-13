@@ -1,8 +1,8 @@
 import express from 'express'
-import { generateMagickLink } from '../controllers/magickLinkController'
+import { generateMagickLink } from '../controllers/magickLinkController.js'
 
 const router = express.Router()
 
 router.post('/', generateMagickLink)
 
-module.exports = router
+export default router

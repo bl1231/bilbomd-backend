@@ -1,5 +1,5 @@
-import app from './app'
-import { logger } from './middleware/loggers'
+import app from './app.js'
+import { logger } from './middleware/loggers.js'
 
 const PORT = 3500
 

@@ -1,5 +1,4 @@
-import { logger } from '../middleware/loggers'
-// import { User, IUser } from '../model/User'
+import { logger } from '../middleware/loggers.js'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import jwt from 'jsonwebtoken'
 import { Request, Response } from 'express'
@@ -255,6 +254,7 @@ const refresh = async (req: Request, res: Response) => {
       res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
+    logger.error(`Error occurred while verifying token: ${error}`)
     res.status(403).json({ message: 'Forbidden' })
   }
 }
