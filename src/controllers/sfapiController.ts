@@ -38,6 +38,14 @@ interface ProjectStats {
   hours_used: number
   project_hours_given: number
   project_hours_used: number
+  cpu_hours_given: number
+  cpu_hours_used: number
+  cpu_project_hours_given: number
+  cpu_project_hours_used: number
+  gpu_hours_given: number
+  gpu_hours_used: number
+  gpu_project_hours_given: number
+  gpu_project_hours_used: number
   projdir_usage: StorageStats[]
   project_projdir_usage: StorageStats
   hpss_usage?: StorageStats[] // Assuming this can be optional
@@ -184,8 +192,10 @@ const getProjectHours = async (req: Request, res: Response) => {
     }
 
     const response = {
-      hours_given: project.hours_given,
-      hours_used: project.hours_used
+      cpu_hours_given: project.cpu_hours_given,
+      cpu_hours_used: project.cpu_hours_used,
+      gpu_hours_given: project.gpu_hours_given,
+      gpu_hours_used: project.gpu_hours_used
     }
 
     logger.info(`Project ${projectName} hours: ${JSON.stringify(response)}`)
