@@ -1,6 +1,6 @@
 import express from 'express'
-import { handleWebhook } from '../controllers/webhooksController'
-import verifyGitHubSecret from '../middleware/verifyGitHubSecret'
+import { handleWebhook } from 'controllers/webhooksController.js'
+import verifyGitHubSecret from 'middleware/verifyGitHubSecret.js'
 
 const router = express.Router()
 

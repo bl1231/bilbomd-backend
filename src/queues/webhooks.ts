@@ -1,8 +1,8 @@
-import IORedis, { RedisOptions } from 'ioredis'
+import { Redis, RedisOptions } from 'ioredis'
 import { Queue } from 'bullmq'
-import { logger } from '../middleware/loggers'
-import { BullMQData } from '../types/webhooks'
-import { config } from '../config/config'
+import { logger } from 'middleware/loggers.js'
+import { BullMQData } from 'types/webhooks.js'
+import { config } from 'config/config.js'
 
 const redisOptions: RedisOptions = {
   port:
@@ -12,7 +12,7 @@ const redisOptions: RedisOptions = {
   host: process.env.REDIS_HOST || 'localhost',
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
-const redis = new IORedis(redisOptions)
+const redis = new Redis(redisOptions)
 
 const webhooksQueue = new Queue('webhooks', {
   connection: redis,

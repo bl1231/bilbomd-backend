@@ -1,8 +1,8 @@
-import { logger } from '../middleware/loggers'
+import { logger } from 'middleware/loggers.js'
 import { Request, Response } from 'express'
-import { queueJob } from '../queues/webhooks'
+import { queueJob } from 'queues/webhooks.js'
 import { v4 as uuid } from 'uuid'
-import { WebhookPayload } from '../types//github-payload'
+import { WebhookPayload } from 'types/github-payload.js'
 
 // Define the function to handle incoming webhooks
 const handleWebhook = (req: Request, res: Response): void => {

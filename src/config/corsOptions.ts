@@ -1,4 +1,5 @@
 import { allowedOrigins } from './allowedOrigins.js'
+import { logger } from 'middleware/loggers.js'
 
 const corsOptions = {
   origin: (
