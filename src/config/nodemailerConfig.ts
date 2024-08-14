@@ -207,13 +207,13 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
  * Function takes two arguments and its going to send the confirmation otp without any template
  */
 const sendOtpEmail = (email: string, otp: string) => {
-  logger.info(`Sending OTP email to ${email}`);
+  logger.info(`Sending OTP email to ${email} and otp is ${otp}`);
   
   const mailOptions = {
     from: user,
     to: email,
     subject: 'Your OTP Code',
-    text: `Your OTP is: ${otp}`, // Use plain text instead of a template
+    text: `Your OTP is: ${otp}`, 
   };
 
   transporter

@@ -201,39 +201,71 @@ const updateUser = async (req: Request, res: Response) => {
  *                   description: Error message.
  *                   example: "User not found"
  */
+// const deleteUser = async (req: Request, res: Response) => {
+//   const { id } = req.params
+
+//   // Confirm data
+//   if (!id) {
+//     return res.status(400).json({ message: 'User ID Required' })
+//   }
+
+//   // Does the user still have assigned jobs?
+//   const job = await Job.findOne({ user: id }).lean().exec()
+//   if (job) {
+//     return res.status(400).json({ message: 'User has jobs' })
+//   }
+
+//   // Does the user exist to delete?
+//   const user = await User.findById(id).exec()
+
+//   if (!user) {
+//     return res.status(400).json({ message: 'User not found' })
+//   }
+
+//   const deleteResult = await user.deleteOne()
+
+//   // Check if a document was actually deleted
+//   if (deleteResult.deletedCount === 0) {
+//     return res.status(404).json({ message: 'No user was deleted' })
+//   }
+
+//   const reply = `Username ${user.username} with ID ${user._id} deleted`
+
+//   res.status(200).json({ message: reply })
+// }
 const deleteUser = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const { id, username } = req.params
 
-  // Confirm data
-  if (!id) {
-    return res.status(400).json({ message: 'User ID Required' })
+  // Check if either ID or username is provided
+  if (!id && !username) {
+    return res.status(400).json({ message: 'User ID or username required' })
   }
 
-  // Does the user still have assigned jobs?
-  const job = await Job.findOne({ user: id }).lean().exec()
-  if (job) {
-    return res.status(400).json({ message: 'User has jobs' })
-  }
-
-  // Does the user exist to delete?
-  const user = await User.findById(id).exec()
+  // Find the user by ID or username
+  const user = id
+    ? await User.findById(id).exec()
+    : await User.findOne({ username }).exec()
 
   if (!user) {
-    return res.status(400).json({ message: 'User not found' })
+    return res.status(404).json({ message: 'User not found' })
   }
 
+  // Check if the user has assigned jobs
+  const job = await Job.findOne({ user: user._id }).lean().exec()
+  if (job) {
+    return res.status(400).json({ message: 'User has assigned jobs' })
+  }
+
+  // Delete the user
   const deleteResult = await user.deleteOne()
 
-  // Check if a document was actually deleted
   if (deleteResult.deletedCount === 0) {
-    return res.status(404).json({ message: 'No user was deleted' })
+    return res.status(500).json({ message: 'Failed to delete user' })
   }
 
-  const reply = `Username ${user.username} with ID ${user._id} deleted`
-
+  const reply = `User ${user.username} with ID ${user._id} deleted`
   res.status(200).json({ message: reply })
 }
-
 /**
  * @openapi
  * /users/{id}:
@@ -278,7 +310,7 @@ const getUser = async (req: Request, res: Response) => {
   }
   res.json(user)
 }
-
+ 
 /**
  * @openapi
  * First, update the IUser interface in your TypeScript code to include the new fields that are emailVerificationOtp,emailVerificationOtpExpires,previousEmail
@@ -420,12 +452,12 @@ const UserSchema: Schema = new Schema({
  */
 
 // Controller for sending email change request
- const sendChangeEmailOtp = async (req: Request, res: Response) => {
+const sendChangeEmailOtp = async (req: Request, res: Response) => {
   try {
-    const { userId, username, currentEmail, newEmail } = req.body;
+    const { username, currentEmail, newEmail } = req.body;
 
-    // Retrieve user details from the database
-    const user = await User.findById(userId);
+    // Retrieve user details from the database using the username
+    const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -437,15 +469,17 @@ const UserSchema: Schema = new Schema({
     }
 
     // Generate a random 6-digit OTP
-    const otp = "123456";//generateOtp();
+    const otpCode = generateOtp(); //generateOtp();
 
     // Store the OTP and expiration time in the database
-    //user.emailVerificationOtp = otp;
-    //user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes from now
-    //await user.save();
+    user.otp = {
+      code: otpCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
+    };
+    await user.save();
 
     // Send the OTP to the current email address
-    await sendOtpEmail(currentEmail, otp);
+    await sendOtpEmail(currentEmail, otpCode);
 
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
@@ -453,6 +487,7 @@ const UserSchema: Schema = new Schema({
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 //#region 
 // Need to create three keys in mongodb database for user entity
@@ -536,26 +571,25 @@ const UserSchema: Schema = new Schema({
  */
 const verifyOtp = async (req: Request, res: Response) => {
   try {
-    const { userId, otp, currentEmail, newEmail } = req.body;
+    const { username, otp, currentEmail, newEmail } = req.body;
 
     // Retrieve user details from the database
-    const user = await User.findById(userId);
+    const user = await User.findOne({username});
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     // Check if the provided OTP matches the stored OTP and is not expired
-    // if (user.emailVerificationOtp !== otp || user.emailVerificationOtpExpires < Date.now()) {
-    //   return res.status(400).json({ message: 'Invalid or expired OTP' });
-    // }
+    if (user.otp?.code !== otp || (user.otp?.expiresAt && user.otp.expiresAt < new Date())) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
 
     // Update the email addresses in the database
-    // user.previousEmail = currentEmail;
-    // user.email = newEmail;
-    // user.emailVerificationOtp = undefined;
-    // user.emailVerificationOtpExpires = undefined;
-    // await user.save();
+    user.previousEmails.push(currentEmail);
+    user.email = newEmail;
+    user.otp = null;
+    await user.save();
 
     res.status(200).json({ message: 'Email address updated successfully' });
   } catch (error) {
@@ -563,7 +597,6 @@ const verifyOtp = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
  /**
  * @openapi
  * /users/resend-otp:
@@ -619,7 +652,7 @@ const verifyOtp = async (req: Request, res: Response) => {
  *                   description: Error message indicating an internal server error.
  *                   example: "Internal server error"
  */
-const resendOtp = async (req: Request, res: Response) => {
+ const resendOtp = async (req: Request, res: Response) => {
   try {
     const { userId } = req.body;
 
@@ -631,15 +664,17 @@ const resendOtp = async (req: Request, res: Response) => {
     }
 
     // Generate a new random 6-digit OTP
-    // const otp = generateOtp();
+    const otpCode = generateOtp();
 
     // Update the OTP and expiration time in the database
-    // user.emailVerificationOtp = otp;
-    // user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes from now
-    // await user.save();
+    user.otp = {
+      code: otpCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
+    };
+    await user.save();
 
     // Send the new OTP to the current email address
-    // await sendOtpEmail(user.email, otp);
+    await sendOtpEmail(user.email, otpCode);
 
     res.status(200).json({ message: 'OTP resent successfully' });
   } catch (error) {
@@ -648,5 +683,16 @@ const resendOtp = async (req: Request, res: Response) => {
   }
 };
 
+//#region  Generating the otp
+function generateOtp(): string {
+  const digits = '0123456789';
+  let otp = '';
 
+  for (let i = 0; i < 6; i++) {
+    otp += digits[Math.floor(Math.random() * 10)];
+  }
+
+  return otp;
+}
+//#endregion
 export { getAllUsers, updateUser, deleteUser, getUser,sendChangeEmailOtp,verifyOtp,resendOtp }
