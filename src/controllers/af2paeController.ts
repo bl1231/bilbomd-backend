@@ -16,7 +16,7 @@ const createNewConstFile = async (req: Request, res: Response) => {
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    logger.info('Created Directory: %s', jobDir)
+    logger.info(`Created Directory: ${jobDir}`)
 
     const storage = multer.diskStorage({
       destination: function (req, file, cb) {
@@ -136,12 +136,12 @@ const spawnAF2PAEInpFileMaker = (
       logStream.write(dataString)
     })
     af2pae.stderr?.on('data', (data: Buffer) => {
-      logger.error('spawnAF2PAEInpFileMaker stderr', data.toString())
+      logger.error(`spawnAF2PAEInpFileMaker stderr:  ${data.toString()}`)
       console.log(data)
       errorStream.write(data.toString())
     })
     af2pae.on('error', (error) => {
-      logger.error('spawnAF2PAEInpFileMaker error:', error)
+      logger.error(`spawnAF2PAEInpFileMaker error ${error}`)
       reject(error)
     })
     af2pae.on('exit', (code) => {
