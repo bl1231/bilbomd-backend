@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 575-configure-github-actions-to-build-on-new-tags
     tags:
       - 'v*'
   pull_request:
