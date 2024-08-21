@@ -4,6 +4,7 @@ const allowedOrigins: AllowedOrigin[] = [
   'http://localhost:3001',
   'http://localhost:3002',
   'http://localhost:3003',
+  'http://localhost:3030',
   'http://localhost:3500',
   'http://localhost:3501',
   'http://127.0.0.1:3001',
