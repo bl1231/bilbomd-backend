@@ -1,1 +1,1 @@
-# Will put examples of "cases" for decision tree
+# Will put examples of "cases" for decision tree.
