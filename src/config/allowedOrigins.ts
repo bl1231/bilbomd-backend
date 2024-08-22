@@ -8,6 +8,7 @@ const allowedOrigins: AllowedOrigin[] = [
   'http://localhost:3500',
   'http://localhost:3501',
   'http://127.0.0.1:3001',
+  'http://127.0.0.1:3030',
   'http://127.0.0.1:3500',
   'http://127.0.0.1:3501',
   'http://192.168.1.1:3001',
