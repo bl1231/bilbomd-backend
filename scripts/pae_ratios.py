@@ -180,9 +180,11 @@ def is_float(arg):
         return False
 
 
-def separate_into_regions(numbers, chain_segs: list):
+def sort_and_separate_cluster(numbers, chain_segs: list):
     """
-    Seprates into regions
+    The purpose of this function is to take a list of numbers and separate them into
+    contiguous regions. A "region" is a sequence of consecutive numbers in the list,
+    except when a number appears in the chain_segs list, which acts as a separator.
     """
     numbers = sorted(numbers)  # Ensure numbers are sorted
     regions = []
@@ -255,6 +257,70 @@ def find_and_update_sequential_rigid_domains(lists_of_tuples):
     return updated, lists_of_tuples
 
 
+def calculate_bfactor_avg_for_region(
+    crd_file, first_resnum_cluster, last_resnum_cluster, first_resnum
+):
+    """
+    Calculate the average B-factor for a given cluster region.
+
+    :param crd_file: Path to the CRD file.
+    :param first_resnum_cluster: The starting residue number of the cluster region.
+    :param last_resnum_cluster: The ending residue number of the cluster region.
+    :param first_resnum: The first residue number in the sequence.
+    :return: The average B-factor for the region.
+    """
+    bfactors = []
+    with open(file=crd_file, mode="r", encoding="utf8") as infile:
+        for line in infile:
+            words = line.split()
+            if len(words) >= 10 and is_float(words[9]) and not words[0].startswith("*"):
+                bfactor = words[9]
+                resnum = words[1]
+
+                if (
+                    float(bfactor)
+                    > 0.0  # Ensure only B-factors greater than 0.0 are considered
+                    and bfactor.replace(".", "", 1).isdigit()
+                    and int(resnum) >= first_resnum_cluster + first_resnum
+                    and int(resnum) <= last_resnum_cluster + first_resnum
+                ):
+                    bfactors.append(float(bfactor))
+
+    if bfactors:
+        return sum(bfactors) / len(bfactors)
+    else:
+        return 0.0  # Or handle this case as needed
+
+
+def identify_new_rigid_domain(
+    crd_file, first_resnum_cluster, last_resnum_cluster, first_resnum
+):
+    """
+    Identify and return a new rigid domain as a tuple of (start_residue, end_residue, segment_id).
+
+    :param crd_file: Path to the CRD file.
+    :param first_resnum_cluster: The starting residue number of the cluster region.
+    :param last_resnum_cluster: The ending residue number of the cluster region.
+    :param first_resnum: The first residue number in the sequence.
+    :return: A tuple (start_residue, end_residue, segment_id) representing the new rigid domain, or None if not found.
+    """
+    str1 = str2 = segid = None
+    with open(file=crd_file, mode="r", encoding="utf8") as infile:
+        for line in infile:
+            words = line.split()
+            if len(words) >= 10 and is_float(words[9]) and not words[0].startswith("*"):
+                resnum = int(words[1])
+                if resnum == first_resnum_cluster + first_resnum:
+                    str1 = int(words[8])
+                elif resnum == last_resnum_cluster + first_resnum:
+                    str2 = int(words[8])
+                    segid = words[7]
+
+    if str1 is not None and str2 is not None and segid is not None:
+        return (str1, str2, segid)
+    return None
+
+
 def define_rigid_domains(
     clusters: list, crd_file: str, first_resnum: int, chain_segment_list: list
 ) -> list:
@@ -272,71 +338,37 @@ def define_rigid_domains(
     for _, cluster in enumerate(clusters):
         rigid_body = []
         if len(cluster) >= MIN_CLUSTER_LENGTH:
-            # make sure all elements of cluster are integers.
-            # is this needed?
-            # res_numbers = [int(num) for num in cluster]
-            # print(f"cluster is identical to res_numbers: {cluster == res_numbers}")
-            consecutive_regions = separate_into_regions(cluster, chain_segment_list)
-            for region in consecutive_regions:
+            sorted_cluster = sort_and_separate_cluster(cluster, chain_segment_list)
+            for region in sorted_cluster:
                 first_resnum_cluster = region[0]
                 last_resnum_cluster = region[-1]
-                # check which rigid domains are rigid and
-                # which are flexbible based on avearge Bfactor
-                bfactors = []
-                with open(file=crd_file, mode="r", encoding="utf8") as infile:
-                    for line in infile:
-                        words = line.split()
-                        if (
-                            len(words) >= 10
-                            and is_float(words[9])
-                            and not words[0].startswith("*")
-                        ):
-                            if float(words[9]) > 0.0:
-                                bfactor = words[9]
-                                resnum = words[1]
 
-                                if (
-                                    bfactor.replace(".", "", 1).isdigit()
-                                    and (
-                                        int(resnum)
-                                        >= first_resnum_cluster + first_resnum
-                                    )
-                                    and (
-                                        int(resnum)
-                                        <= last_resnum_cluster + first_resnum
-                                    )
-                                ):
-                                    bfactors.append(float(bfactor))
-                bfactor_avg = sum(bfactors) / len(bfactors)
+                # Calculate the average B-factor for the current region
+                bfactor_avg = calculate_bfactor_avg_for_region(
+                    crd_file, first_resnum_cluster, last_resnum_cluster, first_resnum
+                )
 
+                # If the average B-factor is above the threshold, identify a new rigid domain
                 if bfactor_avg > B_THRESHOLD:
-                    with open(file=crd_file, mode="r", encoding="utf8") as infile:
-                        for line in infile:
-                            words = line.split()
-                            if (
-                                len(words) >= 10
-                                and is_float(words[9])
-                                and not words[0].startswith("*")
-                            ):
-                                if int(words[1]) == first_resnum_cluster + first_resnum:
-                                    str1 = int(words[8])
-                                elif (
-                                    int(words[1]) == last_resnum_cluster + first_resnum
-                                ):
-                                    str2 = int(words[8])
-                                    segid = words[7]
-
-                    new_rigid_domain = (str1, str2, segid)
-                    print(f"new_rigid_domain: {new_rigid_domain} pLDDT: {bfactor_avg}")
-                    rigid_body.append(new_rigid_domain)
+                    new_rigid_domain = identify_new_rigid_domain(
+                        crd_file,
+                        first_resnum_cluster,
+                        last_resnum_cluster,
+                        first_resnum,
+                    )
+                    if new_rigid_domain:
+                        print(
+                            f"new_rigid_domain: {new_rigid_domain} pLDDT: {bfactor_avg}"
+                        )
+                        rigid_body.append(new_rigid_domain)
             rigid_bodies.append(rigid_body)
-    # print(f"Rigid Bodies: {rigid_bodies}")
-    #
+
     # remove empty lists from our list of lists of tuples
     all_non_empty_rigid_bodies = [cluster for cluster in rigid_bodies if cluster]
     print(f"Rigid Bodies: {all_non_empty_rigid_bodies}")
+
     # Now we need to make sure that none of the Rigid Domains (defined as tuples) are
-    # adjacent to each other, and if they are we need to adjust the start and end so
+    # adjacent to each other, and if they are, we need to adjust the start and end so
     # that we establish a 2 residue gap between them.
     updated = True
     while updated:
