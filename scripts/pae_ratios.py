@@ -223,10 +223,46 @@ def sort_and_separate_cluster(numbers, chain_segs: list):
 
 def find_and_update_sequential_rigid_domains(lists_of_tuples):
     """
-    Find and update sequential Rigid Domains
+    Identify and adjust adjacent rigid domains in a list of tuples.
 
-    This function was a collaboration between ChatGPT and Scott. Each tuple represents
-    the start and end of a rigid domain and the chain it belongs to.
+    This function iterates over a list of lists, where each inner list contains tuples
+    representing Rigid Domains. Each tuple consists of the start residue, end residue,
+    and the chain identifier. The function identifies adjacent rigid domains within the
+    same chain and adjusts them by creating a 2-residue gap between consecutive domains.
+    The adjustment is done by decrementing the end of the first domain and incrementing
+    the start of the second domain.
+
+    Parameters:
+    -----------
+    lists_of_tuples : list of lists of tuples
+        A list where each inner list contains tuples representing rigid domains. Each
+        tuple is of the form (start_residue, end_residue, chain), where `start_residue`
+        and `end_residue` are integers indicating the range of residues, and `chain` is
+        a string representing the chain ID.
+
+    Returns:
+    --------
+    tuple (bool, list of list of tuples)
+        - A boolean indicating whether any updates were made to the rigid domains.
+        - The updated list of lists containing the adjusted rigid domains.
+
+    Example:
+    --------
+    Given a list of tuples representing rigid domains:
+
+    >>> lists_of_tuples = [
+    >>>     [(10, 20, "A"), (21, 30, "A")],
+    >>>     [(5, 15, "B"), (16, 25, "B")]
+    >>> ]
+
+    The function will identify that (10, 20, "A") and (21, 30, "A") are adjacent and
+    will update them to (10, 19, "A") and (22, 30, "A"), respectively, creating a
+    2-residue gap between the domains.
+
+    Collaboration Note:
+    -------------------
+    This function was collaboratively developed by ChatGPT and Scott
+
     """
     seen_pairs = set()  # To keep track of seen pairs and avoid duplicates
     updates = {}  # To store updates for each tuple
