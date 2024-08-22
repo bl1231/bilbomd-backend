@@ -180,11 +180,34 @@ def is_float(arg):
 
 def sort_and_separate_cluster(numbers, chain_segs: list):
     """
-    The purpose of this function is to take a list of numbers and separate them into
-    contiguous regions. A "region" is a sequence of consecutive numbers in the list,
-    except when a number appears in the chain_segs list, which acts as a separator.
+    Sorts a list of numbers and separates them into contiguous regions.
+
+    A "region" is defined as a sequence of consecutive numbers in the sorted list.
+    The separation of regions occurs when a break in consecutiveness is detected,
+    or when a number is found in the `chain_segs` list, which acts as a separator.
+
+    Parameters:
+    -----------
+    numbers : list of int
+        A list of integers that needs to be sorted and separated into regions.
+
+    chain_segs : list of int
+        A list of integers that serve as separators. When a number from `numbers`
+        is found in `chain_segs`, it causes a break in the region, even if the
+        numbers are otherwise consecutive.
+
+    Returns:
+    --------
+    list of list of int
+        A list of lists, where each inner list represents a contiguous region
+        of numbers, excluding any breaks caused by numbers in `chain_segs`.
+
+    Example:
+    --------
+    >>> sort_and_separate_cluster([1, 2, 3, 7, 8, 9, 11], [3, 8])
+    [[1, 2], [3], [7], [8, 9], [11]]
     """
-    numbers = sorted(numbers)  # Ensure numbers are sorted
+    numbers = sorted(numbers)
     regions = []
     current_region = [numbers[0]]
     for i in range(1, len(numbers)):
@@ -472,9 +495,9 @@ if __name__ == "__main__":
     )
     # print(f"pae_clusters: {pae_clusters}")
 
-    rigid_bodies = define_rigid_bodies(
+    rigid_bodies_from_pae = define_rigid_bodies(
         pae_clusters, args.crd_file, first_residue, chain_segments
     )
 
-    write_const_file(rigid_bodies, CONST_FILE_PATH)
+    write_const_file(rigid_bodies_from_pae, CONST_FILE_PATH)
     print("------------- done -------------")
