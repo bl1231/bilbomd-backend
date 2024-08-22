@@ -7,7 +7,7 @@ import json
 from collections import defaultdict
 from typing import Tuple, Optional
 import igraph
-import numpy
+import numpy as np
 
 # This is defining the pLDDT threshold for determing flex/rigid
 # which Alphafold2 writes to the B-factor column
@@ -136,9 +136,7 @@ def define_clusters_for_selected_pae(
     if "predicted_aligned_error" not in selected_data:
         raise ValueError("Invalid PAE JSON format.")
 
-    pae_matrix = numpy.array(
-        selected_data["predicted_aligned_error"], dtype=numpy.float64
-    )
+    pae_matrix = np.array(selected_data["predicted_aligned_error"], dtype=np.float64)
 
     pae_cutoff = 10
     graph_resolution = 1
@@ -150,7 +148,7 @@ def define_clusters_for_selected_pae(
     g = igraph.Graph()
     size = weights.shape[0]
     g.add_vertices(range(size))
-    edges = numpy.argwhere(pae_matrix < pae_cutoff)
+    edges = np.argwhere(pae_matrix < pae_cutoff)
     sel_weights = weights[edges.T[0], edges.T[1]]
     g.add_edges(edges)
     g.es["weight"] = sel_weights
@@ -158,7 +156,7 @@ def define_clusters_for_selected_pae(
     vc = g.community_leiden(
         weights="weight", resolution=graph_resolution / 100, n_iterations=10
     )
-    membership = numpy.array(vc.membership)
+    membership = np.array(vc.membership)
 
     membership_clusters = defaultdict(list)
     for index, cluster in enumerate(membership):
@@ -321,7 +319,7 @@ def identify_new_rigid_domain(
     return None
 
 
-def define_rigid_domains(
+def define_rigid_bodies(
     clusters: list, crd_file: str, first_resnum: int, chain_segment_list: list
 ) -> list:
     """
@@ -474,9 +472,9 @@ if __name__ == "__main__":
     )
     # print(f"pae_clusters: {pae_clusters}")
 
-    rigid_body_clusters = define_rigid_domains(
+    rigid_bodies = define_rigid_bodies(
         pae_clusters, args.crd_file, first_residue, chain_segments
     )
 
-    write_const_file(rigid_body_clusters, CONST_FILE_PATH)
+    write_const_file(rigid_bodies, CONST_FILE_PATH)
     print("------------- done -------------")
