@@ -358,7 +358,7 @@ def define_rigid_domains(
                     )
                     if new_rigid_domain:
                         print(
-                            f"new_rigid_domain: {new_rigid_domain} pLDDT: {bfactor_avg}"
+                            f"New Rigid Domain: {new_rigid_domain} pLDDT: {round(bfactor_avg, 2)}"
                         )
                         rigid_body.append(new_rigid_domain)
             rigid_bodies.append(rigid_body)
