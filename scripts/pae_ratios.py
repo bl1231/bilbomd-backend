@@ -169,12 +169,12 @@ def define_clusters_for_selected_pae(
 
 def is_float(arg):
     """
-    Returns Boolean if arg is a float
+    Returns True if arg can be converted to a float, False otherwise.
     """
     try:
         float(arg)
         return True
-    except ValueError:
+    except (ValueError, TypeError):
         return False
 
 
