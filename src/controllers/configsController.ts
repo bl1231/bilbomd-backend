@@ -11,7 +11,7 @@ export const getConfigsStuff = (req: Request, res: Response) => {
     useNersc: process.env.USE_NERSC || 'false',
     nerscProject: process.env.NERSC_PROJECT || 'm4659',
     sendMailUser: process.env.SENDMAIL_USER || 'bilbomd@lbl.gov',
-    gitHash: process.env.GIT_HASH || 'unknown',
+    gitHash: process.env.GIT_HASH || '',
     mode: process.env.NODE_ENV || 'development',
   }
 
