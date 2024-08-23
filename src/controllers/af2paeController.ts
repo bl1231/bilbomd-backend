@@ -90,7 +90,7 @@ const createNewConstFile = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error(error)
+    logger.error(`Failed to create job directory: ${error}`)
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
 }
