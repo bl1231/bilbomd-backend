@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.9.7
+  - Add API endpoint to deliver config info (e.g. dev/prod, useNersc, repo, etc.)
+  - Fix & refactor the `pae_ratios.py` script to deal with adjacent Rigid Domains.
 - 1.9.6
   - Implement GitHub Actions to build docker images
   - Add API endpoints for SF-API expiration date
