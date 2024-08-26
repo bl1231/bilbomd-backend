@@ -52,7 +52,7 @@ ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG GITHUB_TOKEN
 
-RUN mkdir -p /app/node_modules /bilbomd/uploads
+RUN mkdir -p /app/node_modules /bilbomd/uploads /bilbomd/logs
 WORKDIR /app
 
 # Create a user and group with the provided IDs
@@ -60,7 +60,7 @@ RUN groupadd -g $GROUP_ID bilbomd && \
     useradd -u $USER_ID -g $GROUP_ID -m -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
-RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
+RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /bilbomd/logs /home/bilbo
 
 # Update NPM
 RUN npm install -g npm@10.8.2
