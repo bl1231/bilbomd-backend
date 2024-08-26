@@ -48,8 +48,8 @@ RUN python setup.py build_ext --inplace && \
 # -----------------------------------------------------------------------------
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
-ARG USER_ID=1001
-ARG GROUP_ID=1001
+ARG USER_ID
+ARG GROUP_ID
 ARG GITHUB_TOKEN
 
 RUN mkdir -p /app/node_modules /bilbomd/uploads /bilbomd/logs
