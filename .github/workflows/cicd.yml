@@ -76,7 +76,6 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
             ghcr.io/${{ github.repository }}/bilbomd-backend:latest
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -95,7 +94,6 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository }}/bilbomd-spin-backend:${{ env.VERSION }}
             ghcr.io/${{ github.repository }}/bilbomd-backend:${{ env.VERSION }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
