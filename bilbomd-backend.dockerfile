@@ -84,7 +84,7 @@ RUN rm /home/bilbo/.npmrc
 COPY --chown=bilbo:bilbomd . .
 
 # Fetch the short git hash and set it as an ARG
-ARG GIT_HASH=$(git rev-parse --short HEAD)
+ARG GIT_HASH
 
 # Use the ARG to set the environment variable
 ENV GIT_HASH=${GIT_HASH}
