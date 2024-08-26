@@ -83,6 +83,12 @@ RUN rm /home/bilbo/.npmrc
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
 
+# Fetch the short git hash and set it as an ARG
+ARG GIT_HASH=$(git rev-parse --short HEAD)
+
+# Use the ARG to set the environment variable
+ENV GIT_HASH=${GIT_HASH}
+
 EXPOSE 3500
 
 CMD [ "npm", "start" ]
