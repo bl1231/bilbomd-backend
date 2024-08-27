@@ -97,7 +97,7 @@ jobs:
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=${{ vars.USER_ID }}
             GROUP_ID=${{ vars.GROUP_ID }}
-            GIT_HASH=${{ github.sha }}
+            GIT_HASH=${{ github.event.pull_request.base.sha }}
             BILBOMD_BACKEND_VERSION=${{ env.BILBOMD_BACKEND_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -117,7 +117,7 @@ jobs:
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=${{ vars.USER_ID }}
             GROUP_ID=${{ vars.GROUP_ID }}
-            GIT_HASH=${{ github.sha }}
+            GIT_HASH=${{ github.event.pull_request.base.sha }}
             BILBOMD_BACKEND_VERSION=${{ env.BILBOMD_BACKEND_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
