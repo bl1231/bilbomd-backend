@@ -94,6 +94,10 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.10.0
+  - Remove `bilbomd-spin-backend`
+  - Improve the API endpoint to deliver config info for backend. worker, and ui
+  - Improvements to CI/CD workflow
 - 1.9.8
   - Unified Docker image for both beamline and NERSC SPIN deployment
 - 1.9.7
