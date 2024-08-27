@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { logger } from '../middleware/loggers.js'
 import axios from 'axios'
-import version from '../../package.json'
+import version from '../../package.json' assert { type: 'json' }
 
 export const getConfigsStuff = async (req: Request, res: Response) => {
   logger.info('--- getConfigsStuff ---')
