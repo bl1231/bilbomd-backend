@@ -69,7 +69,8 @@ jobs:
 
       - name: Get version from package.json
         id: get_version
-        run: echo "BILBOMD_BACKEND_VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_ENV
+        # run: echo "BILBOMD_BACKEND_VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_ENV
+        run: echo "BILBOMD_BACKEND_VERSION=$(node -p \"require('./package.json').version\")" | tee -a $GITHUB_ENV
 
       - name: Get short Git hash
         id: git-info
