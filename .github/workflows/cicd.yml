@@ -25,13 +25,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Ensure full history is fetched
-          ref: ${{ github.ref }} # Ensure the correct branch or tag is checked out
-
-      - name: Print commit information
-        run: |
-          echo "GITHUB_SHA: ${{ github.sha }}"
-          git rev-parse HEAD
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -43,11 +37,11 @@ jobs:
           echo "@bl1231:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      - name: Install dependencies
-        run: npm ci --force
+      # - name: Install dependencies
+      #   run: npm ci --force
 
-      - name: Build the project
-        run: npm run build
+      # - name: Build the project
+      #   run: npm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -79,9 +73,17 @@ jobs:
         id: get_version
         run: echo "BILBOMD_BACKEND_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 
-      - name: Get short Git hash
-        id: git-info
-        run: echo "GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      # - name: Get short Git hash
+      #   id: git-info
+      #   run: echo "GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Determine commit hash
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "GIT_HASH=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          else
+            echo "GIT_HASH=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          fi
 
       - name: Build and push bilbomd-backend Docker image (latest)
         uses: docker/build-push-action@v5
@@ -97,7 +99,7 @@ jobs:
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=${{ vars.USER_ID }}
             GROUP_ID=${{ vars.GROUP_ID }}
-            GIT_HASH=${{ github.event.pull_request.head.sha }}
+            GIT_HASH=${{ env.GIT_HASH }}
             BILBOMD_BACKEND_VERSION=${{ env.BILBOMD_BACKEND_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -117,7 +119,7 @@ jobs:
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=${{ vars.USER_ID }}
             GROUP_ID=${{ vars.GROUP_ID }}
-            GIT_HASH=${{ github.event.pull_request.head.sha }}
+            GIT_HASH=${{ env.GIT_HASH }}
             BILBOMD_BACKEND_VERSION=${{ env.BILBOMD_BACKEND_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
