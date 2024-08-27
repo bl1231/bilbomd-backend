@@ -12,6 +12,12 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
         process.env.WORKER_SERVICE_PORT || 3000
       }/config`
     )
+    // Fetch ui info
+    const { data: uiInfo } = await axios.get(
+      `${process.env.UI_SERVICE_URL || 'http://ui'}:${
+        process.env.UI_SERVICE_PORT || 80
+      }/version-info`
+    )
 
     // Log environment variables for debugging
     const envVars = [
@@ -32,15 +38,17 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
 
     // Construct the response object
     const configs = {
-      tokenExpires: process.env.SFAPI_TOKEN_EXPIRES || '2024-05-22 04:20',
+      mode: process.env.BILBOMD_ENV || '',
       useNersc: process.env.USE_NERSC || 'false',
       nerscProject: process.env.NERSC_PROJECT || 'm1234',
+      tokenExpires: process.env.SFAPI_TOKEN_EXPIRES || '2024-05-22 04:20',
       sendMailUser: process.env.SENDMAIL_USER || 'bilbomd@lbl.gov',
-      backendGitHash: process.env.GIT_HASH || '',
-      backendVersion: process.env.BILBOMD_BACKEND_VERSION || '',
-      mode: process.env.BILBOMD_ENV || '',
-      workerVersion: workerInfo.version || '',
-      workerGitHash: workerInfo.gitHash || ''
+      backendVersion: process.env.BILBOMD_BACKEND_VERSION || '0.0.0',
+      backendGitHash: process.env.GIT_HASH || 'abc123',
+      workerVersion: workerInfo.version || '0.0.0',
+      workerGitHash: workerInfo.gitHash || 'abc123',
+      uiGitHash: uiInfo.gitHash || 'abc123',
+      uiVersion: uiInfo.version || '0.0.0'
     }
 
     return res.json(configs)
