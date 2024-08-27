@@ -22,8 +22,16 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Ensure full history is fetched
+          ref: ${{ github.ref }} # Ensure the correct branch or tag is checked out
+
+      - name: Print commit information
+        run: |
+          echo "GITHUB_SHA: ${{ github.sha }}"
+          git rev-parse HEAD
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
