@@ -1,9 +1,10 @@
-import { Request, Response } from 'express';
-import { logger } from '../middleware/loggers.js';
-import axios from 'axios';
+import { Request, Response } from 'express'
+import { logger } from '../middleware/loggers.js'
+import axios from 'axios'
+import version from '../../package.json'
 
 export const getConfigsStuff = async (req: Request, res: Response) => {
-  logger.info('--- getConfigsStuff ---');
+  logger.info('--- getConfigsStuff ---')
 
   try {
     // Fetch worker info
@@ -11,7 +12,7 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
       `${process.env.WORKER_SERVICE_URL || 'http://worker'}:${
         process.env.WORKER_SERVICE_PORT || 3000
       }/config`
-    );
+    )
 
     // Log environment variables for debugging
     const envVars = [
@@ -22,12 +23,12 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
       'GIT_HASH',
       'BILBOMD_ENV',
       'WORKER_SERVICE_URL',
-      'WORKER_SERVICE_PORT',
-    ];
+      'WORKER_SERVICE_PORT'
+    ]
 
     envVars.forEach((envVar) => {
-      logger.info(`${envVar}: ${process.env[envVar]}`);
-    });
+      logger.info(`${envVar}: ${process.env[envVar]}`)
+    })
 
     // Construct the response object
     const configs = {
@@ -35,18 +36,19 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
       useNersc: process.env.USE_NERSC || 'false',
       nerscProject: process.env.NERSC_PROJECT || 'm1234',
       sendMailUser: process.env.SENDMAIL_USER || 'bilbomd@lbl.gov',
-      gitHash: process.env.GIT_HASH || '',
+      backendGitHash: process.env.GIT_HASH || '',
+      backendVersion: version || '',
       mode: process.env.BILBOMD_ENV || '',
       workerVersion: workerInfo.version || '',
-      workerGitHash: workerInfo.gitHash || '',
-    };
+      workerGitHash: workerInfo.gitHash || ''
+    }
 
-    return res.json(configs);
+    return res.json(configs)
   } catch (error) {
-    logger.error('Error fetching worker info or processing request:', error);
+    logger.error('Error fetching worker info or processing request:', error)
     return res.status(500).json({
       message: 'Failed to retrieve configuration information',
-      error: error,
-    });
+      error: error
+    })
   }
-};
+}
