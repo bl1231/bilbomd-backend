@@ -10,7 +10,7 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
     const { data: workerInfo } = await axios.get(
       `${process.env.WORKER_SERVICE_URL || 'http://worker'}:${
         process.env.WORKER_SERVICE_PORT || 3000
-      }/worker-info`
+      }/config`
     );
 
     // Log environment variables for debugging
