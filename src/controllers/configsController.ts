@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import { logger } from '../middleware/loggers.js'
 import axios from 'axios'
-import version from '../../package.json' assert { type: 'json' }
 
 export const getConfigsStuff = async (req: Request, res: Response) => {
   logger.info('--- getConfigsStuff ---')
@@ -21,6 +20,7 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
       'NERSC_PROJECT',
       'SENDMAIL_USER',
       'GIT_HASH',
+      'BILBOMD_BACKEND_VERSION',
       'BILBOMD_ENV',
       'WORKER_SERVICE_URL',
       'WORKER_SERVICE_PORT'
@@ -37,7 +37,7 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
       nerscProject: process.env.NERSC_PROJECT || 'm1234',
       sendMailUser: process.env.SENDMAIL_USER || 'bilbomd@lbl.gov',
       backendGitHash: process.env.GIT_HASH || '',
-      backendVersion: version || '',
+      backendVersion: process.env.BILBOMD_BACKEND_VERSION || '',
       mode: process.env.BILBOMD_ENV || '',
       workerVersion: workerInfo.version || '',
       workerGitHash: workerInfo.gitHash || ''

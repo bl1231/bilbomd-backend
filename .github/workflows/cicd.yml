@@ -61,11 +61,15 @@ jobs:
             type=raw,value=latest
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Generate version
+      - name: Generate version from tag
         id: version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Get version from package.json
+        id: get_version
+        run: echo "BILBOMD_BACKEND_VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_ENV
 
       - name: Get short Git hash
         id: git-info
@@ -86,6 +90,7 @@ jobs:
             USER_ID=${{ vars.USER_ID }}
             GROUP_ID=${{ vars.GROUP_ID }}
             GIT_HASH=${{ env.GIT_HASH }}
+            BILBOMD_BACKEND_VERSION=${{ env.BILBOMD_BACKEND_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

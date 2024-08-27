@@ -52,6 +52,7 @@ ARG USER_ID
 ARG GROUP_ID
 ARG GITHUB_TOKEN
 ARG GIT_HASH
+ARG BILBOMD_BACKEND_VERSION
 RUN mkdir -p /app/node_modules /bilbomd/uploads /bilbomd/logs
 WORKDIR /app
 
@@ -85,6 +86,7 @@ COPY --chown=bilbo:bilbomd . .
 
 # Use the ARG to set the environment variable
 ENV GIT_HASH=${GIT_HASH}
+ENV BILBOMD_BACKEND_VERSION=${BILBOMD_BACKEND_VERSION}
 
 EXPOSE 3500
 
