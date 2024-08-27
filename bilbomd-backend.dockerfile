@@ -51,7 +51,7 @@ FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID
 ARG GROUP_ID
 ARG GITHUB_TOKEN
-
+ARG GIT_HASH
 RUN mkdir -p /app/node_modules /bilbomd/uploads /bilbomd/logs
 WORKDIR /app
 
@@ -82,9 +82,6 @@ RUN rm /home/bilbo/.npmrc
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
-
-# Fetch the short git hash and set it as an ARG
-ARG GIT_HASH
 
 # Use the ARG to set the environment variable
 ENV GIT_HASH=${GIT_HASH}
