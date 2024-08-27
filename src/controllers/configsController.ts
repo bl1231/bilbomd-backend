@@ -47,8 +47,8 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
       backendGitHash: process.env.GIT_HASH || 'abc123',
       workerVersion: workerInfo.version || '0.0.0',
       workerGitHash: workerInfo.gitHash || 'abc123',
-      uiGitHash: uiInfo.gitHash || 'abc123',
-      uiVersion: uiInfo.version || '0.0.0'
+      uiVersion: uiInfo.version || '0.0.0',
+      uiGitHash: uiInfo.gitHash || 'abc123'
     }
 
     return res.json(configs)
