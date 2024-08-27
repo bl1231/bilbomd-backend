@@ -3,6 +3,7 @@ import { logger } from '../middleware/loggers.js'
 import axios from 'axios'
 
 export const getConfigsStuff = async (req: Request, res: Response) => {
+  logger.info(`--- getConfigsStuff ---`)
   logger.info(`process.env.SFAPI_TOKEN_EXPIRES: ${process.env.SFAPI_TOKEN_EXPIRES}`)
   logger.info(`process.env.USE_NERSC: ${process.env.USE_NERSC}`)
   logger.info(`process.env.NERSC_PROJECT: ${process.env.NERSC_PROJECT}`)
