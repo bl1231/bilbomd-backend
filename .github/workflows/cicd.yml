@@ -1,4 +1,4 @@
-name: Build and Push Docker Images to GitHub Container Registry
+name: Build and Push bilbomd-backend Docker Images
 
 on:
   push:
@@ -37,10 +37,10 @@ jobs:
           echo "@bl1231:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci --force
 
-      - name: Run TypeScript build
+      - name: Run npm build to test Typescript transpilation
         run: npm run build
 
       - name: Set up Docker Buildx
