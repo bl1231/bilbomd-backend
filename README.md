@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.10.2
+  - Add API endpoint to provide Perlmutter outage information
 - 1.10.1
   - Update dependencies
   - Various Typescript fixes
