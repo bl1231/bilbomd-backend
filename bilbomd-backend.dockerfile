@@ -48,11 +48,12 @@ RUN python setup.py build_ext --inplace && \
 # -----------------------------------------------------------------------------
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
-ARG USER_ID=1001
-ARG GROUP_ID=1001
+ARG USER_ID
+ARG GROUP_ID
 ARG GITHUB_TOKEN
-
-RUN mkdir -p /app/node_modules /bilbomd/uploads
+ARG BILBOMD_BACKEND_GIT_HASH
+ARG BILBOMD_BACKEND_VERSION
+RUN mkdir -p /app/node_modules /bilbomd/uploads /bilbomd/logs
 WORKDIR /app
 
 # Create a user and group with the provided IDs
@@ -60,10 +61,10 @@ RUN groupadd -g $GROUP_ID bilbomd && \
     useradd -u $USER_ID -g $GROUP_ID -m -d /home/bilbo -s /bin/bash bilbo
 
 # Change ownership of directories to the user and group
-RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /home/bilbo
+RUN chown -R bilbo:bilbomd /app /bilbomd/uploads /bilbomd/logs /home/bilbo
 
 # Update NPM
-RUN npm install -g npm@10.8.1
+RUN npm install -g npm@10.8.3
 
 # Switch to the non-root user
 USER bilbo:bilbomd
@@ -75,13 +76,17 @@ COPY --chown=bilbo:bilbomd package*.json .
 RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --force
 
 # Remove .npmrc file for security
 RUN rm /home/bilbo/.npmrc
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .
+
+# Use the ARG to set the environment variable
+ENV BILBOMD_BACKEND_GIT_HASH=${BILBOMD_BACKEND_GIT_HASH}
+ENV BILBOMD_BACKEND_VERSION=${BILBOMD_BACKEND_VERSION}
 
 EXPOSE 3500
 
