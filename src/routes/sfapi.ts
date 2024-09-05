@@ -4,8 +4,8 @@ import {
   getOutages,
   getUser,
   getProjectHours
-} from 'controllers/sfapiController.js'
-import { ensureSFAuthenticated } from 'middleware/tokenManager.js'
+} from '../controllers/sfapiController.js'
+import { ensureSFAuthenticated } from '../middleware/tokenManager.js'
 // import verifyJWT from '../middleware/verifyJWT'
 
 const router = express.Router()

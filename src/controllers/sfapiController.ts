@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import axios, { AxiosResponse } from 'axios'
-import { logger } from 'middleware/loggers.js'
+import { logger } from '../middleware/loggers.js'
 
 const baseURL = 'https://api.nersc.gov/api/v1.2'
 

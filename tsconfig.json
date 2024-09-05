@@ -28,12 +28,9 @@
     "module": "NodeNext" /* Specify what module code is generated. */,
     "rootDir": "src" /* Specify the root folder within your source files. */,
     "moduleResolution": "NodeNext" /* Specify how TypeScript looks up a file from a given module specifier. */,
-    "baseUrl": "src" /* Specify the base directory to resolve non-relative module names. */,
+    "baseUrl": "./src" /* Specify the base directory to resolve non-relative module names. */,
     "paths": {
-      "controllers/*": ["controllers/*"],
-      "middleware/*": ["middleware/*"],
-      "config/*": ["config/*"],
-      "queues/*": ["queues/*"],
+      "*": ["./src/*"]
     },
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
