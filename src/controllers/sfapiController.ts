@@ -145,6 +145,18 @@ const getStatus = async (req: Request, res: Response) => {
   res.json(data)
 }
 
+const getOutages = async (req: Request, res: Response) => {
+  const { success, data, error } = await makeUnauthenticatedSFApiRequest({
+    endpoint: '/status/outages/planned/perlmutter'
+  })
+
+  if (!success) {
+    return res.status(500).json({ error })
+  }
+
+  res.json(data)
+}
+
 const getUser = async (req: Request, res: Response) => {
   const username = 'sclassen'
   if (!req.sfApiToken) {
@@ -206,4 +218,4 @@ const getProjectHours = async (req: Request, res: Response) => {
   }
 }
 
-export { getStatus, getUser, getProjectHours }
+export { getStatus, getOutages, getUser, getProjectHours }
