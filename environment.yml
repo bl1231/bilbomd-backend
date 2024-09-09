@@ -1,4 +1,4 @@
-name: py312-test
+name: base
 channels:
   - defaults
   - conda-forge

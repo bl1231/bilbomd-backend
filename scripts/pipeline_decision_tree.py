@@ -8,6 +8,10 @@ Ex: ../pipeline_decision_tree.py results
 
 '''
 
+__author__ = "Joshua Del Mundo"
+__version__ = "0.1.0"
+__license__ = "SIBYLS"
+
 import bioxtasraw.RAWAPI as raw
 import copy
 import glob
@@ -16,8 +20,15 @@ import os
 import os.path
 import shutil
 import json
+import argparse
 
 print_flag = True
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description = "A script that evaluates the fit of a BilboMD job")
+    parser.add_argument("results", help="results folder from BilboMD job")
+    args = parser.parse_args()
+    print(args)
 
 def print_debug(arg):
     '''
@@ -25,7 +36,6 @@ def print_debug(arg):
     '''
     if print_flag:
         print(arg)
-
 
 #Define RAW functions
 
@@ -124,7 +134,7 @@ def residuals_region(prof1, prof2):
 
 
 
-Bilbo_output_folder = sys.argv[1]
+Bilbo_output_folder = args.results
 
 multi_state_models = sorted(glob.glob(Bilbo_output_folder + "/multi_state_model_*", recursive=True))
 cs_models = []
