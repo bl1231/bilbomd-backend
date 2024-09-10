@@ -72,7 +72,7 @@ const createNewAlphaFoldJob = async (req: Request, res: Response) => {
         await createFastaFile(parsedEntities, jobDir)
 
         // Handle the job creation
-        await handleBilboMDAlphaFoldJobCreation(req, res, user, UUID, entities)
+        await handleBilboMDAlphaFoldJobCreation(req, res, user, UUID, parsedEntities)
       } catch (error) {
         logger.error(error)
         res.status(500).json({ message: 'Internal server error' })
