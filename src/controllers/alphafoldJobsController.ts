@@ -3,8 +3,12 @@ import path from 'path'
 import fs from 'fs-extra'
 import { logger } from '../middleware/loggers.js'
 import multer from 'multer'
-import { BilboMdAlphaFoldJob, IBilboMDAlphaFoldJob } from '@bl1231/bilbomd-mongodb-schema'
-import { User, IUser, IAlphaFoldEntity } from '@bl1231/bilbomd-mongodb-schema'
+import {
+  BilboMdAlphaFoldJob,
+  IBilboMDAlphaFoldJob,
+  IAlphaFoldEntity
+} from '@bl1231/bilbomd-mongodb-schema'
+import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { writeJobParams } from './jobsController.js'
 import { queueJob } from '../queues/bilbomd.js'
@@ -37,7 +41,21 @@ const createNewAlphaFoldJob = async (req: Request, res: Response) => {
       }
 
       try {
-        const { email, bilbomd_mode } = req.body
+        const { email, bilbomd_mode, entities } = req.body
+
+        // Convert string values for "copies" to integers
+        const parsedEntities = entities.map((entity: IAlphaFoldEntity) => ({
+          ...entity,
+          copies: parseInt(entity.copies as unknown as string, 10) // Convert copies to an integer
+        }))
+
+        // Check if the number of entities exceeds the maximum allowed
+        if (parsedEntities.length > 20) {
+          return res
+            .status(400)
+            .json({ message: 'You can only submit up to 20 entities.' })
+        }
+
         const foundUser = await User.findOne({ email }).exec()
 
         if (!foundUser) {
@@ -50,28 +68,8 @@ const createNewAlphaFoldJob = async (req: Request, res: Response) => {
 
         user = foundUser
 
-        const entities = []
-        let index = 0
-        logger.info(`req.body: ${JSON.stringify(req.body)}`)
-        while (req.body[`entities[${index}][name]`]) {
-          entities.push({
-            id: req.body[`entities[${index}][id]`],
-            name: req.body[`entities[${index}][name]`],
-            sequence: req.body[`entities[${index}][sequence]`],
-            type: req.body[`entities[${index}][type]`],
-            copies: parseInt(req.body[`entities[${index}][copies]`], 10)
-          })
-          index++
-        }
-        // Check if the number of entities exceeds the maximum allowed
-        if (entities.length > 20) {
-          return res
-            .status(400)
-            .json({ message: 'You can only submit up to 20 entities.' })
-        }
-
         // Create the FASTA file
-        await createFastaFile(entities, jobDir)
+        await createFastaFile(parsedEntities, jobDir)
 
         // Handle the job creation
         await handleBilboMDAlphaFoldJobCreation(req, res, user, UUID, entities)
