@@ -52,6 +52,7 @@ const createNewAlphaFoldJob = async (req: Request, res: Response) => {
 
         const entities = []
         let index = 0
+        logger.info(`req.body: ${JSON.stringify(req.body)}`)
         while (req.body[`entities[${index}][name]`]) {
           entities.push({
             id: req.body[`entities[${index}][id]`],
