@@ -90,13 +90,13 @@ const handleBilboMDAlphaFoldJobCreation = async (
   res: Response,
   user: IUser,
   UUID: string,
-  entities: IAlphaFoldEntity[]
+  alphafold_entities: IAlphaFoldEntity[]
 ) => {
   const { bilbomd_mode: bilbomdMode } = req.body
   const files = req.files as { [fieldname: string]: Express.Multer.File[] }
   logger.info(`bilbomdMode: ${bilbomdMode}`)
   logger.info(`title: ${req.body.title}`)
-  logger.info(`entities: ${JSON.stringify(entities)}`) // Log parsed entities to check
+  // logger.info(`entities: ${JSON.stringify(alphafold_entities)}`) // Log parsed entities to check
   try {
     const datFileName =
       files['dat_file'] && files['dat_file'][0]
@@ -109,12 +109,13 @@ const handleBilboMDAlphaFoldJobCreation = async (
       uuid: UUID,
       data_file: datFileName,
       fasta_file: 'af-entities.fasta',
-      entities,
+      alphafold_entities,
       conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
       user: user,
       steps: {
+        alphafold: {},
         pdb2crd: {},
         pae: {},
         autorg: {},
