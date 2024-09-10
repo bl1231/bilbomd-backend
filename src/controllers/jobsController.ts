@@ -1286,5 +1286,6 @@ export {
   getJobById,
   downloadJobResults,
   getLogForStep,
-  getAutoRg
+  getAutoRg,
+  writeJobParams
 }
