@@ -96,6 +96,7 @@ const handleBilboMDAlphaFoldJobCreation = async (
   const files = req.files as { [fieldname: string]: Express.Multer.File[] }
   logger.info(`bilbomdMode: ${bilbomdMode}`)
   logger.info(`title: ${req.body.title}`)
+  logger.info(`entities: ${JSON.stringify(entities)}`) // Log parsed entities to check
   try {
     const datFileName =
       files['dat_file'] && files['dat_file'][0]
