@@ -11,7 +11,7 @@ import {
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { writeJobParams } from './jobsController.js'
-import { queueJob } from '../queues/bilbomd.js'
+// import { queueJob } from '../queues/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -139,15 +139,15 @@ const handleBilboMDAlphaFoldJobCreation = async (
     await writeJobParams(newJob.id)
 
     // Queue the job
-    const BullId = await queueJob({
-      type: bilbomdMode,
-      title: newJob.title,
-      uuid: newJob.uuid,
-      jobid: newJob.id
-    })
+    // const BullId = await queueJob({
+    //   type: bilbomdMode,
+    //   title: newJob.title,
+    //   uuid: newJob.uuid,
+    //   jobid: newJob.id
+    // })
 
     logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
-    logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
+    // logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
 
     res.status(200).json({
       message: `New ${bilbomdMode} Job ${newJob.title} successfully created`,
@@ -161,17 +161,30 @@ const handleBilboMDAlphaFoldJobCreation = async (
 }
 
 const createFastaFile = async (entities: IAlphaFoldEntity[], jobDir: string) => {
-  let fastaContent = ''
+  // Determine the header
+  let header = ''
+  if (entities.length === 1) {
+    header = entities[0].copies > 1 ? '>multimer' : '>single-chain'
+  } else {
+    header = '>complex'
+  }
 
-  // Loop over the entities and format them as FASTA
-  entities.forEach((entity, index) => {
-    // Repeat each entity `copies` times
-    for (let i = 0; i < entity.copies; i++) {
-      fastaContent += `> ${entity.name || `entity_${index}`}_copy_${i + 1}\n${
-        entity.sequence
-      }\n`
-    }
-  })
+  // Generate the sequence lines
+  const sequenceLines = entities
+    .flatMap((entity) => {
+      return Array.from({ length: entity.copies }, () => {
+        return entity.sequence
+          .split('')
+          .map((char, idx, arr) => {
+            return idx === arr.length - 1 ? char : `${char}:`
+          })
+          .join('')
+      })
+    })
+    .join('\n')
+
+  // Combine the header and sequences
+  const fastaContent = `${header}\n${sequenceLines}`
 
   // Define the path for the FASTA file
   const fastaFilePath = path.join(jobDir, 'af-entities.fasta')
