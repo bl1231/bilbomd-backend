@@ -1,30 +1,19 @@
-import { logger } from '../middleware/loggers'
-import { config } from '../config/config'
+import { logger } from '../middleware/loggers.js'
+import { config } from '../config/config.js'
 import mongoose from 'mongoose'
 import multer from 'multer'
 import fs from 'fs-extra'
 import readline from 'readline'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
-const spawn = require('child_process').spawn
-import { queueJob, getBullMQJob } from '../queues/bilbomd'
-import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper'
+import { spawn } from 'child_process'
+import { queueJob, getBullMQJob } from '../queues/bilbomd.js'
+import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper.js'
 import {
   queueJob as queuePdb2CrdJob,
   waitForJobCompletion,
   pdb2crdQueueEvents
-} from '../queues/pdb2crd'
-// import {
-//   Job,
-//   BilboMdPDBJob,
-//   IBilboMDPDBJob,
-//   BilboMdCRDJob,
-//   IBilboMDCRDJob,
-//   BilboMdAutoJob,
-//   IBilboMDAutoJob,
-//   BilboMdScoperJob,
-//   IBilboMDScoperJob
-// } from '../model/Job'
+} from '../queues/pdb2crd.js'
 import {
   Job,
   IJob,
@@ -37,13 +26,11 @@ import {
   BilboMdScoperJob,
   IBilboMDScoperJob
 } from '@bl1231/bilbomd-mongodb-schema'
-
-// import { User, IUser } from '../model/User'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
-import { BilboMDScoperSteps, BilboMDSteps } from 'types/bilbomd'
-import { BilboMDJob, BilboMDBullMQ } from 'types/bilbomd'
+import { BilboMDScoperSteps, BilboMDSteps } from '../types/bilbomd.js'
+import { BilboMDJob, BilboMDBullMQ } from '../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -861,7 +848,7 @@ const getJobById = async (req: Request, res: Response) => {
 
     let bullmq: BilboMDBullMQ | undefined
     // Instantiate a bilbomdJob object with id and MongoDB info
-    let bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
+    const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
     if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD' || job.__t === 'BilboMd') {
       bullmq = await getBullMQJob(job.uuid)
@@ -946,6 +933,7 @@ const downloadJobResults = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
+    logger.error(`Error accessing default result file: ${error}`)
     // If the default file is not found, try the new file name
     try {
       await fs.promises.access(newResultFile)
@@ -959,6 +947,7 @@ const downloadJobResults = async (req: Request, res: Response) => {
         }
       })
     } catch (newFileError) {
+      logger.error(`Error accessing new result file: ${newFileError}`)
       // If neither file is found, log error and return a message
       logger.error(`No result files available for job ID: ${req.params.id}`)
       return res.status(500).json({ message: 'No result files available.' })
@@ -1297,5 +1286,6 @@ export {
   getJobById,
   downloadJobResults,
   getLogForStep,
-  getAutoRg
+  getAutoRg,
+  writeJobParams
 }

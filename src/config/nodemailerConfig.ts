@@ -1,12 +1,12 @@
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import nodemailer from 'nodemailer'
 import hbs from 'nodemailer-express-handlebars'
-import path from 'path'
 
 const user = process.env.SEND_EMAIL_USER
 const name = process.env.BILBOMD_FQDN
-const viewPath = path.resolve(__dirname, '../templates/views/')
-const partialsPath = path.resolve(__dirname, '../templates/partials')
+
+const viewPath = '/app/dist/templates/views/'
+const partialsPath = '/app/dist/templates/partials/'
 
 const transporter = nodemailer.createTransport({
   name: name,

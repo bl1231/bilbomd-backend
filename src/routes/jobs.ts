@@ -7,9 +7,10 @@ import {
   downloadJobResults,
   getJobById,
   getLogForStep
-} from '../controllers/jobsController'
-import { downloadPDB, getFoxsData } from '../controllers/downloadController'
-import verifyJWT from '../middleware/verifyJWT'
+} from '../controllers/jobsController.js'
+import { createNewAlphaFoldJob } from '../controllers/alphafoldJobsController.js'
+import { downloadPDB, getFoxsData } from '../controllers/downloadController.js'
+import verifyJWT from '../middleware/verifyJWT.js'
 
 const router = express.Router()
 
@@ -25,5 +26,6 @@ router.route('/:id/results/:pdb').get(downloadPDB)
 router.route('/:id/logs').get(getLogForStep)
 router.route('/bilbomd-auto').post(createNewJob)
 router.route('/bilbomd-scoper').post(createNewJob)
+router.route('/bilbomd-alphafold').post(createNewAlphaFoldJob)
 
-module.exports = router
+export default router

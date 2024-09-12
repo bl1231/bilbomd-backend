@@ -1,13 +1,12 @@
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import multer from 'multer'
 import fs from 'fs-extra'
 import path from 'path'
-import { Express, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { v4 as uuid } from 'uuid'
 import { spawn, ChildProcess } from 'node:child_process'
-// import { User } from '../model/User'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { queueJob, waitForJobCompletion, pdb2crdQueueEvents } from '../queues/pdb2crd'
+import { queueJob, waitForJobCompletion, pdb2crdQueueEvents } from '../queues/pdb2crd.js'
 
 const uploadFolder: string = process.env.DATA_VOL ?? '/bilbomd/uploads'
 
@@ -17,7 +16,7 @@ const createNewConstFile = async (req: Request, res: Response) => {
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
-    logger.info('Created Directory: %s', jobDir)
+    logger.info(`Created Directory: ${jobDir}`)
 
     const storage = multer.diskStorage({
       destination: function (req, file, cb) {
@@ -91,7 +90,7 @@ const createNewConstFile = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error(error)
+    logger.error(`Failed to create job directory: ${error}`)
     return res.status(500).json({ message: 'Failed to create job directory' })
   }
 }
@@ -111,7 +110,7 @@ const downloadConstFile = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error('No %s available.', constFile)
+    logger.error(`No ${constFile} available. ${error}`)
     return res.status(500).json({ message: `No ${constFile} available.` })
   }
 }
@@ -137,12 +136,12 @@ const spawnAF2PAEInpFileMaker = (
       logStream.write(dataString)
     })
     af2pae.stderr?.on('data', (data: Buffer) => {
-      logger.error('spawnAF2PAEInpFileMaker stderr', data.toString())
+      logger.error(`spawnAF2PAEInpFileMaker stderr:  ${data.toString()}`)
       console.log(data)
       errorStream.write(data.toString())
     })
     af2pae.on('error', (error) => {
-      logger.error('spawnAF2PAEInpFileMaker error:', error)
+      logger.error(`spawnAF2PAEInpFileMaker error ${error}`)
       reject(error)
     })
     af2pae.on('exit', (code) => {

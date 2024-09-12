@@ -94,6 +94,25 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.10.2
+  - Add API endpoint to provide Perlmutter outage information
+- 1.10.1
+  - Update dependencies
+  - Various Typescript fixes
+- 1.10.0
+  - Remove `bilbomd-spin-backend`
+  - Improve the API endpoint to deliver config info for backend. worker, and ui
+  - Improvements to CI/CD workflow
+- 1.9.8
+  - Unified Docker image for both beamline and NERSC SPIN deployment
+- 1.9.7
+  - Add API endpoint to deliver config info (e.g. dev/prod, useNersc, repo, etc.)
+  - Fix & refactor the `pae_ratios.py` script to deal with adjacent Rigid Domains.
+- 1.9.6
+  - Implement GitHub Actions to build docker images
+  - Add API endpoints for SF-API expiration date
+  - Bump ESLint to v9.x
+  - Return GPU usage stats from NERSC
 - 1.9.3
   - Add steps object to mongodb entry
   - Some improvements to logging

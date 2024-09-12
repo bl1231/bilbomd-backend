@@ -1,11 +1,10 @@
 import express from 'express'
-import IORedis, { RedisOptions } from 'ioredis'
+import { Redis, RedisOptions } from 'ioredis'
 import { createBullBoard } from '@bull-board/api'
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js'
 import { ExpressAdapter } from '@bull-board/express'
 import { Queue as QueueMQ } from 'bullmq'
-// import { logger } from '../middleware/loggers'
-import verifyJWT from '../middleware/verifyJWT'
+import verifyJWT from '../middleware/verifyJWT.js'
 
 const basePath = '/admin/bullmq'
 
@@ -20,7 +19,7 @@ const redisOptions: RedisOptions = {
   tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
 }
 
-const redis = new IORedis(redisOptions)
+const redis = new Redis(redisOptions)
 
 // Create instances for both queues
 const bilbomdQueue = new QueueMQ('bilbomd', { connection: redis })

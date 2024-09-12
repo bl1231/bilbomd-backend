@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 const {
   MONGO_USERNAME,
   MONGO_PASSWORD,

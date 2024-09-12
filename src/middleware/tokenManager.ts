@@ -1,7 +1,7 @@
 import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import fs from 'fs'
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 import { Request, Response, NextFunction } from 'express'
 
 const tokenUrl = 'https://oidc.nersc.gov/c2id/token'
@@ -86,6 +86,7 @@ const ensureSFAuthenticated = async (
       // Log the new token's expiry time in seconds from now
       const secondsUntilExpiry = expiresIn - Math.floor(Date.now() / 1000)
       logger.info(`New token acquired. Seconds until expiry: ${secondsUntilExpiry}`)
+      // logger.info(`New token acquired. Token: ${accessToken}`)
     } else {
       // For an existing token, calculate and log the remaining time until expiry
       const secondsUntilExpiry = tokenExpiry - Math.floor(Date.now() / 1000)

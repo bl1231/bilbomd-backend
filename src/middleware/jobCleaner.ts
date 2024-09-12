@@ -1,13 +1,12 @@
 import mongoose from 'mongoose'
-import { connectDB } from '../config/dbConn'
+import { RootFilterQuery } from 'mongoose'
+import { connectDB } from '../config/dbConn.js'
 import path from 'path'
 import fs from 'fs-extra'
-import { Job } from '@bl1231/bilbomd-mongodb-schema'
-import { logger } from './loggers'
+import { Job, IJob } from '@bl1231/bilbomd-mongodb-schema'
+import { logger } from './loggers.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
-
-
 
 export const deleteOldJobs = async () => {
   try {
@@ -18,7 +17,9 @@ export const deleteOldJobs = async () => {
     const maxAge = 30 * 24 * 60 * 60
     const thresholdDate = new Date(Date.now() - maxAge * 1000)
 
-    const oldJobs = await Job.find({ createdAt: { $lt: thresholdDate } })
+    const oldJobs = await Job.find({
+      createdAt: { $lt: thresholdDate }
+    } as RootFilterQuery<IJob>)
     const numOldJobs = oldJobs.length
 
     if (numOldJobs > 0) {
@@ -43,10 +44,11 @@ export const deleteOldJobs = async () => {
       }
     }
 
-    const deleteResult = await Job.deleteMany({ createdAt: { $lt: thresholdDate } })
+    const deleteResult = await Job.deleteMany({
+      createdAt: { $lt: thresholdDate }
+    } as RootFilterQuery<IJob>)
     const deletedJobsCount = deleteResult.deletedCount
     logger.warn(`Deleted ${deletedJobsCount} jobs from MongoDB`)
-
   } catch (error) {
     console.error('Error deleting old jobs:', error)
   }

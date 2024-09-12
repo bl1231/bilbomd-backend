@@ -14,7 +14,7 @@ describe('POST /v1/magicklink', () => {
     server = app.listen(5555, () => {
       // console.log('test server started')
     })
-    let res = await request(server)
+    const res = await request(server)
       .post('/v1/register')
       .send({ user: 'testuser1', email: 'testuser1@example.com' })
     confirmationCode = res.body.code
@@ -29,19 +29,19 @@ describe('POST /v1/magicklink', () => {
   })
   jest.setTimeout(5000)
   test('should return error if no user or email provided', async () => {
-    let res = await request(server).post('/v1/magicklink').send({ email: '' })
+    const res = await request(server).post('/v1/magicklink').send({ email: '' })
     expect(res.statusCode).toBe(400)
     expect(res.body.message).toBe('email is required')
   })
   test('Should return error when email not in DB', async () => {
-    let res = await request(server)
+    const res = await request(server)
       .post('/v1/magicklink')
       .send({ email: 'testuser2@example.com' })
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('no account with that email')
   })
   test('Should return error if user is Pending', async () => {
-    let res = await request(server)
+    const res = await request(server)
       .post('/v1/magicklink')
       .send({ email: 'testuser1@example.com' })
     expect(res.statusCode).toBe(403)
@@ -49,10 +49,10 @@ describe('POST /v1/magicklink', () => {
   })
   test('Should verify confirmation code and request OTP', async () => {
     // console.log('cc2: ', confirmationCode)
-    let res = await request(server).post('/v1/verify').send({ code: confirmationCode })
+    const res = await request(server).post('/v1/verify').send({ code: confirmationCode })
     expect(res.statusCode).toBe(200)
     expect(res.body.message).toBe('Verified')
-    let res2 = await request(server)
+    const res2 = await request(server)
       .post('/v1/magicklink')
       .send({ email: 'testuser1@example.com' })
     expect(res2.statusCode).toBe(201)

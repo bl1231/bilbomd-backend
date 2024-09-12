@@ -1,7 +1,6 @@
-// eslint-disable-next-line no-unused-vars
-import { Express, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import axios, { AxiosResponse } from 'axios'
-import { logger } from '../middleware/loggers'
+import { logger } from '../middleware/loggers.js'
 
 const baseURL = 'https://api.nersc.gov/api/v1.2'
 
@@ -39,6 +38,14 @@ interface ProjectStats {
   hours_used: number
   project_hours_given: number
   project_hours_used: number
+  cpu_hours_given: number
+  cpu_hours_used: number
+  cpu_project_hours_given: number
+  cpu_project_hours_used: number
+  gpu_hours_given: number
+  gpu_hours_used: number
+  gpu_project_hours_given: number
+  gpu_project_hours_used: number
   projdir_usage: StorageStats[]
   project_projdir_usage: StorageStats
   hpss_usage?: StorageStats[] // Assuming this can be optional
@@ -138,6 +145,18 @@ const getStatus = async (req: Request, res: Response) => {
   res.json(data)
 }
 
+const getOutages = async (req: Request, res: Response) => {
+  const { success, data, error } = await makeUnauthenticatedSFApiRequest({
+    endpoint: '/status/outages/planned/perlmutter'
+  })
+
+  if (!success) {
+    return res.status(500).json({ error })
+  }
+
+  res.json(data)
+}
+
 const getUser = async (req: Request, res: Response) => {
   const username = 'sclassen'
   if (!req.sfApiToken) {
@@ -185,8 +204,10 @@ const getProjectHours = async (req: Request, res: Response) => {
     }
 
     const response = {
-      hours_given: project.hours_given,
-      hours_used: project.hours_used
+      cpu_hours_given: project.cpu_hours_given,
+      cpu_hours_used: project.cpu_hours_used,
+      gpu_hours_given: project.gpu_hours_given,
+      gpu_hours_used: project.gpu_hours_used
     }
 
     logger.info(`Project ${projectName} hours: ${JSON.stringify(response)}`)
@@ -197,4 +218,4 @@ const getProjectHours = async (req: Request, res: Response) => {
   }
 }
 
-export { getStatus, getUser, getProjectHours }
+export { getStatus, getOutages, getUser, getProjectHours }
