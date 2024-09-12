@@ -2,7 +2,7 @@ import { logger } from '../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
 import { Job, IJob, IBilboMDScoperJob } from '@bl1231/bilbomd-mongodb-schema'
-import { FoxsData, FoxsDataPoint } from 'types/foxs.js'
+import { FoxsData, FoxsDataPoint } from '../types/foxs.js'
 import { Request, Response } from 'express'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')

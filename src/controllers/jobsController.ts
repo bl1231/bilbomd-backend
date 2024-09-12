@@ -29,8 +29,8 @@ import {
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
-import { BilboMDScoperSteps, BilboMDSteps } from 'types/bilbomd.js'
-import { BilboMDJob, BilboMDBullMQ } from 'types/bilbomd.js'
+import { BilboMDScoperSteps, BilboMDSteps } from '../types/bilbomd.js'
+import { BilboMDJob, BilboMDBullMQ } from '../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -1286,5 +1286,6 @@ export {
   getJobById,
   downloadJobResults,
   getLogForStep,
-  getAutoRg
+  getAutoRg,
+  writeJobParams
 }
