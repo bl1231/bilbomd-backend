@@ -172,14 +172,10 @@ const createFastaFile = async (entities: IAlphaFoldEntity[], jobDir: string) => 
   // Generate the sequence lines
   const sequenceLines = entities
     .flatMap((entity) => {
-      return Array.from({ length: entity.copies }, () => {
-        return entity.sequence
-          .split('')
-          .map((char, idx, arr) => {
-            return idx === arr.length - 1 ? char : `${char}:`
-          })
-          .join('')
-      })
+      return Array.from({ length: entity.copies }, () => entity.sequence)
+    })
+    .map((sequence, idx, arr) => {
+      return idx === arr.length - 1 ? sequence : `${sequence}:`
     })
     .join('\n')
 
