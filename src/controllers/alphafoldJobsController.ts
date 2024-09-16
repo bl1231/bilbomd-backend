@@ -11,7 +11,7 @@ import {
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { writeJobParams } from './jobsController.js'
-// import { queueJob } from '../queues/bilbomd.js'
+import { queueJob } from '../queues/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -139,15 +139,15 @@ const handleBilboMDAlphaFoldJobCreation = async (
     await writeJobParams(newJob.id)
 
     // Queue the job
-    // const BullId = await queueJob({
-    //   type: bilbomdMode,
-    //   title: newJob.title,
-    //   uuid: newJob.uuid,
-    //   jobid: newJob.id
-    // })
+    const BullId = await queueJob({
+      type: bilbomdMode,
+      title: newJob.title,
+      uuid: newJob.uuid,
+      jobid: newJob.id
+    })
 
     logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
-    // logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
+    logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
 
     res.status(200).json({
       message: `New ${bilbomdMode} Job ${newJob.title} successfully created`,
