@@ -849,9 +849,11 @@ const getJobById = async (req: Request, res: Response) => {
     const jobDir = path.join(uploadFolder, job.uuid, 'results')
 
     let bullmq: BilboMDBullMQ | undefined
+
     // Instantiate a bilbomdJob object with id and MongoDB info
     const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
+    // The goal is to eventually use the job-specific object to store results needed for the front end
     if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD' || job.__t === 'BilboMd') {
       bullmq = await getBullMQJob(job.uuid)
       if (bullmq && 'bilbomdStep' in bullmq) {
@@ -872,12 +874,9 @@ const getJobById = async (req: Request, res: Response) => {
       }
     } else if (job.__t === 'BilboMdAlphaFold') {
       bullmq = await getBullMQJob(job.uuid)
-      if (bullmq && 'bilbomdStep' in bullmq) {
+      if (bullmq) {
         bilbomdJob.bullmq = bullmq
-        bilbomdJob.alphafold = await calculateNumEnsembles(
-          bullmq.bilbomdStep as BilboMDSteps,
-          jobDir
-        )
+        bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
       }
     } else if (job.__t === 'BilboMdScoper') {
       const scoperJob = job as IBilboMDScoperJob
@@ -913,6 +912,25 @@ const calculateNumEnsembles = async (
     logger.info(`calculateNumEnsembles Error: ${error}`)
     return {
       ...bilbomdStep,
+      numEnsembles: 0
+    }
+  }
+}
+const calculateNumEnsembles2 = async (
+  jobDir: string
+): Promise<{ numEnsembles: number }> => {
+  try {
+    const files = await fs.promises.readdir(jobDir)
+    const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
+    const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
+    const numEnsembles = ensembleFiles.length
+
+    return {
+      numEnsembles: numEnsembles
+    }
+  } catch (error) {
+    logger.error(`calculateNumEnsembles Error: ${error}`)
+    return {
       numEnsembles: 0
     }
   }
