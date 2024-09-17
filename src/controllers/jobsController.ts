@@ -870,6 +870,15 @@ const getJobById = async (req: Request, res: Response) => {
           jobDir
         )
       }
+    } else if (job.__t === 'BilboMdAlphaFold') {
+      bullmq = await getBullMQJob(job.uuid)
+      if (bullmq && 'bilbomdStep' in bullmq) {
+        bilbomdJob.bullmq = bullmq
+        bilbomdJob.alphafold = await calculateNumEnsembles(
+          bullmq.bilbomdStep as BilboMDSteps,
+          jobDir
+        )
+      }
     } else if (job.__t === 'BilboMdScoper') {
       const scoperJob = job as IBilboMDScoperJob
       bullmq = await getBullMQScoperJob(job.uuid)
