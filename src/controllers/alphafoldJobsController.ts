@@ -126,6 +126,7 @@ const handleBilboMDAlphaFoldJobCreation = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
+        copy_results_to_cfs: {},
         results: {},
         email: {}
       }

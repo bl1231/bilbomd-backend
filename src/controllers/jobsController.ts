@@ -337,6 +337,7 @@ const handleBilboMDJob = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
+        copy_results_to_cfs: {},
         results: {},
         email: {}
       }
@@ -446,6 +447,7 @@ const handleBilboMDAutoJob = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
+        copy_results_to_cfs: {},
         results: {},
         email: {}
       }
