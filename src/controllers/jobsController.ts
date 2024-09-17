@@ -903,35 +903,49 @@ const calculateNumEnsembles = async (
     const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
     const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
     const numEnsembles = ensembleFiles.length
-
+    if (numEnsembles === 0) {
+      return {
+        ...bilbomdStep,
+        numEnsembles: 0
+      }
+    }
     return {
       ...bilbomdStep,
       numEnsembles: numEnsembles
     }
   } catch (error) {
-    logger.info(`calculateNumEnsembles Error: ${error}`)
+    logger.error(`calculateNumEnsembles Error: ${error}`)
     return {
       ...bilbomdStep,
       numEnsembles: 0
     }
   }
 }
+
 const calculateNumEnsembles2 = async (
   jobDir: string
-): Promise<{ numEnsembles: number }> => {
+): Promise<{ numEnsembles: number; message?: string }> => {
   try {
     const files = await fs.promises.readdir(jobDir)
     const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
     const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
     const numEnsembles = ensembleFiles.length
 
+    if (numEnsembles === 0) {
+      return {
+        numEnsembles: 0,
+        message: 'No ensemble files found yet.'
+      }
+    }
+
     return {
       numEnsembles: numEnsembles
     }
   } catch (error) {
-    logger.error(`calculateNumEnsembles Error: ${error}`)
+    logger.error(`calculateNumEnsembles2 Error: ${error}`)
     return {
-      numEnsembles: 0
+      numEnsembles: 0,
+      message: 'Error reading directory or no files found.'
     }
   }
 }
