@@ -24,7 +24,8 @@ import {
   BilboMdAutoJob,
   IBilboMDAutoJob,
   BilboMdScoperJob,
-  IBilboMDScoperJob
+  IBilboMDScoperJob,
+  IBilboMDAlphaFoldJob
 } from '@bl1231/bilbomd-mongodb-schema'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
@@ -839,6 +840,7 @@ const getJobById = async (req: Request, res: Response) => {
       | IBilboMDCRDJob
       | IBilboMDAutoJob
       | IBilboMDScoperJob
+      | IBilboMDAlphaFoldJob
 
     if (!job) {
       return res.status(404).json({ message: `No job matches ID ${jobId}.` })
