@@ -126,6 +126,7 @@ const handleBilboMDAlphaFoldJobCreation = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
+        copy_results_to_cfs: {},
         results: {},
         email: {}
       }
@@ -161,17 +162,26 @@ const handleBilboMDAlphaFoldJobCreation = async (
 }
 
 const createFastaFile = async (entities: IAlphaFoldEntity[], jobDir: string) => {
-  let fastaContent = ''
+  // Determine the header
+  let header = ''
+  if (entities.length === 1) {
+    header = entities[0].copies > 1 ? '>multimer' : '>single-chain'
+  } else {
+    header = '>complex'
+  }
 
-  // Loop over the entities and format them as FASTA
-  entities.forEach((entity, index) => {
-    // Repeat each entity `copies` times
-    for (let i = 0; i < entity.copies; i++) {
-      fastaContent += `> ${entity.name || `entity_${index}`}_copy_${i + 1}\n${
-        entity.sequence
-      }\n`
-    }
-  })
+  // Generate the sequence lines
+  const sequenceLines = entities
+    .flatMap((entity) => {
+      return Array.from({ length: entity.copies }, () => entity.sequence)
+    })
+    .map((sequence, idx, arr) => {
+      return idx === arr.length - 1 ? sequence : `${sequence}:`
+    })
+    .join('\n')
+
+  // Combine the header and sequences
+  const fastaContent = `${header}\n${sequenceLines}`
 
   // Define the path for the FASTA file
   const fastaFilePath = path.join(jobDir, 'af-entities.fasta')

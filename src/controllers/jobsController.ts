@@ -24,7 +24,8 @@ import {
   BilboMdAutoJob,
   IBilboMDAutoJob,
   BilboMdScoperJob,
-  IBilboMDScoperJob
+  IBilboMDScoperJob,
+  IBilboMDAlphaFoldJob
 } from '@bl1231/bilbomd-mongodb-schema'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
@@ -336,6 +337,7 @@ const handleBilboMDJob = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
+        copy_results_to_cfs: {},
         results: {},
         email: {}
       }
@@ -445,6 +447,7 @@ const handleBilboMDAutoJob = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
+        copy_results_to_cfs: {},
         results: {},
         email: {}
       }
@@ -839,6 +842,7 @@ const getJobById = async (req: Request, res: Response) => {
       | IBilboMDCRDJob
       | IBilboMDAutoJob
       | IBilboMDScoperJob
+      | IBilboMDAlphaFoldJob
 
     if (!job) {
       return res.status(404).json({ message: `No job matches ID ${jobId}.` })
@@ -847,9 +851,11 @@ const getJobById = async (req: Request, res: Response) => {
     const jobDir = path.join(uploadFolder, job.uuid, 'results')
 
     let bullmq: BilboMDBullMQ | undefined
+
     // Instantiate a bilbomdJob object with id and MongoDB info
     const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
+    // The goal is to eventually use the job-specific object to store results needed for the front end
     if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD' || job.__t === 'BilboMd') {
       bullmq = await getBullMQJob(job.uuid)
       if (bullmq && 'bilbomdStep' in bullmq) {
@@ -867,6 +873,12 @@ const getJobById = async (req: Request, res: Response) => {
           bullmq.bilbomdStep as BilboMDSteps,
           jobDir
         )
+      }
+    } else if (job.__t === 'BilboMdAlphaFold') {
+      bullmq = await getBullMQJob(job.uuid)
+      if (bullmq) {
+        bilbomdJob.bullmq = bullmq
+        bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
       }
     } else if (job.__t === 'BilboMdScoper') {
       const scoperJob = job as IBilboMDScoperJob
@@ -893,16 +905,49 @@ const calculateNumEnsembles = async (
     const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
     const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
     const numEnsembles = ensembleFiles.length
-
+    if (numEnsembles === 0) {
+      return {
+        ...bilbomdStep,
+        numEnsembles: 0
+      }
+    }
     return {
       ...bilbomdStep,
       numEnsembles: numEnsembles
     }
   } catch (error) {
-    logger.info(`calculateNumEnsembles Error: ${error}`)
+    logger.error(`calculateNumEnsembles Error: ${error}`)
     return {
       ...bilbomdStep,
       numEnsembles: 0
+    }
+  }
+}
+
+const calculateNumEnsembles2 = async (
+  jobDir: string
+): Promise<{ numEnsembles: number; message?: string }> => {
+  try {
+    const files = await fs.promises.readdir(jobDir)
+    const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
+    const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
+    const numEnsembles = ensembleFiles.length
+
+    if (numEnsembles === 0) {
+      return {
+        numEnsembles: 0,
+        message: 'No ensemble files found yet.'
+      }
+    }
+
+    return {
+      numEnsembles: numEnsembles
+    }
+  } catch (error) {
+    logger.error(`calculateNumEnsembles2 Error: ${error}`)
+    return {
+      numEnsembles: 0,
+      message: 'Error reading directory or no files found.'
     }
   }
 }
