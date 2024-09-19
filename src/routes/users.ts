@@ -7,8 +7,8 @@ import {
   sendChangeEmailOtp,
   verifyOtp,
   resendOtp
-} from '../controllers/usersController'
-import verifyJWT from '../middleware/verifyJWT'
+} from '../controllers/usersController.js'
+import verifyJWT from '../middleware/verifyJWT.js'
 
 const router = express.Router()
 
@@ -27,4 +27,4 @@ router.post('/verify-otp',verifyOtp);
 // Route for resending otp
 router.post('/resend-otp',resendOtp);
 
-module.exports = router
+export default router

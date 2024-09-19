@@ -2,7 +2,7 @@ import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from '../middleware/loggers.js'
 import { Request, Response } from 'express'
-import { sendOtpEmail } from './../config/nodemailerConfig'
+import { sendOtpEmail } from './../config/nodemailerConfig.js'
 
 /**
  * @openapi
@@ -308,7 +308,6 @@ const getUser = async (req: Request, res: Response) => {
   }
   res.json(user)
 }
- 
 /**
  * @openapi
  * First, update the IUser interface in your TypeScript code to include the new fields that are emailVerificationOtp,emailVerificationOtpExpires,previousEmail
@@ -652,11 +651,12 @@ const verifyOtp = async (req: Request, res: Response) => {
  */
  const resendOtp = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
+    //const { userId } = req.body;
+    const { username, otp, currentEmail, newEmail } = req.body;
 
     // Retrieve user details from the database
-    const user = await User.findById(userId);
-
+    //const user = await User.findById(userId);
+    const user=await User.findOne({username});
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
