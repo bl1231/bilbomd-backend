@@ -2,11 +2,12 @@ import express from 'express'
 import {
   getAllUsers,
   updateUser,
-  deleteUser,
+  deleteUserById,
   getUser,
   sendChangeEmailOtp,
   verifyOtp,
-  resendOtp
+  resendOtp,
+  deleteUserByUsername
 } from '../controllers/usersController.js'
 import verifyJWT from '../middleware/verifyJWT.js'
 
@@ -16,8 +17,9 @@ router.use(verifyJWT)
 
 router.route('/').get(getAllUsers).patch(updateUser)
 
-router.route('/:id').get(getUser).delete(deleteUser)
+router.route('/:id').get(getUser).delete(deleteUserById)
 
+router.post('/delete-user-by-username',deleteUserByUsername)
 // Route for sending email change request
 router.post('/change-email',sendChangeEmailOtp);
 

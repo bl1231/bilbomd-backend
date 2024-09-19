@@ -231,36 +231,62 @@ const updateUser = async (req: Request, res: Response) => {
 
 //   res.status(200).json({ message: reply })
 // }
-const deleteUser = async (req: Request, res: Response) => {
-  const { id, username } = req.params
+const deleteUserById =  async (req: Request, res: Response) => {
+  const { id } = req.params
 
-  // Check if either ID or username is provided
-  if (!id && !username) {
-    return res.status(400).json({ message: 'User ID or username required' })
+  // Confirm data
+  if (!id) {
+    return res.status(400).json({ message: 'User ID Required' })
   }
 
-  // Find the user by ID or username
-  const user = id
-    ? await User.findById(id).exec()
-    : await User.findOne({ username }).exec()
+  // Does the user still have assigned jobs?
+  const job = await Job.findOne({ user: id }).lean().exec()
+  if (job) {
+    return res.status(400).json({ message: 'User has jobs' })
+  }
+
+  // Does the user exist to delete?
+  const user = await User.findById(id).exec()
 
   if (!user) {
-    return res.status(404).json({ message: 'User not found' })
+    return res.status(400).json({ message: 'User not found' })
   }
 
-  // Check if the user has assigned jobs
-  const job = await Job.findOne({ user: user._id }).lean().exec()
-  if (job) {
-    return res.status(400).json({ message: 'User has assigned jobs' })
-  }
-
-  // Delete the user
   const deleteResult = await user.deleteOne()
 
+  // Check if a document was actually deleted
   if (deleteResult.deletedCount === 0) {
-    return res.status(500).json({ message: 'Failed to delete user' })
+    return res.status(404).json({ message: 'No user was deleted' })
   }
 
+  const reply = `Username ${user.username} with ID ${user._id} deleted`
+
+  res.status(200).json({ message: reply })
+}
+
+// sinilar to deleteUserById but using username
+const deleteUserByUsername = async (req: Request, res: Response) => {
+  const { username } = req.body;
+ console.log(`${username}`)
+  if (!username) {
+    return res.status(400).json({ message: 'Username required' })
+  }
+
+  const user = await User.findOne({ username}).exec()
+
+  if(!user) {
+    return res.status(404).json({ message: 'User not found' })
+  }
+  // check if the user has assigned jobs
+  const job = await Job.findOne({ user: user._id }).lean().exec()
+  if (job) {
+    return res.status(409).json({ message: 'User has assigned jobs' })
+  }
+  // delete the user
+  const deleteResult = await user.deleteOne()
+  if(deleteResult.deletedCount === 0) {
+    return res.status(500).json({ message: 'Failed to delete user' })
+  }
   const reply = `User ${user.username} with ID ${user._id} deleted`
   res.status(200).json({ message: reply })
 }
@@ -459,7 +485,15 @@ const sendChangeEmailOtp = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
+    // verify that the newEmail is not the same as the current email
+    if (user.email === newEmail) {
+      return res.status(400).json({ message: 'New email is the same as the current email' });
+    }
+    //verify that the newEmail is not there in not any other users current email
+    const duplicate = await User.findOne({ email: newEmail })
+    if (duplicate) {
+      return res.status(409).json({ message: 'Duplicate email' })
+    }
     // Verify that the current email matches the email in the database
     if (user.email !== currentEmail) {
       return res.status(400).json({ message: 'Current email does not match' });
@@ -693,4 +727,4 @@ function generateOtp(): string {
   return otp;
 }
 //#endregion
-export { getAllUsers, updateUser, deleteUser, getUser,sendChangeEmailOtp,verifyOtp,resendOtp }
+export { getAllUsers, updateUser, deleteUserById, deleteUserByUsername, getUser,sendChangeEmailOtp,verifyOtp,resendOtp }
