@@ -686,7 +686,7 @@ const verifyOtp = async (req: Request, res: Response) => {
  const resendOtp = async (req: Request, res: Response) => {
   try {
     //const { userId } = req.body;
-    const { username, otp, currentEmail, newEmail } = req.body;
+    const { username } = req.body;
 
     // Retrieve user details from the database
     //const user = await User.findById(userId);
