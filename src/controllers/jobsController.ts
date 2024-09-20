@@ -251,7 +251,6 @@ const createNewJob = async (req: Request, res: Response) => {
       { name: 'pdb_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
       { name: 'constinp', maxCount: 1 },
-      { name: 'const_file', maxCount: 1 },
       { name: 'inp_file', maxCount: 1 },
       { name: 'expdata', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
@@ -278,7 +277,7 @@ const createNewJob = async (req: Request, res: Response) => {
 
         if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
           logger.info(`about to handleBilboMDJob ${req.body.bilbomd_mode}`)
-          await handleBilboMDJob(req, res, user, UUID)
+          await handleBilboMDJob(req, res, user, UUID, jobDir)
         } else if (bilbomd_mode === 'auto') {
           logger.info('about to handleBilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, user, UUID)
@@ -304,7 +303,8 @@ const handleBilboMDJob = async (
   req: Request,
   res: Response,
   user: IUser,
-  UUID: string
+  UUID: string,
+  jobDir: string
 ) => {
   try {
     const { bilbomd_mode: bilbomdMode } = req.body
@@ -314,6 +314,15 @@ const handleBilboMDJob = async (
 
     const constInpFile = files['constinp'][0].originalname.toLowerCase()
     const dataFile = files['expdata'][0].originalname.toLowerCase()
+
+    // Rename the original constinp file to create a backup
+    const constInpFilePath = path.join(jobDir, constInpFile)
+    const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
+
+    await fs.copyFile(constInpFilePath, constInpOrigFilePath)
+
+    // Sanitize the uploaded file (constInpFilePath)
+    await sanitizeConstInpFile(constInpFilePath)
 
     const jobData = {
       title: req.body.title,
@@ -616,6 +625,49 @@ const updateJobStatus = async (req: Request, res: Response) => {
   res.json(`'${updatedJob.title}' updated`)
 }
 
+const sanitizeConstInpFile = async (filePath: string): Promise<void> => {
+  const fileContents = await fs.readFile(filePath, 'utf-8')
+  const lines = fileContents.split('\n')
+  const sanitizedLines: string[] = []
+
+  for (const line of lines) {
+    if (line.length > 78) {
+      const wrappedLines = wrapLine(line)
+      sanitizedLines.push(...wrappedLines)
+    } else {
+      sanitizedLines.push(line)
+    }
+  }
+
+  const sanitizedContent = sanitizedLines.join('\n')
+  await fs.writeFile(filePath, sanitizedContent, 'utf-8')
+}
+
+const wrapLine = (line: string): string[] => {
+  const words = line.split(/\s+/)
+  const wrappedLines: string[] = []
+  let currentLine = ''
+
+  for (const word of words) {
+    if ((currentLine + word).length > 78) {
+      wrappedLines.push(currentLine.trim() + ' -')
+      currentLine = word + ' '
+    } else {
+      currentLine += word + ' '
+    }
+  }
+
+  if (currentLine.trim().length > 0) {
+    wrappedLines.push(
+      currentLine.trim().endsWith('end')
+        ? currentLine.trim()
+        : currentLine.trim() + ' end'
+    )
+  }
+
+  return wrappedLines
+}
+
 /**
  * @openapi
  * /jobs/{id}:
@@ -848,7 +900,8 @@ const getJobById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: `No job matches ID ${jobId}.` })
     }
 
-    const jobDir = path.join(uploadFolder, job.uuid, 'results')
+    // const jobDir = path.join(uploadFolder, job.uuid, 'results')
+    const jobDir = path.join(uploadFolder, job.uuid)
 
     let bullmq: BilboMDBullMQ | undefined
 
@@ -900,35 +953,59 @@ const calculateNumEnsembles = async (
   bilbomdStep: BilboMDSteps,
   jobDir: string
 ): Promise<BilboMDSteps> => {
+  let numEnsembles = 0
+
+  // Define the results directory
+  const resultsDir = path.join(jobDir, 'results')
+
+  // Check if the results directory exists
   try {
-    const files = await fs.promises.readdir(jobDir)
+    await fs.promises.access(resultsDir, fs.constants.F_OK)
+  } catch {
+    // Log as info since it's normal that the directory might not exist yet
+    logger.info(`Results directory does not exist: ${resultsDir}`)
+    return {
+      ...bilbomdStep,
+      numEnsembles: 0 // Return 0 if the results folder is missing
+    }
+  }
+
+  // Proceed to scan the results directory if it exists
+  try {
+    const files = await fs.promises.readdir(resultsDir)
     const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
     const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
-    const numEnsembles = ensembleFiles.length
-    if (numEnsembles === 0) {
-      return {
-        ...bilbomdStep,
-        numEnsembles: 0
-      }
-    }
-    return {
-      ...bilbomdStep,
-      numEnsembles: numEnsembles
-    }
+    numEnsembles = ensembleFiles.length // Number of ensemble files found
   } catch (error) {
-    logger.error(`calculateNumEnsembles Error: ${error}`)
-    return {
-      ...bilbomdStep,
-      numEnsembles: 0
-    }
+    logger.error(`calculateNumEnsembles Error reading directory: ${error}`)
+  }
+
+  return {
+    ...bilbomdStep,
+    numEnsembles: numEnsembles
   }
 }
 
 const calculateNumEnsembles2 = async (
   jobDir: string
 ): Promise<{ numEnsembles: number; message?: string }> => {
+  const dirToScan = path.join(jobDir, 'results')
+
+  // Check if the results directory exists
   try {
-    const files = await fs.promises.readdir(jobDir)
+    await fs.promises.access(dirToScan, fs.constants.F_OK)
+  } catch {
+    // Log as info since it's expected that the directory might not exist yet
+    logger.info(`Results directory does not exist: ${dirToScan}`)
+    return {
+      numEnsembles: 0,
+      message: 'Results directory not found yet.'
+    }
+  }
+
+  // Proceed to scan the results directory if it exists
+  try {
+    const files = await fs.promises.readdir(dirToScan)
     const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
     const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
     const numEnsembles = ensembleFiles.length
@@ -944,7 +1021,7 @@ const calculateNumEnsembles2 = async (
       numEnsembles: numEnsembles
     }
   } catch (error) {
-    logger.error(`calculateNumEnsembles2 Error: ${error}`)
+    logger.error(`calculateNumEnsembles2 Error reading directory: ${error}`)
     return {
       numEnsembles: 0,
       message: 'Error reading directory or no files found.'
