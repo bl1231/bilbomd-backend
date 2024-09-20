@@ -1409,5 +1409,6 @@ export {
   downloadJobResults,
   getLogForStep,
   getAutoRg,
-  writeJobParams
+  writeJobParams,
+  sanitizeConstInpFile
 }
