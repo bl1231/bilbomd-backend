@@ -19,7 +19,7 @@ router.route('/').get(getAllUsers).patch(updateUser)
 
 router.route('/:id').get(getUser).delete(deleteUserById)
 
-router.post('/delete-user-by-username',deleteUserByUsername)
+router.delete('/delete-user-by-username/:username',deleteUserByUsername)
 // Route for sending email change request
 router.post('/change-email',sendChangeEmailOtp);
 

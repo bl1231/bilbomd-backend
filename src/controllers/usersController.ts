@@ -266,30 +266,37 @@ const deleteUserById =  async (req: Request, res: Response) => {
 
 // sinilar to deleteUserById but using username
 const deleteUserByUsername = async (req: Request, res: Response) => {
-  const { username } = req.body;
- console.log(`${username}`)
-  if (!username) {
-    return res.status(400).json({ message: 'Username required' })
-  }
+  try {
+    const username  = req.params.username;
+    if (!username) {
+      return res.status(400).json({ message: 'Username required' });
+    }
 
-  const user = await User.findOne({ username}).exec()
+    const user = await User.findOne({ username }).exec();
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-  if(!user) {
-    return res.status(404).json({ message: 'User not found' })
+    // Check if the user has assigned jobs
+    const job = await Job.findOne({ user: user._id }).lean().exec();
+    if (job) {
+      return res.status(409).json({ message: 'User has assigned jobs' });
+    }
+
+    // Delete the user
+    const deleteResult = await user.deleteOne();
+    if (deleteResult.deletedCount === 0) {
+      return res.status(500).json({ message: 'Failed to delete user' });
+    }
+
+    const reply = `User ${user.username} with ID ${user._id} deleted`;
+    res.status(200).json({ message: reply });
+  } catch (error) {
+    console.error('Error during user deletion:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
-  // check if the user has assigned jobs
-  const job = await Job.findOne({ user: user._id }).lean().exec()
-  if (job) {
-    return res.status(409).json({ message: 'User has assigned jobs' })
-  }
-  // delete the user
-  const deleteResult = await user.deleteOne()
-  if(deleteResult.deletedCount === 0) {
-    return res.status(500).json({ message: 'Failed to delete user' })
-  }
-  const reply = `User ${user.username} with ID ${user._id} deleted`
-  res.status(200).json({ message: reply })
-}
+};
+
 /**
  * @openapi
  * /users/{id}:
