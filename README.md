@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.11.1
+  - Add sanitizing function for user uploaded `const.inp` files to ensure no lines longer than 78 characters.
 - 1.11.0
   - Add API endpoint to handle BilboMD AF jobs
 - 1.10.2
