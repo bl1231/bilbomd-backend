@@ -25,7 +25,8 @@ import {
   IBilboMDAutoJob,
   BilboMdScoperJob,
   IBilboMDScoperJob,
-  IBilboMDAlphaFoldJob
+  IBilboMDAlphaFoldJob,
+  IBilboMDSANSJob
 } from '@bl1231/bilbomd-mongodb-schema'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
@@ -895,6 +896,7 @@ const getJobById = async (req: Request, res: Response) => {
       | IBilboMDAutoJob
       | IBilboMDScoperJob
       | IBilboMDAlphaFoldJob
+      | IBilboMDSANSJob
 
     if (!job) {
       return res.status(404).json({ message: `No job matches ID ${jobId}.` })
@@ -909,7 +911,12 @@ const getJobById = async (req: Request, res: Response) => {
     const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
     // The goal is to eventually use the job-specific object to store results needed for the front end
-    if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD' || job.__t === 'BilboMd') {
+    if (
+      job.__t === 'BilboMdPDB' ||
+      job.__t === 'BilboMdCRD' ||
+      job.__t === 'BilboMd' ||
+      job.__t === 'BilboMdSANS'
+    ) {
       bullmq = await getBullMQJob(job.uuid)
       if (bullmq && 'bilbomdStep' in bullmq) {
         bilbomdJob.bullmq = bullmq
