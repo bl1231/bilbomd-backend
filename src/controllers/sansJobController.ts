@@ -138,18 +138,12 @@ const handleBilboMDSANSJob = async (
       time_submitted: now,
       user: user,
       steps: {
-        alphafold: {},
-        pdb2crd: {},
-        pae: {},
-        autorg: {},
         minimize: {},
-        initfoxs: {},
         heat: {},
         md: {},
         dcd2pdb: {},
-        foxs: {},
-        multifoxs: {},
-        copy_results_to_cfs: {},
+        pepsisans: {},
+        gasans: {},
         results: {},
         email: {}
       }
