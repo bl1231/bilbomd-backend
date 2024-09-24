@@ -38,7 +38,10 @@ const createNewSANSJob = async (req: Request, res: Response) => {
     upload.fields([
       { name: 'pdb_file', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
-      { name: 'inp_file', maxCount: 1 }
+      { name: 'inp_file', maxCount: 1 },
+      { name: 'rg_min', maxCount: 1 },
+      { name: 'rg_max', maxCount: 1 },
+      { name: 'd2o_fraction', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
         logger.error(err)
@@ -59,9 +62,6 @@ const createNewSANSJob = async (req: Request, res: Response) => {
         }
 
         user = foundUser
-
-        // Create the FASTA file
-        // await createFastaFile(parsedEntities, jobDir)
 
         // Handle the job creation
         await handleBilboMDSANSJob(req, res, user, UUID, jobDir)
@@ -112,17 +112,28 @@ const handleBilboMDSANSJob = async (
     // Sanitize the uploaded file (constInpFilePath)
     await sanitizeConstInpFile(constInpFilePath)
 
+    // Capture deuteration fractions from request body
+    const deuterationFractions: { [key: string]: number } = {}
+    for (const key in req.body) {
+      if (key.startsWith('deuteration_fraction_')) {
+        const chainId = key.replace('deuteration_fraction_', '')
+        deuterationFractions[chainId] = parseFloat(req.body[key])
+      }
+    }
+
     const now = new Date()
     // logger.info(`now ${now}`)
     const newJob: IBilboMDSANSJob = new BilboMdSANSJob({
       title: req.body.title,
       uuid: UUID,
       pdb_file: pdbFile,
+      deuteration_fractions: deuterationFractions,
+      d2o_fraction: req.body.d2o_fraction,
       data_file: dataFile,
       const_inp_file: constInpFile,
       conformational_sampling: 2,
-      rg_min: 24,
-      rg_max: 48,
+      rg_min: req.body.rg_min,
+      rg_max: req.body.rg_max,
       status: 'Submitted',
       time_submitted: now,
       user: user,
