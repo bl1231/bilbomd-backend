@@ -120,7 +120,7 @@ const handleBilboMDSANSJob = async (
       pdb_file: pdbFile,
       data_file: dataFile,
       const_inp_file: constInpFile,
-      conformational_sampling: 3,
+      conformational_sampling: 2,
       rg_min: 24,
       rg_max: 48,
       status: 'Submitted',
