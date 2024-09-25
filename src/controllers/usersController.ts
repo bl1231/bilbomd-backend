@@ -231,7 +231,7 @@ const updateUser = async (req: Request, res: Response) => {
 
 //   res.status(200).json({ message: reply })
 // }
-const deleteUserById =  async (req: Request, res: Response) => {
+const deleteUserById = async (req: Request, res: Response) => {
   const { id } = req.params
 
   // Confirm data
@@ -267,35 +267,35 @@ const deleteUserById =  async (req: Request, res: Response) => {
 // sinilar to deleteUserById but using username
 const deleteUserByUsername = async (req: Request, res: Response) => {
   try {
-    const username  = req.params.username;
+    const username = req.params.username
     if (!username) {
-      return res.status(400).json({ message: 'Username required' });
+      return res.status(400).json({ message: 'Username required' })
     }
 
-    const user = await User.findOne({ username }).exec();
+    const user = await User.findOne({ username }).exec()
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' })
     }
 
     // Check if the user has assigned jobs
-    const job = await Job.findOne({ user: user._id }).lean().exec();
+    const job = await Job.findOne({ user: user._id }).lean().exec()
     if (job) {
-      return res.status(409).json({ message: 'User has assigned jobs' });
+      return res.status(409).json({ message: 'User has assigned jobs' })
     }
 
     // Delete the user
-    const deleteResult = await user.deleteOne();
+    const deleteResult = await user.deleteOne()
     if (deleteResult.deletedCount === 0) {
-      return res.status(500).json({ message: 'Failed to delete user' });
+      return res.status(500).json({ message: 'Failed to delete user' })
     }
 
-    const reply = `User ${user.username} with ID ${user._id} deleted`;
-    res.status(200).json({ message: reply });
+    const reply = `User ${user.username} with ID ${user._id} deleted`
+    res.status(200).json({ message: reply })
   } catch (error) {
-    console.error('Error during user deletion:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Error during user deletion:', error)
+    res.status(500).json({ message: 'Internal Server Error' })
   }
-};
+}
 
 /**
  * @openapi
@@ -484,17 +484,19 @@ const UserSchema: Schema = new Schema({
 // Controller for sending email change request
 const sendChangeEmailOtp = async (req: Request, res: Response) => {
   try {
-    const { username, currentEmail, newEmail } = req.body;
+    const { username, currentEmail, newEmail } = req.body
 
     // Retrieve user details from the database using the username
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username })
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' })
     }
     // verify that the newEmail is not the same as the current email
     if (user.email === newEmail) {
-      return res.status(400).json({ message: 'New email is the same as the current email' });
+      return res
+        .status(400)
+        .json({ message: 'The new email is the same as the current email.' })
     }
     //verify that the newEmail is not there in not any other users current email
     const duplicate = await User.findOne({ email: newEmail })
@@ -503,34 +505,32 @@ const sendChangeEmailOtp = async (req: Request, res: Response) => {
     }
     // Verify that the current email matches the email in the database
     if (user.email !== currentEmail) {
-      return res.status(400).json({ message: 'Current email does not match' });
+      return res.status(400).json({ message: 'Current email does not match' })
     }
 
     // Generate a random 6-digit OTP
-    const otpCode = generateOtp(); //generateOtp();
+    const otpCode = generateOtp() //generateOtp();
 
     // Store the OTP and expiration time in the database
     user.otp = {
       code: otpCode,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
-    };
-    await user.save();
+    }
+    await user.save()
 
     // Send the OTP to the current email address
-    await sendOtpEmail(currentEmail, otpCode);
+    await sendOtpEmail(currentEmail, otpCode)
 
-    res.status(200).json({ message: 'OTP sent successfully' });
+    res.status(200).json({ message: 'OTP sent successfully' })
   } catch (error) {
-    console.error('Failed to send change email OTP:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Failed to send change email OTP:', error)
+    res.status(500).json({ message: 'Internal server error' })
   }
-};
+}
 
-
-//#region 
+//#region
 // Need to create three keys in mongodb database for user entity
 // emailVerificationOtp,previosEmail and emailVerificationOtpExpires
-
 
 /**
  * @openapi
@@ -609,33 +609,36 @@ const sendChangeEmailOtp = async (req: Request, res: Response) => {
  */
 const verifyOtp = async (req: Request, res: Response) => {
   try {
-    const { username, otp, currentEmail, newEmail } = req.body;
+    const { username, otp, currentEmail, newEmail } = req.body
 
     // Retrieve user details from the database
-    const user = await User.findOne({username});
+    const user = await User.findOne({ username })
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' })
     }
 
     // Check if the provided OTP matches the stored OTP and is not expired
-    if (user.otp?.code !== otp || (user.otp?.expiresAt && user.otp.expiresAt < new Date())) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    if (
+      user.otp?.code !== otp ||
+      (user.otp?.expiresAt && user.otp.expiresAt < new Date())
+    ) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' })
     }
 
     // Update the email addresses in the database
-    user.previousEmails.push(currentEmail);
-    user.email = newEmail;
-    user.otp = null;
-    await user.save();
+    user.previousEmails.push(currentEmail)
+    user.email = newEmail
+    user.otp = null
+    await user.save()
 
-    res.status(200).json({ message: 'Email address updated successfully' });
+    res.status(200).json({ message: 'Email address updated successfully' })
   } catch (error) {
-    console.error('Failed to verify OTP:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Failed to verify OTP:', error)
+    res.status(500).json({ message: 'Internal server error' })
   }
-};
- /**
+}
+/**
  * @openapi
  * /users/resend-otp:
  *   post:
@@ -690,48 +693,57 @@ const verifyOtp = async (req: Request, res: Response) => {
  *                   description: Error message indicating an internal server error.
  *                   example: "Internal server error"
  */
- const resendOtp = async (req: Request, res: Response) => {
+const resendOtp = async (req: Request, res: Response) => {
   try {
     //const { userId } = req.body;
-    const { username } = req.body;
+    const { username } = req.body
 
     // Retrieve user details from the database
     //const user = await User.findById(userId);
-    const user=await User.findOne({username});
+    const user = await User.findOne({ username })
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' })
     }
 
     // Generate a new random 6-digit OTP
-    const otpCode = generateOtp();
+    const otpCode = generateOtp()
 
     // Update the OTP and expiration time in the database
     user.otp = {
       code: otpCode,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
-    };
-    await user.save();
+    }
+    await user.save()
 
     // Send the new OTP to the current email address
-    await sendOtpEmail(user.email, otpCode);
+    await sendOtpEmail(user.email, otpCode)
 
-    res.status(200).json({ message: 'OTP resent successfully' });
+    res.status(200).json({ message: 'OTP resent successfully' })
   } catch (error) {
-    console.error('Failed to resend OTP:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Failed to resend OTP:', error)
+    res.status(500).json({ message: 'Internal server error' })
   }
-};
+}
 
 //#region  Generating the otp
 function generateOtp(): string {
-  const digits = '0123456789';
-  let otp = '';
+  const digits = '0123456789'
+  let otp = ''
 
   for (let i = 0; i < 6; i++) {
-    otp += digits[Math.floor(Math.random() * 10)];
+    otp += digits[Math.floor(Math.random() * 10)]
   }
 
-  return otp;
+  return otp
 }
 //#endregion
-export { getAllUsers, updateUser, deleteUserById, deleteUserByUsername, getUser,sendChangeEmailOtp,verifyOtp,resendOtp }
+export {
+  getAllUsers,
+  updateUser,
+  deleteUserById,
+  deleteUserByUsername,
+  getUser,
+  sendChangeEmailOtp,
+  verifyOtp,
+  resendOtp
+}
