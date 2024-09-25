@@ -138,6 +138,7 @@ const handleBilboMDSANSJob = async (
       time_submitted: now,
       user: user,
       steps: {
+        pdb2crd: {},
         minimize: {},
         heat: {},
         md: {},
