@@ -10,6 +10,14 @@
 /bilbomd-test-data
 /charmm
 
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+
+# Ignore Python bytecode files
+*.py[cod]
+*.pyo
+
 # production
 /dist
 
