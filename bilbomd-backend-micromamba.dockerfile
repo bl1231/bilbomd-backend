@@ -37,7 +37,7 @@ USER mambauser
 RUN micromamba install --yes --name base -c conda-forge numpy scipy matplotlib
 RUN micromamba install --yes --name base -c conda-forge pillow numba h5py cython reportlab
 RUN micromamba install --yes --name base -c conda-forge dbus-python fabio pyfai hdf5plugin
-RUN micromamba install --yes --name base -c conda-forge mmcif_pdbx svglib
+RUN micromamba install --yes --name base -c conda-forge mmcif_pdbx svglib python-igraph
 RUN micromamba install --yes --name base pip
 
 USER root
@@ -75,6 +75,9 @@ RUN npm install -g npm@10.8.3
 
 # Switch to the non-root user
 USER bilbo:bilbomd
+
+# Configure bilbo bash shell for micromamba
+RUN micromamba shell init --shell bash 
 
 # Copy package.json and package-lock.json
 COPY --chown=bilbo:bilbomd package*.json .
