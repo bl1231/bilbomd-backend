@@ -25,10 +25,10 @@ SAMPLE_GUINIER_RESULTS = (
 
 @pytest.fixture
 def mock_raw():
-    with patch("autorg.raw") as mock_raw:
-        mock_raw.load_profiles.return_value = [SAMPLE_PROFILE]
-        mock_raw.auto_guinier.return_value = SAMPLE_GUINIER_RESULTS
-        yield mock_raw
+    with patch("autorg.raw") as patched_raw:
+        patched_raw.load_profiles.return_value = [SAMPLE_PROFILE]
+        patched_raw.auto_guinier.return_value = SAMPLE_GUINIER_RESULTS
+        yield patched_raw
 
 
 def test_parse_args():
