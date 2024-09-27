@@ -200,7 +200,7 @@ const sendChangeEmailOtp = async (req: Request, res: Response) => {
     }
     await user.save()
 
-    await sendOtpEmail(currentEmail, otpCode)
+    sendOtpEmail(currentEmail, otpCode)
 
     res.status(200).json({ success: true, message: 'OTP sent successfully' })
   } catch (error) {
@@ -240,7 +240,7 @@ const verifyOtp = async (req: Request, res: Response) => {
     logger.error('Failed to verify OTP:', error)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
-}
+} 
 
 const resendOtp = async (req: Request, res: Response) => {
   try {
@@ -263,7 +263,7 @@ const resendOtp = async (req: Request, res: Response) => {
     }
     await user.save()
 
-    await sendOtpEmail(user.email, otpCode)
+    sendOtpEmail(user.email, otpCode)
 
     res.status(200).json({ success: true, message: 'OTP resent successfully' })
   } catch (error) {
