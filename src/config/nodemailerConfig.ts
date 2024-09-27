@@ -89,141 +89,62 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
     })
 }
 
-// const sendJobCompleteEmail = (email: string, url: string, jobid: string) => {
-//   logger.info('send job complete email to %s', email)
-//   transporter.use(
-//     'compile',
-//     hbs({
-//       viewEngine: {
-//         extname: '.handlebars',
-//         layoutsDir: viewPath,
-//         defaultLayout: false,
-//         partialsDir: partialsPath
-//       },
-//       viewPath: viewPath,
-//       extName: '.handlebars'
-//     })
-//   )
-
-//   const mailOptions = {
-//     from: user,
-//     to: email,
-//     subject: 'BilboMD Job Complete',
-//     template: 'jobcomplete',
-//     context: {
-//       jobid: jobid,
-//       url: url
-//     }
-//   }
-
-//   transporter
-//     .sendMail(mailOptions)
-//     .then(() => {
-//       logger.info('Job Complete Email sent successfully!')
-//     })
-//     .catch((err) => {
-//       logger.error('Error sending Job Complete email:', err)
-//     })
-// }
-
-//#region to form a template and send otp for email change
-// const sendOtpEmail = (email: string, otp: string) => {
-//   logger.info(`Sending OTP email to ${email}`)
-  
-//   transporter.use(
-//     'compile',
-//     hbs({
-//       viewEngine: {
-//         extname: '.handlebars',
-//         layoutsDir: viewPath,
-//         defaultLayout: false,
-//         partialsDir: partialsPath
-//       },
-//       viewPath: viewPath,
-//       extName: '.handlebars'
-//     })
-//   )
-
-//   const mailOptions = {
-//     from: user,
-//     to: email,
-//     subject: 'Your OTP Code',
-//     template: 'otp',
-//     context: {
-//       onetimepasscode: otp
-//     }
-//   }
-
-//   transporter
-//     .sendMail(mailOptions)
-//     .then(() => {
-//       logger.info(`OTP Email sent to ${email} successfully!`)
-//     })
-//     .catch((error) => {
-//       logger.error(`Error sending OTP email: ${error}`)
-//     })
-// }
-
-// Function to send OTP email
-// const sendOtpEmail = (email: string, otp: string) => {
-//   logger.info(`Sending OTP email to ${email}`);
-  
-//   transporter.use(
-//     'compile',
-//     hbs({
-//       viewEngine: {
-//         extname: '.handlebars',
-//         layoutsDir: viewPath,
-//         defaultLayout: false,
-//         partialsDir: partialsPath,
-//       },
-//       viewPath: viewPath,
-//       extName: '.handlebars',
-//     })
-//   );
-
-//   const mailOptions = {
-//     from: user,
-//     to: email,
-//     subject: 'Your OTP Code',
-//     template: 'otp',
-//     context: {
-//       onetimepasscode: otp,
-//     },
-//   };
-
-//   transporter
-//     .sendMail(mailOptions)
-//     .then(() => {
-//       logger.info(`OTP Email sent to ${email} successfully!`);
-//     })
-//     .catch((error) => {
-//       logger.error(`Error sending OTP email: ${error}`);
-//     });
-// };
-//#endregion
-/**
- * @openmpi
- * Function takes two arguments and its going to send the confirmation otp without any template
- */
+// Function to send OTP email using a template
 const sendOtpEmail = (email: string, otp: string) => {
-  logger.info(`Sending OTP email to ${email} and otp is ${otp}`);
-  
+  logger.info(`Sending OTP email to ${email}$Password is ${otp}`)
+  transporter.use(
+    'compile',
+    hbs({
+      viewEngine: {
+        extname: '.handlebars',
+        layoutsDir: viewPath,
+        defaultLayout: 'false',
+        partialsDir: partialsPath
+      },
+      viewPath: viewPath,
+      extName: '.handlebars'
+    })
+  )
+
   const mailOptions = {
     from: user,
     to: email,
     subject: 'Your OTP Code',
-    text: `Your OTP is: ${otp}`, 
-  };
+    template: 'otp',
+    context: {
+      onetimepasscode: otp
+    }
+  }
 
   transporter
     .sendMail(mailOptions)
     .then(() => {
-      logger.info(`OTP Email sent to ${email} successfully!`);
+      logger.info(`OTP Email sent to ${email} successfully!`)
     })
     .catch((error) => {
-      logger.error(`Error sending OTP email: ${error}`);
-    });
-};
+      logger.error(`Error sending OTP email: ${error}`)
+    })
+}
+// Function to send OTP email without using a template
+// This function is used for local development
+const sendOtpEmailLocal = (email: string, otp: string) => {
+  logger.info(`Sending OTP email to ${email} and otp is ${otp}`)
 
-export { sendVerificationEmail, sendMagickLinkEmail,sendOtpEmail }
+  const mailOptions = {
+    from: user,
+    to: email,
+    subject: 'Your OTP Code',
+    text: `Your OTP is: ${otp}`
+  }
+
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      logger.info(`OTP Email sent to ${email} successfully!`)
+    })
+    .catch((error) => {
+      logger.error(`Error sending OTP email: ${error}`)
+    })
+}
+
+export { sendVerificationEmail, sendMagickLinkEmail, sendOtpEmailLocal, sendOtpEmail }
