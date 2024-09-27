@@ -11,7 +11,7 @@ import {
 import { createNewAlphaFoldJob } from '../controllers/alphafoldJobsController.js'
 import { createNewSANSJob } from '../controllers/sansJobController.js'
 import { downloadPDB, getFoxsData } from '../controllers/downloadController.js'
-import verifyJWT from '../middleware/verifyJWT.js'
+import { verifyJWT } from '../middleware/verifyJWT.js'
 
 const router = express.Router()
 

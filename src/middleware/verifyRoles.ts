@@ -14,4 +14,4 @@ const verifyRoles = (...allowedRoles: string[]) => {
   }
 }
 
-export default verifyRoles
+export { verifyRoles }

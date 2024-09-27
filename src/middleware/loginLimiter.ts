@@ -16,4 +16,4 @@ const loginLimiter = rateLimit({
   legacyHeaders: false // Disable the `X-RateLimit-*` headers
 })
 
-export default loginLimiter
+export { loginLimiter }
