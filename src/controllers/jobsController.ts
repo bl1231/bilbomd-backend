@@ -47,7 +47,7 @@ const getAllJobs = async (req: Request, res: Response) => {
     const DBjobs: Array<IJob> = await Job.find().lean()
 
     if (!DBjobs?.length) {
-      return res.status(204).json({})
+      res.status(204).json({})
     }
 
     const bilboMDJobs = await Promise.all(
@@ -450,25 +450,24 @@ const updateJobStatus = async (req: Request, res: Response) => {
 
   // Confirm data
   if (!id || !email || !status) {
-    return res.status(400).json({ message: 'All fields are required' })
+    res.status(400).json({ message: 'All fields are required' })
   }
 
   // Confirm job exists to update
   const job = await Job.findById(id).exec()
 
   if (!job) {
-    return res.status(400).json({ message: 'Job not found' })
+    res.status(400).json({ message: 'Job not found' })
+    return
   }
 
   // Check current status
   if (job.status == status) {
-    return res
-      .status(400)
-      .json({ message: `nothing to do - status already ${job.status}` })
+    res.status(400).json({ message: `nothing to do - status already ${job.status}` })
   }
 
   if (job.status == status) {
-    return res.status(400).json({ message: 'nothing to do' })
+    res.status(400).json({ message: 'nothing to do' })
   }
 
   // Go ahead and update status
@@ -527,14 +526,15 @@ const deleteJob = async (req: Request, res: Response) => {
 
   // Confirm that client sent id
   if (!id) {
-    return res.status(400).json({ message: 'Job ID required' })
+    res.status(400).json({ message: 'Job ID required' })
   }
 
   // Find the job to delete
   const job = await Job.findById(id).exec()
 
   if (!job) {
-    return res.status(400).json({ message: 'Job not found' })
+    res.status(400).json({ message: 'Job not found' })
+    return
   }
 
   // Delete the job from MongoDB
@@ -542,7 +542,7 @@ const deleteJob = async (req: Request, res: Response) => {
 
   // Check if a document was actually deleted
   if (deleteResult.deletedCount === 0) {
-    return res.status(404).json({ message: 'No job was deleted' })
+    res.status(404).json({ message: 'No job was deleted' })
   }
 
   // Remove from disk
@@ -551,7 +551,7 @@ const deleteJob = async (req: Request, res: Response) => {
     // Check if the directory exists and remove it
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
-      return res.status(404).json({ message: 'Directory not found on disk' })
+      res.status(404).json({ message: 'Directory not found on disk' })
     }
     // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
     // because there are dangles NFS lock files present.
@@ -607,7 +607,7 @@ const deleteJob = async (req: Request, res: Response) => {
 const getJobById = async (req: Request, res: Response) => {
   const jobId = req.params.id
   if (!jobId) {
-    return res.status(400).json({ message: 'Job ID required.' })
+    res.status(400).json({ message: 'Job ID required.' })
   }
 
   try {
@@ -620,7 +620,7 @@ const getJobById = async (req: Request, res: Response) => {
       | IBilboMDSANSJob
 
     if (!job) {
-      return res.status(404).json({ message: `No job matches ID ${jobId}.` })
+      res.status(404).json({ message: `No job matches ID ${jobId}.` })
     }
 
     // const jobDir = path.join(uploadFolder, job.uuid, 'results')
@@ -758,11 +758,12 @@ const calculateNumEnsembles2 = async (
 }
 
 const downloadJobResults = async (req: Request, res: Response) => {
-  if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
+  if (!req?.params?.id) res.status(400).json({ message: 'Job ID required.' })
 
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {
-    return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    return
   }
 
   const outputFolder = path.join(uploadFolder, job.uuid)
@@ -775,9 +776,9 @@ const downloadJobResults = async (req: Request, res: Response) => {
     await fs.promises.access(defaultResultFile)
     const filename = path.basename(defaultResultFile) // Extract filename for setting Content-Disposition
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    return res.download(defaultResultFile, filename, (err) => {
+    res.download(defaultResultFile, filename, (err) => {
       if (err) {
-        return res.status(500).json({
+        res.status(500).json({
           message: 'Could not download the file: ' + err
         })
       }
@@ -789,9 +790,9 @@ const downloadJobResults = async (req: Request, res: Response) => {
       await fs.promises.access(newResultFile)
       const filename = path.basename(newResultFile) // Extract new filename for setting Content-Disposition
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-      return res.download(newResultFile, filename, (err) => {
+      res.download(newResultFile, filename, (err) => {
         if (err) {
-          return res.status(500).json({
+          res.status(500).json({
             message: 'Could not download the file: ' + err
           })
         }
@@ -800,20 +801,21 @@ const downloadJobResults = async (req: Request, res: Response) => {
       logger.error(`Error accessing new result file: ${newFileError}`)
       // If neither file is found, log error and return a message
       logger.error(`No result files available for job ID: ${req.params.id}`)
-      return res.status(500).json({ message: 'No result files available.' })
+      res.status(500).json({ message: 'No result files available.' })
     }
   }
 }
 
 const getLogForStep = async (req: Request, res: Response) => {
-  if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
+  if (!req?.params?.id) res.status(400).json({ message: 'Job ID required.' })
   // Check if req.params.id is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({ message: 'Invalid Job ID format.' })
+    res.status(400).json({ message: 'Invalid Job ID format.' })
   }
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {
-    return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    return
   }
   const step = req.query.step
   let logFile: string = ''
@@ -833,7 +835,7 @@ const getLogForStep = async (req: Request, res: Response) => {
   fs.readFile(logFile, 'utf8', (err, data) => {
     if (err) {
       // Handle any errors that occurred while reading the file
-      return res.status(500).json({ message: 'Error reading log file' })
+      res.status(500).json({ message: 'Error reading log file' })
     }
 
     // Send the log file content in a JSON response
@@ -1112,7 +1114,7 @@ const writeJobParams = async (jobID: string): Promise<void> => {
     // Convert the Mongoose document to a plain object
     const jobObject = job.toObject({ virtuals: true, versionKey: false })
     // Exclude metadata like mongoose versionKey, etc, if necessary
-    delete jobObject.__v // Optionally remove version key if not done globally
+    // delete jobObject.__v // Optionally remove version key if not done globally
 
     // Serialize to JSON with pretty printing
     const jobJson = JSON.stringify(jobObject, null, 2)

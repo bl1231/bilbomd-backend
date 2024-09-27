@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import { logger } from '../middleware/loggers.js'
 import axios from 'axios'
 
-export const getConfigsStuff = async (req: Request, res: Response) => {
+export const getConfigsStuff = async (req: Request, res: Response): Promise<void> => {
   logger.info('--- getConfigsStuff ---')
 
   try {
@@ -51,10 +51,10 @@ export const getConfigsStuff = async (req: Request, res: Response) => {
       uiGitHash: uiInfo.gitHash || 'abc123'
     }
 
-    return res.json(configs)
+    res.json(configs)
   } catch (error) {
     logger.error('Error fetching worker info or processing request:', error)
-    return res.status(500).json({
+    res.status(500).json({
       message: 'Failed to retrieve configuration information',
       error: error
     })

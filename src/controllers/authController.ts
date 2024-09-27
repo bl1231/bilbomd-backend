@@ -89,11 +89,11 @@ interface RefreshToken {
  *                   description: Error message.
  *                   example: Internal server error.
  */
-const otp = async (req: Request, res: Response): Promise<Response> => {
+const otp = async (req: Request, res: Response) => {
   try {
     const { otp: code } = req.body
 
-    if (!code) return res.status(400).json({ message: 'OTP required.' })
+    if (!code) res.status(400).json({ message: 'OTP required.' })
 
     const user: IUser | null = await User.findOne({ 'otp.code': code })
 
@@ -106,7 +106,7 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
       const currentTimestamp = Date.now()
       if (user.otp?.expiresAt && user.otp.expiresAt.getTime() < currentTimestamp) {
         logger.warn('OTP has expired')
-        return res.status(401).json({ error: 'OTP has expired' })
+        res.status(401).json({ error: 'OTP has expired' })
       }
 
       // Generating an access token
@@ -153,14 +153,14 @@ const otp = async (req: Request, res: Response): Promise<Response> => {
 
       // Send the accessToken back to client
       // logger.info(`Sending jwt: ${JSON.stringify(accessTokenData)}`)
-      return res.json({ accessTokenData })
+      res.json({ accessTokenData })
     } else {
       logger.warn('Invalid OTP')
-      return res.status(401).json({ message: 'Invalid OTP' })
+      res.status(401).json({ message: 'Invalid OTP' })
     }
   } catch (error) {
     logger.error('Error occurred while querying user: %s', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    res.status(500).json({ message: 'Internal server error' })
   }
 }
 
@@ -217,7 +217,7 @@ const refresh = async (req: Request, res: Response) => {
   const cookies = req.cookies
   // logger.info(`refresh got cookies: ${JSON.stringify(cookies)}`)
 
-  if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized - no token' })
+  if (!cookies?.jwt) res.status(401).json({ message: 'Unauthorized - no token' })
 
   const refreshToken = cookies.jwt
   // logger.info(`refresh got jwt: ${refreshToken}`)
@@ -232,7 +232,8 @@ const refresh = async (req: Request, res: Response) => {
       const foundUser = await User.findOne({ email: decoded.email }).exec()
       // console.log('foundUser --->', foundUser)
       if (!foundUser) {
-        return res.status(401).json({ message: 'Unauthorized' })
+        res.status(401).json({ message: 'Unauthorized' })
+        return
       }
 
       const accessToken = jwt.sign(
@@ -283,7 +284,7 @@ const refresh = async (req: Request, res: Response) => {
  */
 const logout = (req: Request, res: Response) => {
   const cookies = req.cookies
-  if (!cookies?.jwt) return res.sendStatus(204) //No content
+  if (!cookies?.jwt) res.sendStatus(204) //No content
   res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true })
   res.json({ message: 'Cookie cleared' })
 }

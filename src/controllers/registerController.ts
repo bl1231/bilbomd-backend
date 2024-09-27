@@ -71,7 +71,7 @@ const handleNewUser = async (req: Request, res: Response) => {
   logger.info('handleNewUser: %s %s', user, email)
   // confirm we have required data
   if (!user || !email)
-    return res.status(400).json({
+    res.status(400).json({
       message: 'Username and email are required.'
     })
 
@@ -80,14 +80,14 @@ const handleNewUser = async (req: Request, res: Response) => {
     .collation({ locale: 'en', strength: 2 })
     .lean()
     .exec()
-  if (duplicateUser) return res.status(409).json({ message: 'Duplicate username' })
+  if (duplicateUser) res.status(409).json({ message: 'Duplicate username' })
 
   // check for duplicate emails in the db
   const duplicate = await User.findOne({ email: email })
     .collation({ locale: 'en', strength: 2 })
     .lean()
     .exec()
-  if (duplicate) return res.status(409).json({ message: 'Duplicate email' })
+  if (duplicate) res.status(409).json({ message: 'Duplicate email' })
 
   try {
     //create a unique confirmation code

@@ -61,18 +61,19 @@ const verifyNewUser = async (req: Request, res: Response) => {
   try {
     const { code } = req.body
     if (!code) {
-      return res.status(400).json({ message: 'Confirmation code required.' })
+      res.status(400).json({ message: 'Confirmation code required.' })
     }
 
-    logger.info('Received verification code: %s', code)
+    logger.info(`Received verification ${code}`)
     const user = await User.findOne({ 'confirmationCode.code': code })
 
     if (!user) {
-      logger.warn('Unable to verify %s', code)
-      return res.status(400).json({ message: `Unable to verify ${code}.` })
+      logger.warn(`Unable to verify ${code}`)
+      res.status(400).json({ message: `Unable to verify ${code}.` })
+      return
     }
 
-    logger.info('Verification code belongs to user: %s %s', user.username, user.email)
+    logger.info(`Verification code belongs to user: ${user.username} ${user.email}`)
 
     user.status = 'Active'
     user.confirmationCode = null
@@ -80,7 +81,7 @@ const verifyNewUser = async (req: Request, res: Response) => {
     logger.info('%s verified!', user.email)
     res.json({ message: 'Verified' })
   } catch (error) {
-    logger.error('Error occurred during user verification: %s', error)
+    logger.error(`Error occurred during user verification: ${error}`)
     res.status(500).json({ message: 'Internal server error' })
   }
 }
@@ -149,18 +150,19 @@ const verifyNewUser = async (req: Request, res: Response) => {
 const resendVerificationCode = async (req: Request, res: Response) => {
   try {
     const { email } = req.body
-    logger.info('Request to resendVerificationCode for: %s', email)
+    logger.info(`Request to resendVerificationCode for: ${email}`)
 
     // Confirm we have required data
     if (!email) {
-      return res.status(400).json({ message: 'Email required.' })
+      res.status(400).json({ message: 'Email required.' })
     }
 
     // Check for user in the db
     const foundUser = await User.findOne({ email })
 
     if (!foundUser) {
-      return res.status(401).json({ message: 'No user with that email.' })
+      res.status(401).json({ message: 'No user with that email.' })
+      return
     }
 
     // Generate a new confirmation code
@@ -176,10 +178,7 @@ const resendVerificationCode = async (req: Request, res: Response) => {
     await foundUser.save()
 
     logger.info(
-      'Updated %s email: %s confirmationCode: %s',
-      foundUser.username,
-      foundUser.email,
-      foundUser.confirmationCode.code
+      `Updated ${foundUser.username} email: ${foundUser.email} confirmationCode: ${foundUser.confirmationCode.code}`
     )
 
     // Send verification email

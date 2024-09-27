@@ -1,6 +1,6 @@
 import express from 'express'
 import { otp, refresh, logout } from '../controllers/authController.js'
-import loginLimiter from '../middleware/loginLimiter.js'
+import { loginLimiter } from '../middleware/loginLimiter.js'
 
 const router = express.Router()
 
