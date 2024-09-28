@@ -27,31 +27,37 @@ const getAllUsers = async (req: Request, res: Response) => {
   }
 }
 
-const updateUser = async (req: Request, res: Response) => {
+const updateUser = async (req: Request, res: Response): Promise<void> => {
   const { id, username, roles, active, email } = req.body
 
   // Validate inputs
   if (!id) {
-    return res.status(400).json({ success: false, message: 'User ID is required' })
+    res.status(400).json({ success: false, message: 'User ID is required' })
+    return
   }
   if (!username || !isValidUsername(username)) {
-    return res.status(400).json({ success: false, message: 'Invalid username format' })
+    res.status(400).json({ success: false, message: 'Invalid username format' })
+    return
   }
   if (!Array.isArray(roles) || !roles.length) {
-    return res.status(400).json({ success: false, message: 'Roles are required' })
+    res.status(400).json({ success: false, message: 'Roles are required' })
+    return
   }
   if (typeof active !== 'boolean') {
-    return res.status(400).json({ success: false, message: 'Active status is required' })
+    res.status(400).json({ success: false, message: 'Active status is required' })
+    return
   }
   if (!email || !isValidEmail(email)) {
-    return res.status(400).json({ success: false, message: 'Invalid email format' })
+    res.status(400).json({ success: false, message: 'Invalid email format' })
+    return
   }
 
   try {
     const user = await User.findById(id).exec()
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
     }
 
     const duplicate = await User.findOne({ username })
@@ -60,7 +66,8 @@ const updateUser = async (req: Request, res: Response) => {
       .exec()
 
     if (duplicate && duplicate?._id.toString() !== id) {
-      return res.status(409).json({ success: false, message: 'Duplicate username' })
+      res.status(409).json({ success: false, message: 'Duplicate username' })
+      return
     }
 
     user.username = username
@@ -77,29 +84,33 @@ const updateUser = async (req: Request, res: Response) => {
   }
 }
 
-const deleteUserById = async (req: Request, res: Response) => {
+const deleteUserById = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params
 
   if (!id) {
-    return res.status(400).json({ success: false, message: 'User ID is required' })
+    res.status(400).json({ success: false, message: 'User ID is required' })
+    return
   }
 
   try {
     const job = await Job.findOne({ user: id }).lean().exec()
     if (job) {
-      return res.status(400).json({ success: false, message: 'User has jobs' })
+      res.status(400).json({ success: false, message: 'User has jobs' })
+      return
     }
 
     const user = await User.findById(id).exec()
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
     }
 
     const deleteResult = await user.deleteOne()
 
     if (deleteResult.deletedCount === 0) {
-      return res.status(404).json({ success: false, message: 'No user was deleted' })
+      res.status(404).json({ success: false, message: 'No user was deleted' })
+      return
     }
 
     const reply = `Username ${user.username} with ID ${user._id} deleted`
@@ -110,27 +121,30 @@ const deleteUserById = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
-
-const deleteUserByUsername = async (req: Request, res: Response) => {
+const deleteUserByUsername = async (req: Request, res: Response): Promise<void> => {
   try {
     const username = req.params.username
     if (!username || !isValidUsername(username)) {
-      return res.status(400).json({ success: false, message: 'Invalid username format' })
+      res.status(400).json({ success: false, message: 'Invalid username format' })
+      return
     }
 
     const user = await User.findOne({ username }).exec()
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
     }
 
     const job = await Job.findOne({ user: user._id }).lean().exec()
     if (job) {
-      return res.status(409).json({ success: false, message: 'User has assigned jobs' })
+      res.status(409).json({ success: false, message: 'User has assigned jobs' })
+      return
     }
 
     const deleteResult = await user.deleteOne()
     if (deleteResult.deletedCount === 0) {
-      return res.status(500).json({ success: false, message: 'Failed to delete user' })
+      res.status(500).json({ success: false, message: 'Failed to delete user' })
+      return
     }
 
     const reply = `User ${user.username} with ID ${user._id} deleted`
@@ -141,17 +155,19 @@ const deleteUserByUsername = async (req: Request, res: Response) => {
   }
 }
 
-const getUser = async (req: Request, res: Response) => {
+const getUser = async (req: Request, res: Response): Promise<void> => {
   if (!req?.params?.id) {
-    return res.status(400).json({ success: false, message: 'User ID is required' })
+    res.status(400).json({ success: false, message: 'User ID is required' })
+    return
   }
 
   try {
     const user = await User.findOne({ _id: req.params.id }).lean().exec()
     if (!user) {
-      return res
+      res
         .status(404)
         .json({ success: false, message: `User ID ${req.params.id} not found` })
+      return
     }
     res.json({ success: true, data: user })
   } catch (error) {
@@ -160,36 +176,39 @@ const getUser = async (req: Request, res: Response) => {
   }
 }
 
-const sendChangeEmailOtp = async (req: Request, res: Response) => {
+const sendChangeEmailOtp = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, currentEmail, newEmail } = req.body
 
     if (!isValidEmail(currentEmail) || !isValidEmail(newEmail)) {
-      return res.status(400).json({ success: false, message: 'Invalid email format' })
+      res.status(400).json({ success: false, message: 'Invalid email format' })
+      return
     }
 
     const user = await User.findOne({ username })
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
     }
 
     if (user.email === newEmail) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'The new email is the same as the current email.'
       })
+      return
     }
 
     const duplicate = await User.findOne({ email: newEmail })
     if (duplicate) {
-      return res.status(409).json({ success: false, message: 'Duplicate email' })
+      res.status(409).json({ success: false, message: 'Duplicate email' })
+      return
     }
 
     if (user.email !== currentEmail) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Current email does not match' })
+      res.status(400).json({ success: false, message: 'Current email does not match' })
+      return
     }
 
     const otpCode = generateOtp()
@@ -209,25 +228,28 @@ const sendChangeEmailOtp = async (req: Request, res: Response) => {
   }
 }
 
-const verifyOtp = async (req: Request, res: Response) => {
+const verifyOtp = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, otp, currentEmail, newEmail } = req.body
 
     if (!isValidEmail(currentEmail) || !isValidEmail(newEmail)) {
-      return res.status(400).json({ success: false, message: 'Invalid email format' })
+      res.status(400).json({ success: false, message: 'Invalid email format' })
+      return
     }
 
     const user = await User.findOne({ username })
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
     }
 
     if (
       user.otp?.code !== otp ||
       (user.otp?.expiresAt && user.otp.expiresAt < new Date())
     ) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' })
+      res.status(400).json({ success: false, message: 'Invalid or expired OTP' })
+      return
     }
 
     user.previousEmails.push(currentEmail)
@@ -242,17 +264,19 @@ const verifyOtp = async (req: Request, res: Response) => {
   }
 }
 
-const resendOtp = async (req: Request, res: Response) => {
+const resendOtp = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username } = req.body
 
     if (!username || !isValidUsername(username)) {
-      return res.status(400).json({ success: false, message: 'Invalid username format' })
+      res.status(400).json({ success: false, message: 'Invalid username format' })
+      return
     }
 
     const user = await User.findOne({ username })
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      res.status(404).json({ success: false, message: 'User not found' })
+      return 
     }
 
     const otpCode = generateOtp()
