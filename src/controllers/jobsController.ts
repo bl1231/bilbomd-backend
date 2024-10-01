@@ -3,6 +3,7 @@ import { config } from '../config/config.js'
 import mongoose from 'mongoose'
 import multer from 'multer'
 import fs from 'fs-extra'
+import os from 'os'
 import readline from 'readline'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
@@ -1049,54 +1050,60 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const autoRg_script = '/app/scripts/autorg.py'
-  const args = [autoRg_script, 'expdata.dat']
+  const tempOutputFile = path.join(os.tmpdir(), `autoRg_${Date.now()}.json`)
+  const args = [autoRg_script, 'expdata.dat', tempOutputFile]
 
   return new Promise<AutoRgResults>((resolve, reject) => {
     const autoRg: ChildProcess = spawn('python', args, { cwd: dir })
-    let autoRg_json = ''
+
     autoRg.stdout?.on('data', (data: Buffer) => {
       const dataString = data.toString().trim()
+      const suppressMessage = "module 'scipy.integrate' has no attribute 'trapz'"
+
+      // Check if the message should be suppressed
+      if (dataString.includes(suppressMessage)) {
+        logger.info(`Suppressed message: ${suppressMessage}`)
+        return
+      }
+
       logger.info(`spawnAutoRgCalculator stdout: ${dataString}`)
-      logStream.write(dataString)
-      autoRg_json += dataString
+      logStream.write(dataString + '\n')
     })
+
     autoRg.stderr?.on('data', (data: Buffer) => {
-      logger.error(`spawnAutoRgCalculator stderr: ${data.toString()}`)
-      console.log(data)
-      errorStream.write(data.toString())
+      const dataString = data.toString().trim()
+      logger.error(`spawnAutoRgCalculator stderr: ${dataString}`)
+      errorStream.write(dataString + '\n')
     })
+
     autoRg.on('error', (error) => {
       logger.error(`spawnAutoRgCalculator error: ${error}`)
       reject(error)
     })
-    autoRg.on('exit', (code) => {
-      // Close streams explicitly once the process exits
-      const closeStreamsPromises = [
-        new Promise((resolveStream) => logStream.end(resolveStream)),
-        new Promise((resolveStream) => errorStream.end(resolveStream))
-      ]
 
-      Promise.all(closeStreamsPromises)
-        .then(() => {
-          // Only proceed once all streams are closed
-          if (code === 0) {
-            try {
-              const analysisResults = JSON.parse(autoRg_json)
-              logger.info(`spawnAutoRgCalculator success with exit code: ${code}`)
-              resolve(analysisResults)
-            } catch (parseError) {
-              logger.error(`Error parsing analysis results: ${parseError}`)
-              reject(parseError)
-            }
-          } else {
-            logger.error(`spawnAutoRgCalculator error with exit code: ${code}`)
-            reject(new Error(`spawnAutoRgCalculator error with exit code: ${code}`))
-          }
-        })
-        .catch((streamError) => {
-          logger.error(`Error closing file streams: ${streamError}`)
-          reject(streamError)
-        })
+    autoRg.on('exit', async (code) => {
+      // Close streams explicitly once the process exits
+      logStream.end()
+      errorStream.end()
+
+      if (code === 0) {
+        try {
+          const analysisResults = JSON.parse(
+            await fs.promises.readFile(tempOutputFile, 'utf-8')
+          )
+          logger.info(`spawnAutoRgCalculator success with exit code: ${code}`)
+          resolve(analysisResults)
+        } catch (parseError) {
+          logger.error(`Error parsing analysis results: ${parseError}`)
+          reject(parseError)
+        } finally {
+          // Clean up the temporary file
+          // await fs.promises.unlink(tempOutputFile)
+        }
+      } else {
+        logger.error(`spawnAutoRgCalculator error with exit code: ${code}`)
+        reject(new Error(`spawnAutoRgCalculator error with exit code: ${code}`))
+      }
     })
   })
 }
