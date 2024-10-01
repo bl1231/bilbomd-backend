@@ -48,6 +48,7 @@ const getAllJobs = async (req: Request, res: Response) => {
 
     if (!DBjobs?.length) {
       res.status(204).json({})
+      return
     }
 
     const bilboMDJobs = await Promise.all(
@@ -191,8 +192,6 @@ const handleBilboMDJob = async (
       user: user,
       steps: {
         pdb2crd: {},
-        pae: {},
-        autorg: {},
         minimize: {},
         initfoxs: {},
         heat: {},
@@ -200,7 +199,6 @@ const handleBilboMDJob = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
-        copy_results_to_cfs: {},
         results: {},
         email: {}
       }
@@ -310,7 +308,6 @@ const handleBilboMDAutoJob = async (
         dcd2pdb: {},
         foxs: {},
         multifoxs: {},
-        copy_results_to_cfs: {},
         results: {},
         email: {}
       }

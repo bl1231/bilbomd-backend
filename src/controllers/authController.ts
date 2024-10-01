@@ -217,7 +217,10 @@ const refresh = async (req: Request, res: Response) => {
   const cookies = req.cookies
   // logger.info(`refresh got cookies: ${JSON.stringify(cookies)}`)
 
-  if (!cookies?.jwt) res.status(401).json({ message: 'Unauthorized - no token' })
+  if (!cookies?.jwt) {
+    res.status(401).json({ message: 'Unauthorized - no token' })
+    return
+  }
 
   const refreshToken = cookies.jwt
   // logger.info(`refresh got jwt: ${refreshToken}`)

@@ -29,7 +29,8 @@ export const getConfigsStuff = async (req: Request, res: Response): Promise<void
       'BILBOMD_BACKEND_VERSION',
       'BILBOMD_ENV',
       'WORKER_SERVICE_URL',
-      'WORKER_SERVICE_PORT'
+      'WORKER_SERVICE_PORT',
+      'ENABLE_BILBOMD_SANS'
     ]
 
     envVars.forEach((envVar) => {
@@ -43,6 +44,7 @@ export const getConfigsStuff = async (req: Request, res: Response): Promise<void
       nerscProject: process.env.NERSC_PROJECT || 'm1234',
       tokenExpires: process.env.SFAPI_TOKEN_EXPIRES || '2024-05-22 04:20',
       sendMailUser: process.env.SENDMAIL_USER || 'bilbomd@lbl.gov',
+      enableBilboMdSANS: process.env.ENABLE_BILBOMD_SANS || 'true',
       backendVersion: process.env.BILBOMD_BACKEND_VERSION || '0.0.0',
       backendGitHash: process.env.BILBOMD_BACKEND_GIT_HASH || 'abc123',
       workerVersion: workerInfo.version || '0.0.0',
