@@ -219,7 +219,7 @@ const sendChangeEmailOtp = async (req: Request, res: Response): Promise<void> =>
     }
     await user.save()
 
-    sendOtpEmail(currentEmail, otpCode)
+    sendOtpEmail(newEmail, otpCode) // Send OTP to new email
 
     res.status(200).json({ success: true, message: 'OTP sent successfully' })
   } catch (error) {
@@ -266,7 +266,7 @@ const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 
 const resendOtp = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username } = req.body
+    const { username, newEmail } = req.body
 
     if (!username || !isValidUsername(username)) {
       res.status(400).json({ success: false, message: 'Invalid username format' })
@@ -276,7 +276,7 @@ const resendOtp = async (req: Request, res: Response): Promise<void> => {
     const user = await User.findOne({ username })
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })
-      return 
+      return
     }
 
     const otpCode = generateOtp()
@@ -287,7 +287,7 @@ const resendOtp = async (req: Request, res: Response): Promise<void> => {
     }
     await user.save()
 
-    sendOtpEmail(user.email, otpCode)
+    sendOtpEmail(newEmail, otpCode)
 
     res.status(200).json({ success: true, message: 'OTP resent successfully' })
   } catch (error) {
