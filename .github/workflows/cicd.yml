@@ -1,4 +1,4 @@
-name: Build and Push Docker Images to GitHub Container Registry
+name: Build and Push bilbomd-backend Docker Images
 
 on:
   push:
@@ -22,8 +22,10 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -35,10 +37,10 @@ jobs:
           echo "@bl1231:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci --force
 
-      - name: Build the project
+      - name: Run npm build to test Typescript transpilation
         run: npm run build
 
       - name: Set up Docker Buildx
@@ -57,48 +59,63 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}/bilbomd-backend
-            ghcr.io/${{ github.repository }}/bilbomd-spin-backend
           tags: |
             type=raw,value=latest
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Generate version
+      - name: Generate version from tag
         id: version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Build and push bilbomd-spin-backend Docker image (latest)
+      - name: Get version from package.json
+        id: get_version
+        run: echo "BILBOMD_BACKEND_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
+      - name: Determine commit hash
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "GIT_HASH=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          else
+            echo "GIT_HASH=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          fi
+
+      - name: Build and push bilbomd-backend Docker image (latest)
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: bilbomd-spin-backend.dockerfile
+          file: bilbomd-backend.dockerfile
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository }}/bilbomd-spin-backend:latest
+            ghcr.io/${{ github.repository }}/bilbomd-backend:latest
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=${{ vars.USER_ID }}
             GROUP_ID=${{ vars.GROUP_ID }}
+            BILBOMD_BACKEND_GIT_HASH=${{ env.GIT_HASH }}
+            BILBOMD_BACKEND_VERSION=${{ env.BILBOMD_BACKEND_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push bilbomd-spin-backend Docker image (versioned)
+      - name: Build and push bilbomd-backend Docker image (versioned)
         if: startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: bilbomd-spin-backend.dockerfile
+          file: bilbomd-backend.dockerfile
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository }}/bilbomd-spin-backend:${{ env.VERSION }}
+            ghcr.io/${{ github.repository }}/bilbomd-backend:${{ env.BILBOMD_BACKEND_VERSION }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             USER_ID=${{ vars.USER_ID }}
             GROUP_ID=${{ vars.GROUP_ID }}
+            BILBOMD_BACKEND_GIT_HASH=${{ env.GIT_HASH }}
+            BILBOMD_BACKEND_VERSION=${{ env.BILBOMD_BACKEND_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

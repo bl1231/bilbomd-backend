@@ -139,7 +139,19 @@ const getStatus = async (req: Request, res: Response) => {
   })
 
   if (!success) {
-    return res.status(500).json({ error })
+    res.status(500).json({ error })
+  }
+
+  res.json(data)
+}
+
+const getOutages = async (req: Request, res: Response) => {
+  const { success, data, error } = await makeUnauthenticatedSFApiRequest({
+    endpoint: '/status/outages/planned/perlmutter'
+  })
+
+  if (!success) {
+    res.status(500).json({ error })
   }
 
   res.json(data)
@@ -148,7 +160,7 @@ const getStatus = async (req: Request, res: Response) => {
 const getUser = async (req: Request, res: Response) => {
   const username = 'sclassen'
   if (!req.sfApiToken) {
-    return res.status(401).json({ error: 'No SF API token provided.' })
+    res.status(401).json({ error: 'No SF API token provided.' })
   }
   const { success, data, error } = await makeSFApiRequest({
     endpoint: '/account',
@@ -159,7 +171,7 @@ const getUser = async (req: Request, res: Response) => {
   })
 
   if (!success) {
-    return res.status(500).json({ error })
+    res.status(500).json({ error })
   }
 
   res.json(data)
@@ -182,13 +194,15 @@ const getProjectHours = async (req: Request, res: Response) => {
     }
 
     if (!data) {
-      return res.status(404).json({ error: 'No data for that project' })
+      res.status(404).json({ error: 'No data for that project' })
+      return
     }
     // logger.info(JSON.stringify(data))
     const project = data.find((p: ProjectStats) => p.repo_name === projectName)
 
     if (!project) {
-      return res.status(404).json({ error: 'Project not found.' })
+      res.status(404).json({ error: 'Project not found.' })
+      return
     }
 
     const response = {
@@ -206,4 +220,4 @@ const getProjectHours = async (req: Request, res: Response) => {
   }
 }
 
-export { getStatus, getUser, getProjectHours }
+export { getStatus, getOutages, getUser, getProjectHours }

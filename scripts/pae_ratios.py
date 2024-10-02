@@ -7,7 +7,7 @@ import json
 from collections import defaultdict
 from typing import Tuple, Optional
 import igraph
-import numpy
+import numpy as np
 
 # This is defining the pLDDT threshold for determing flex/rigid
 # which Alphafold2 writes to the B-factor column
@@ -136,9 +136,7 @@ def define_clusters_for_selected_pae(
     if "predicted_aligned_error" not in selected_data:
         raise ValueError("Invalid PAE JSON format.")
 
-    pae_matrix = numpy.array(
-        selected_data["predicted_aligned_error"], dtype=numpy.float64
-    )
+    pae_matrix = np.array(selected_data["predicted_aligned_error"], dtype=np.float64)
 
     pae_cutoff = 10
     graph_resolution = 1
@@ -150,7 +148,7 @@ def define_clusters_for_selected_pae(
     g = igraph.Graph()
     size = weights.shape[0]
     g.add_vertices(range(size))
-    edges = numpy.argwhere(pae_matrix < pae_cutoff)
+    edges = np.argwhere(pae_matrix < pae_cutoff)
     sel_weights = weights[edges.T[0], edges.T[1]]
     g.add_edges(edges)
     g.es["weight"] = sel_weights
@@ -158,40 +156,62 @@ def define_clusters_for_selected_pae(
     vc = g.community_leiden(
         weights="weight", resolution=graph_resolution / 100, n_iterations=10
     )
-    membership = numpy.array(vc.membership)
+    membership = np.array(vc.membership)
 
     membership_clusters = defaultdict(list)
     for index, cluster in enumerate(membership):
         membership_clusters[cluster].append(index)
 
     # Directly sort the cluster values by their length in descending order
-    sorted_clusters = sorted(
-        membership_clusters.values(), key=len, reverse=True)
+    sorted_clusters = sorted(membership_clusters.values(), key=len, reverse=True)
     return sorted_clusters
 
 
 def is_float(arg):
     """
-    Returns Boolean if arg is a float
+    Returns True if arg can be converted to a float, False otherwise.
     """
     try:
         float(arg)
         return True
-    except ValueError:
+    except (ValueError, TypeError):
         return False
 
 
-def separate_into_regions(numbers, chain_segs: list):
+def sort_and_separate_cluster(numbers, chain_segs: list):
     """
-    Seprates into regions
+    Sorts a list of numbers and separates them into contiguous regions.
+
+    A "region" is defined as a sequence of consecutive numbers in the sorted list.
+    The separation of regions occurs when a break in consecutiveness is detected,
+    or when a number is found in the `chain_segs` list, which acts as a separator.
+
+    Parameters:
+    -----------
+    numbers : list of int
+        A list of integers that needs to be sorted and separated into regions.
+
+    chain_segs : list of int
+        A list of integers that serve as separators. When a number from `numbers`
+        is found in `chain_segs`, it causes a break in the region, even if the
+        numbers are otherwise consecutive.
+
+    Returns:
+    --------
+    list of list of int
+        A list of lists, where each inner list represents a contiguous region
+        of numbers, excluding any breaks caused by numbers in `chain_segs`.
+
+    Example:
+    --------
+    >>> sort_and_separate_cluster([1, 2, 3, 7, 8, 9, 11], [3, 8])
+    [[1, 2], [3], [7], [8, 9], [11]]
     """
-    numbers = sorted(numbers)  # Ensure numbers are sorted
+    numbers = sorted(numbers)
     regions = []
     current_region = [numbers[0]]
     for i in range(1, len(numbers)):
-        if (numbers[i] == numbers[i - 1] + 1) and (
-            numbers[i - 1] not in chain_segs
-        ):
+        if (numbers[i] == numbers[i - 1] + 1) and (numbers[i - 1] not in chain_segs):
             current_region.append(numbers[i])
         else:
             regions.append(current_region)
@@ -201,106 +221,218 @@ def separate_into_regions(numbers, chain_segs: list):
     return regions
 
 
-def define_rigid_clusters(
-    cluster_list: list, crd_file: str, first_resnum: int, chain_segment_list: list
+def find_and_update_sequential_rigid_domains(lists_of_tuples):
+    """
+    Identify and adjust adjacent rigid domains in a list of tuples.
+
+    This function iterates over a list of lists, where each inner list contains tuples
+    representing Rigid Domains. Each tuple consists of the start residue, end residue,
+    and the chain identifier. The function identifies adjacent rigid domains within the
+    same chain and adjusts them by creating a 2-residue gap between consecutive domains.
+    The adjustment is done by decrementing the end of the first domain and incrementing
+    the start of the second domain.
+
+    Parameters:
+    -----------
+    lists_of_tuples : list of lists of tuples
+        A list where each inner list contains tuples representing rigid domains. Each
+        tuple is of the form (start_residue, end_residue, chain), where `start_residue`
+        and `end_residue` are integers indicating the range of residues, and `chain` is
+        a string representing the chain ID.
+
+    Returns:
+    --------
+    tuple (bool, list of list of tuples)
+        - A boolean indicating whether any updates were made to the rigid domains.
+        - The updated list of lists containing the adjusted rigid domains.
+
+    Example:
+    --------
+    Given a list of tuples representing rigid domains:
+
+    >>> lists_of_tuples = [
+    >>>     [(10, 20, "A"), (21, 30, "A")],
+    >>>     [(5, 15, "B"), (16, 25, "B")]
+    >>> ]
+
+    The function will identify that (10, 20, "A") and (21, 30, "A") are adjacent and
+    will update them to (10, 19, "A") and (22, 30, "A"), respectively, creating a
+    2-residue gap between the domains.
+
+    Collaboration Note:
+    -------------------
+    This function was collaboratively developed by ChatGPT and Scott
+
+    """
+    seen_pairs = set()  # To keep track of seen pairs and avoid duplicates
+    updates = {}  # To store updates for each tuple
+    updated = False  # Flag to indicate if updates were made
+    print("-----------------")
+    for outer_list in lists_of_tuples:
+        for start1, end1, chain1 in outer_list:
+            for other_outer_list in lists_of_tuples:
+                for start2, end2, chain2 in other_outer_list:
+                    if chain1 == chain2:
+                        if end1 + 1 == start2:
+                            # Ensure the pair is not considered in reverse
+                            if (
+                                (start1, end1, chain1),
+                                (start2, end2, chain2),
+                            ) not in seen_pairs:
+                                print(
+                                    f"Adjacent Rigid Domains: ({start1}, {end1}, '{chain1}') and ({start2}, {end2}, '{chain2}')"
+                                )
+                                updates[(start1, end1, chain1)] = (start1, end1 - 1)
+                                updates[(start2, end2, chain2)] = (start2 + 1, end2)
+                                seen_pairs.add(
+                                    ((start1, end1, chain1), (start2, end2, chain2))
+                                )
+                                updated = True
+
+                        elif end2 + 1 == start1:
+                            if (
+                                (start2, end2, chain2),
+                                (start1, end1, chain1),
+                            ) not in seen_pairs:
+                                print(
+                                    f"Adjacent Rigid Domains: ({start2}, {end2}, '{chain2}') and ({start1}, {end1}, '{chain1}')"
+                                )
+                                updates[(start2, end2, chain2)] = (start2, end2 - 1)
+                                updates[(start1, end1, chain1)] = (start1 + 1, end1)
+                                seen_pairs.add(
+                                    ((start2, end2, chain2), (start1, end1, chain1))
+                                )
+                                updated = True
+
+    # Apply the updates to the original list
+    for i, outer_list in enumerate(lists_of_tuples):
+        for j, (start, end, chain) in enumerate(outer_list):
+            if (start, end, chain) in updates:
+                new_start, new_end = updates[(start, end, chain)]
+                lists_of_tuples[i][j] = (new_start, new_end, chain)
+
+    return updated, lists_of_tuples
+
+
+def calculate_bfactor_avg_for_region(
+    crd_file, first_resnum_cluster, last_resnum_cluster, first_resnum
+):
+    """
+    Calculate the average B-factor for a given cluster region.
+
+    :param crd_file: Path to the CRD file.
+    :param first_resnum_cluster: The starting residue number of the cluster region.
+    :param last_resnum_cluster: The ending residue number of the cluster region.
+    :param first_resnum: The first residue number in the sequence.
+    :return: The average B-factor for the region.
+    """
+    bfactors = []
+    with open(file=crd_file, mode="r", encoding="utf8") as infile:
+        for line in infile:
+            words = line.split()
+            if len(words) >= 10 and is_float(words[9]) and not words[0].startswith("*"):
+                bfactor = words[9]
+                resnum = words[1]
+
+                if (
+                    float(bfactor)
+                    > 0.0  # Ensure only B-factors greater than 0.0 are considered
+                    and bfactor.replace(".", "", 1).isdigit()
+                    and int(resnum) >= first_resnum_cluster + first_resnum
+                    and int(resnum) <= last_resnum_cluster + first_resnum
+                ):
+                    bfactors.append(float(bfactor))
+
+    if bfactors:
+        return sum(bfactors) / len(bfactors)
+    else:
+        return 0.0  # Or handle this case as needed
+
+
+def identify_new_rigid_domain(
+    crd_file, first_resnum_cluster, last_resnum_cluster, first_resnum
+):
+    """
+    Identify and return a new rigid domain as a tuple of (start_residue, end_residue, segment_id).
+
+    :param crd_file: Path to the CRD file.
+    :param first_resnum_cluster: The starting residue number of the cluster region.
+    :param last_resnum_cluster: The ending residue number of the cluster region.
+    :param first_resnum: The first residue number in the sequence.
+    :return: A tuple (start_residue, end_residue, segment_id) representing the new rigid domain, or None if not found.
+    """
+    str1 = str2 = segid = None
+    with open(file=crd_file, mode="r", encoding="utf8") as infile:
+        for line in infile:
+            words = line.split()
+            if len(words) >= 10 and is_float(words[9]) and not words[0].startswith("*"):
+                resnum = int(words[1])
+                if resnum == first_resnum_cluster + first_resnum:
+                    str1 = int(words[8])
+                elif resnum == last_resnum_cluster + first_resnum:
+                    str2 = int(words[8])
+                    segid = words[7]
+
+    if str1 is not None and str2 is not None and segid is not None:
+        return (str1, str2, segid)
+    return None
+
+
+def define_rigid_bodies(
+    clusters: list, crd_file: str, first_resnum: int, chain_segment_list: list
 ) -> list:
     """
-    Define a rigid cluster
+    Define all Rigid Domains
+
+    note:
+    Rigid Bodies contain one of more Rigid Domains
+    Rigid Domains are defined by a tuple of (start_residue, end_residue, segment_id)
     """
-    # print(chain_segment_list)
-    rb = []
-    for idx, cluster in enumerate(cluster_list):
-        pairs = []
+    # print(f"chain_segment_list: {chain_segment_list}")
+    # print(f"first_resnum: {first_resnum}")
+    # print(f"clusters: {clusters}")
+    rigid_bodies = []
+    for _, cluster in enumerate(clusters):
+        rigid_body = []
         if len(cluster) >= MIN_CLUSTER_LENGTH:
-            print(f"cluster{idx} len: {len(cluster)}: {cluster}")
-            numbers = [int(num) for num in cluster]
-            # print(f"{len(cluster)} - {numbers}")
-            consecutive_regions = separate_into_regions(
-                numbers, chain_segment_list)
-            # consecutive_regions = separate_into_regions(numbers)
-            for region in consecutive_regions:
+            sorted_cluster = sort_and_separate_cluster(cluster, chain_segment_list)
+            for region in sorted_cluster:
                 first_resnum_cluster = region[0]
                 last_resnum_cluster = region[-1]
-                # check which rigid domains are rigid and
-                # which are flexbible based on avearge Bfactor
-                bfactors = []
-                with open(file=crd_file, mode="r", encoding="utf8") as infile:
-                    for line in infile:
-                        words = line.split()
-                        if (
-                            len(words) >= 10
-                            and is_float(words[9])
-                            and not words[0].startswith("*")
-                        ):
-                            if float(words[9]) > 0.0:
-                                bfactor = words[9]
-                                resnum = words[1]
 
-                                if (
-                                    bfactor.replace(".", "", 1).isdigit()
-                                    and (
-                                        int(resnum)
-                                        >= first_resnum_cluster + first_resnum
-                                    )
-                                    and (
-                                        int(resnum)
-                                        <= last_resnum_cluster + first_resnum
-                                    )
-                                ):
-                                    bfactors.append(float(bfactor))
-                # print(f"bfactor list is {len(bfactors)}")
-                bfactor_avg = sum(bfactors) / len(bfactors)
+                # Calculate the average B-factor for the current region
+                bfactor_avg = calculate_bfactor_avg_for_region(
+                    crd_file, first_resnum_cluster, last_resnum_cluster, first_resnum
+                )
 
+                # If the average B-factor is above the threshold, identify a new rigid domain
                 if bfactor_avg > B_THRESHOLD:
-                    with open(file=crd_file, mode="r", encoding="utf8") as infile:
-                        for line in infile:
-                            words = line.split()
-                            if (
-                                len(words) >= 10
-                                and is_float(words[9])
-                                and not words[0].startswith("*")
-                            ):
-                                if int(words[1]) == first_resnum_cluster + first_resnum:
-                                    str1 = int(words[8])
-                                elif (
-                                    int(words[1]) == last_resnum_cluster +
-                                        first_resnum
-                                ):
-                                    str2 = int(words[8])
-                                    segid = words[7]
+                    new_rigid_domain = identify_new_rigid_domain(
+                        crd_file,
+                        first_resnum_cluster,
+                        last_resnum_cluster,
+                        first_resnum,
+                    )
+                    if new_rigid_domain:
+                        print(
+                            f"New Rigid Domain: {new_rigid_domain} pLDDT: {round(bfactor_avg, 2)}"
+                        )
+                        rigid_body.append(new_rigid_domain)
+            rigid_bodies.append(rigid_body)
 
-                    new_pair = (str1, str2, segid)
-                    print(f"new_pair: {new_pair} pLDDT: {bfactor_avg}")
-                    pairs.append(new_pair)
-            rb.append(pairs)
-    print(f"1-RBs: {rb}")
+    # remove empty lists from our list of lists of tuples
+    all_non_empty_rigid_bodies = [cluster for cluster in rigid_bodies if cluster]
+    print(f"Rigid Bodies: {all_non_empty_rigid_bodies}")
 
-    # Optimizing Rigid Bodies with a minimum gap
-    rigid_body_optimized = []
-    for i_clus, cluster in enumerate(rb):
-        if not cluster:  # Skip empty clusters
-            continue
-        cluster_optimized = []
-        for i, pair in enumerate(cluster):
-            # Copy the pair to avoid mutating the original while iterating
-            pair = list(pair)
-            print(f"{i_clus} pair: {pair}")
-            if i < len(cluster) - 1:  # If not the last pair in the cluster
-                next_pair = cluster[i + 1]
-                if pair[2] == next_pair[2]:  # If in the same segment
-                    gap = next_pair[0] - pair[1] - 1
-                    print(f"i: {i} gap: {gap} pair: {pair}")
-                    if gap < 2:  # If the gap is less than 3 residues
-                        # Adjust the end residue of the current pair to enforce the gap
-                        pair[1] = next_pair[0] - 3
-            cluster_optimized.append(tuple(pair))
-        rigid_body_optimized.append(cluster_optimized)
-
-    # Removing empty lists is already handled by the check for empty clusters
-    rigid_body_optimized = [
-        cluster for cluster in rigid_body_optimized if cluster]
-
-    print(f"2-RBs: {rigid_body_optimized}")
+    # Now we need to make sure that none of the Rigid Domains (defined as tuples) are
+    # adjacent to each other, and if they are, we need to adjust the start and end so
+    # that we establish a 2 residue gap between them.
+    updated = True
+    while updated:
+        updated, rigid_body_optimized = find_and_update_sequential_rigid_domains(
+            all_non_empty_rigid_bodies
+        )
+    print(f"Optimized Rigid Bodies: {all_non_empty_rigid_bodies}")
     return rigid_body_optimized
 
 
@@ -341,8 +473,7 @@ def write_const_file(rigid_body_list: list, output_file):
                     )
                     if n == len(rigid_body):
                         dock_count += 1
-                        const_file.write(
-                            f"shape desc dock{dock_count} rigid sele ")
+                        const_file.write(f"shape desc dock{dock_count} rigid sele ")
                         for number in range(1, n):
                             const_file.write(f"rigid{number} .or. ")
                         const_file.write(f"rigid{n} end \n")
@@ -356,21 +487,18 @@ if __name__ == "__main__":
         description="Extract PAE matrix for interacxtive region from an AlphaFold PAE matrix."
     )
 
-    parser.add_argument("pae_file",
-                        type=str,
-                        help="Name of the PAE JSON file.")
-    parser.add_argument("crd_file",
-                        type=str,
-                        help="Name of the CRD file.")
-    parser.add_argument("--pae_power",
-                        type=float,
-                        help="PAE power used to weight the cluster_leiden() function",
-                        default=2.0)
+    parser.add_argument("pae_file", type=str, help="Name of the PAE JSON file.")
+    parser.add_argument("crd_file", type=str, help="Name of the CRD file.")
+    parser.add_argument(
+        "--pae_power",
+        type=float,
+        help="PAE power used to weight the cluster_leiden() function",
+        default=2.0,
+    )
 
     args = parser.parse_args()
 
-    first_residue, last_residue = get_first_and_last_residue_numbers(
-        args.crd_file)
+    first_residue, last_residue = get_first_and_last_residue_numbers(args.crd_file)
     # print(f"first_residue: {first_residue} last_residues: {last_residue}")
 
     # define_segments is used to define breakpoint between PROA-PROB-PROC etc.
@@ -388,12 +516,12 @@ if __name__ == "__main__":
 
     correct_json_brackets(args.pae_file, TEMP_FILE_JSON)
 
-    print(
-        f"row_start: {SELECTED_ROWS_START}\n"
-        f"row_end:{SELECTED_ROWS_END}\n"
-        f"col_start:{SELECTED_COLS_START}\n"
-        f"col_end:{SELECTED_COLS_END}\n"
-    )
+    # print(
+    #     f"row_start: {SELECTED_ROWS_START}\n"
+    #     f"row_end:{SELECTED_ROWS_END}\n"
+    #     f"col_start:{SELECTED_COLS_START}\n"
+    #     f"col_end:{SELECTED_COLS_END}\n"
+    # )
     pae_clusters = define_clusters_for_selected_pae(
         TEMP_FILE_JSON,
         SELECTED_ROWS_START,
@@ -403,9 +531,9 @@ if __name__ == "__main__":
     )
     # print(f"pae_clusters: {pae_clusters}")
 
-    rigid_body_clusters = define_rigid_clusters(
+    rigid_bodies_from_pae = define_rigid_bodies(
         pae_clusters, args.crd_file, first_residue, chain_segments
     )
 
-    write_const_file(rigid_body_clusters, CONST_FILE_PATH)
-    print("done")
+    write_const_file(rigid_bodies_from_pae, CONST_FILE_PATH)
+    print("------------- done -------------")

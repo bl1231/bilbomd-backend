@@ -44,13 +44,13 @@ const createNewConstFile = async (req: Request, res: Response) => {
     ])(req, res, async (err) => {
       if (err) {
         logger.error(err)
-        return res.status(500).json({ message: 'Failed to upload one or more files' })
+        res.status(500).json({ message: 'Failed to upload one or more files' })
       }
       try {
         const { email, pae_power } = req.body
         const user = await User.findOne({ email }).exec()
         if (!user) {
-          return res.status(401).json({ message: 'No user found with that email' })
+          res.status(401).json({ message: 'No user found with that email' })
         }
         const files = req.files as { [fieldname: string]: Express.Multer.File[] }
         const pdbFileName =
@@ -90,15 +90,22 @@ const createNewConstFile = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error(error)
-    return res.status(500).json({ message: 'Failed to create job directory' })
+    logger.error(`Failed to create job directory: ${error}`)
+    res.status(500).json({ message: 'Failed to create job directory' })
   }
 }
 
 const downloadConstFile = async (req: Request, res: Response) => {
   const { uuid } = req.query
-  if (!uuid) return res.status(400).json({ message: 'Job UUID required.' })
+  // Check if uuid is provided
+  if (!uuid || typeof uuid !== 'string') {
+    res.status(400).json({ message: 'Job UUID required.' })
+    return // Stop execution if uuid is missing or invalid
+  }
   logger.info(`Request to download ${uuid}`)
+  if (!uuid) {
+    res.status(400).json({ message: 'Job UUID required.' })
+  }
   const constFile = path.join(uploadFolder, uuid.toString(), 'const.inp')
   try {
     await fs.promises.access(constFile)
@@ -111,7 +118,7 @@ const downloadConstFile = async (req: Request, res: Response) => {
     })
   } catch (error) {
     logger.error(`No ${constFile} available. ${error}`)
-    return res.status(500).json({ message: `No ${constFile} available.` })
+    res.status(500).json({ message: `No ${constFile} available.` })
   }
 }
 

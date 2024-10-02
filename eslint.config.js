@@ -1,7 +1,6 @@
 import pluginJs from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import jestPlugin from 'eslint-plugin-jest'
-import importPlugin from 'eslint-plugin-import'
 
 export default [
   { files: ['**/*.{ts}'] },
@@ -10,8 +9,7 @@ export default [
   { ignores: ['dist/*', 'build/*', 'test/*'] },
   {
     plugins: {
-      jest: jestPlugin,
-      import: importPlugin
+      jest: jestPlugin
     }
   },
   {
@@ -20,18 +18,18 @@ export default [
       'jest/no-focused-tests': 'error',
       'jest/no-identical-title': 'error',
       'jest/prefer-to-have-length': 'warn',
-      'jest/valid-expect': 'error',
-      'import/extensions': [
-        'error',
-        'ignorePackages',
-        {
-          js: 'always',
-          jsx: 'always',
-          ts: 'always',
-          tsx: 'always',
-          mjs: 'always'
-        }
-      ]
+      'jest/valid-expect': 'error'
+      // 'import/extensions': [
+      //   'error',
+      //   'ignorePackages',
+      //   {
+      //     js: 'always',
+      //     jsx: 'always',
+      //     ts: 'always',
+      //     tsx: 'always',
+      //     mjs: 'always'
+      //   }
+      // ]
     }
   }
 ]

@@ -3,6 +3,7 @@ import { config } from '../config/config.js'
 import mongoose from 'mongoose'
 import multer from 'multer'
 import fs from 'fs-extra'
+import os from 'os'
 import readline from 'readline'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
@@ -24,13 +25,15 @@ import {
   BilboMdAutoJob,
   IBilboMDAutoJob,
   BilboMdScoperJob,
-  IBilboMDScoperJob
+  IBilboMDScoperJob,
+  IBilboMDAlphaFoldJob,
+  IBilboMDSANSJob
 } from '@bl1231/bilbomd-mongodb-schema'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
-import { BilboMDScoperSteps, BilboMDSteps } from 'types/bilbomd.js'
-import { BilboMDJob, BilboMDBullMQ } from 'types/bilbomd.js'
+import { BilboMDScoperSteps, BilboMDSteps } from '../types/bilbomd.js'
+import { BilboMDJob, BilboMDBullMQ } from '../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -40,54 +43,13 @@ type AutoRgResults = {
   rg_max: number
 }
 
-/**
- * @openapi
- * /jobs:
- *   get:
- *     summary: Get All Jobs
- *     description: Retrieves a list of all jobs, including details from both MongoDB and BullMQ.
- *     tags:
- *       - Job Management
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved a list of jobs.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   mongo:
- *                     $ref: '#/components/schemas/Jobs'
- *                   bullmq:
- *                     type: object
- *                     description: BullMQ job details. Structure depends on the job type.
- *                   username:
- *                     type: string
- *                     description: Username of the user associated with the job.
- *       204:
- *         description: No jobs found. Returns an empty response.
- *       500:
- *         description: Internal Server Error - Unable to retrieve jobs.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *                   example: 'Internal Server Error - getAllJobs'
- */
 const getAllJobs = async (req: Request, res: Response) => {
   try {
     const DBjobs: Array<IJob> = await Job.find().lean()
 
     if (!DBjobs?.length) {
-      return res.status(204).json({})
+      res.status(204).json({})
+      return
     }
 
     const bilboMDJobs = await Promise.all(
@@ -118,111 +80,6 @@ const getAllJobs = async (req: Request, res: Response) => {
   }
 }
 
-/**
- * @openapi
- * /jobs:
- *   post:
- *     summary: Create a New Job
- *     description: Creates a new job with various files and job type specifications.
- *     tags:
- *       - Job Management
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email of the user creating the job.
- *               bilbomd_mode:
- *                 type: string
- *                 description: Type of job to create.
- *               psf_file:
- *                 type: string
- *                 format: binary
- *                 description: PSF file for the job.
- *               pdb_file:
- *                 type: string
- *                 format: binary
- *                 description: PDB file for the job.
- *               crd_file:
- *                 type: string
- *                 format: binary
- *                 description: CRD file for the job.
- *               constinp:
- *                 type: string
- *                 format: binary
- *                 description: Constraint input file.
- *               const_file:
- *                 type: string
- *                 format: binary
- *                 description: Constraint file for the job.
- *               inp_file:
- *                 type: string
- *                 format: binary
- *                 description: Input file for the job.
- *               expdata:
- *                 type: string
- *                 format: binary
- *                 description: Experimental data file.
- *               dat_file:
- *                 type: string
- *                 format: binary
- *                 description: DAT file for the job.
- *               pae_file:
- *                 type: string
- *                 format: binary
- *                 description: PAE file for the job.
- *             required:
- *               - email
- *               - bilbomd_mode
- *     responses:
- *       201:
- *         description: Job created successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: string
- *                   description: Success message indicating job creation.
- *       400:
- *         description: Bad request due to missing fields or invalid job type.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message detailing the issue with the request.
- *       401:
- *         description: Unauthorized request due to no user found with the provided email.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating no user found.
- *       500:
- *         description: Internal server error due to issues creating the job.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message detailing the server issue.
- */
 const createNewJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, UUID)
@@ -250,7 +107,6 @@ const createNewJob = async (req: Request, res: Response) => {
       { name: 'pdb_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
       { name: 'constinp', maxCount: 1 },
-      { name: 'const_file', maxCount: 1 },
       { name: 'inp_file', maxCount: 1 },
       { name: 'expdata', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
@@ -277,7 +133,7 @@ const createNewJob = async (req: Request, res: Response) => {
 
         if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
           logger.info(`about to handleBilboMDJob ${req.body.bilbomd_mode}`)
-          await handleBilboMDJob(req, res, user, UUID)
+          await handleBilboMDJob(req, res, user, UUID, jobDir)
         } else if (bilbomd_mode === 'auto') {
           logger.info('about to handleBilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, user, UUID)
@@ -303,7 +159,8 @@ const handleBilboMDJob = async (
   req: Request,
   res: Response,
   user: IUser,
-  UUID: string
+  UUID: string,
+  jobDir: string
 ) => {
   try {
     const { bilbomd_mode: bilbomdMode } = req.body
@@ -313,6 +170,15 @@ const handleBilboMDJob = async (
 
     const constInpFile = files['constinp'][0].originalname.toLowerCase()
     const dataFile = files['expdata'][0].originalname.toLowerCase()
+
+    // Rename the original constinp file to create a backup
+    const constInpFilePath = path.join(jobDir, constInpFile)
+    const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
+
+    await fs.copyFile(constInpFilePath, constInpOrigFilePath)
+
+    // Sanitize the uploaded file (constInpFilePath)
+    await sanitizeConstInpFile(constInpFilePath)
 
     const jobData = {
       title: req.body.title,
@@ -327,8 +193,6 @@ const handleBilboMDJob = async (
       user: user,
       steps: {
         pdb2crd: {},
-        pae: {},
-        autorg: {},
         minimize: {},
         initfoxs: {},
         heat: {},
@@ -584,25 +448,24 @@ const updateJobStatus = async (req: Request, res: Response) => {
 
   // Confirm data
   if (!id || !email || !status) {
-    return res.status(400).json({ message: 'All fields are required' })
+    res.status(400).json({ message: 'All fields are required' })
   }
 
   // Confirm job exists to update
   const job = await Job.findById(id).exec()
 
   if (!job) {
-    return res.status(400).json({ message: 'Job not found' })
+    res.status(400).json({ message: 'Job not found' })
+    return
   }
 
   // Check current status
   if (job.status == status) {
-    return res
-      .status(400)
-      .json({ message: `nothing to do - status already ${job.status}` })
+    res.status(400).json({ message: `nothing to do - status already ${job.status}` })
   }
 
   if (job.status == status) {
-    return res.status(400).json({ message: 'nothing to do' })
+    res.status(400).json({ message: 'nothing to do' })
   }
 
   // Go ahead and update status
@@ -613,78 +476,63 @@ const updateJobStatus = async (req: Request, res: Response) => {
   res.json(`'${updatedJob.title}' updated`)
 }
 
-/**
- * @openapi
- * /jobs/{id}:
- *   delete:
- *     summary: Delete a Job
- *     description: Deletes a specific job by its ID, along with any associated files on disk.
- *     tags:
- *       - Job Management
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Unique identifier of the job to be deleted.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Job and associated resources successfully deleted.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 reply:
- *                   type: string
- *                   description: Confirmation message of the job deletion.
- *       400:
- *         description: Job ID not provided or job not found in the database.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating either a missing job ID or that the job could not be found.
- *       404:
- *         description: Directory associated with the job not found on disk or no job was deleted because it didn't exist.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating the directory for the job was not found or no job was found to delete.
- *       500:
- *         description: Error occurred during the deletion process, either with database deletion or directory removal.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message detailing the server-side issue encountered during deletion.
- */
+const sanitizeConstInpFile = async (filePath: string): Promise<void> => {
+  const fileContents = await fs.readFile(filePath, 'utf-8')
+  const lines = fileContents.split('\n')
+  const sanitizedLines: string[] = []
+
+  for (const line of lines) {
+    if (line.length > 78) {
+      const wrappedLines = wrapLine(line)
+      sanitizedLines.push(...wrappedLines)
+    } else {
+      sanitizedLines.push(line)
+    }
+  }
+
+  const sanitizedContent = sanitizedLines.join('\n')
+  await fs.writeFile(filePath, sanitizedContent, 'utf-8')
+}
+
+const wrapLine = (line: string): string[] => {
+  const words = line.split(/\s+/)
+  const wrappedLines: string[] = []
+  let currentLine = ''
+
+  for (const word of words) {
+    if ((currentLine + word).length > 78) {
+      wrappedLines.push(currentLine.trim() + ' -')
+      currentLine = word + ' '
+    } else {
+      currentLine += word + ' '
+    }
+  }
+
+  if (currentLine.trim().length > 0) {
+    wrappedLines.push(
+      currentLine.trim().endsWith('end')
+        ? currentLine.trim()
+        : currentLine.trim() + ' end'
+    )
+  }
+
+  return wrappedLines
+}
+
 const deleteJob = async (req: Request, res: Response) => {
   const { id } = req.params
 
   // Confirm that client sent id
   if (!id) {
-    return res.status(400).json({ message: 'Job ID required' })
+    res.status(400).json({ message: 'Job ID required' })
   }
 
   // Find the job to delete
   const job = await Job.findById(id).exec()
 
   if (!job) {
-    return res.status(400).json({ message: 'Job not found' })
+    res.status(400).json({ message: 'Job not found' })
+    return
   }
 
   // Delete the job from MongoDB
@@ -692,7 +540,7 @@ const deleteJob = async (req: Request, res: Response) => {
 
   // Check if a document was actually deleted
   if (deleteResult.deletedCount === 0) {
-    return res.status(404).json({ message: 'No job was deleted' })
+    res.status(404).json({ message: 'No job was deleted' })
   }
 
   // Remove from disk
@@ -701,7 +549,7 @@ const deleteJob = async (req: Request, res: Response) => {
     // Check if the directory exists and remove it
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
-      return res.status(404).json({ message: 'Directory not found on disk' })
+      res.status(404).json({ message: 'Directory not found on disk' })
     }
     // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
     // because there are dangles NFS lock files present.
@@ -754,83 +602,10 @@ const deleteJob = async (req: Request, res: Response) => {
   res.status(200).json({ reply })
 }
 
-/**
- * @openapi
- * /jobs/{id}:
- *   get:
- *     summary: Get Job by ID
- *     description: Retrieves detailed information about a specific job, including its status and results, if available.
- *     tags:
- *       - Job Management
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The unique identifier of the job.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Successfully retrieved job details.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                   description: The job's unique ID.
- *                 mongo:
- *                   $ref: '#/components/schemas/Job'  # Assuming you define a Job schema in the components section
- *                 bullmq:
- *                   type: object
- *                   description: Optional. Details from BullMQ about the job's execution.
- *                 classic:
- *                   type: object
- *                   description: Optional. Specific details for classic BilboMD jobs.
- *                 auto:
- *                   type: object
- *                   description: Optional. Specific details for auto BilboMD jobs.
- *                 scoper:
- *                   type: object
- *                   description: Optional. Status information for Scoper jobs.
- *       400:
- *         description: Bad request due to missing job ID.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating that the job ID is required.
- *       404:
- *         description: No job matches the provided ID.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating no job found with the provided ID.
- *       500:
- *         description: Failed to retrieve job due to an internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message detailing the issue encountered.
- */
 const getJobById = async (req: Request, res: Response) => {
   const jobId = req.params.id
   if (!jobId) {
-    return res.status(400).json({ message: 'Job ID required.' })
+    res.status(400).json({ message: 'Job ID required.' })
   }
 
   try {
@@ -839,18 +614,28 @@ const getJobById = async (req: Request, res: Response) => {
       | IBilboMDCRDJob
       | IBilboMDAutoJob
       | IBilboMDScoperJob
+      | IBilboMDAlphaFoldJob
+      | IBilboMDSANSJob
 
     if (!job) {
-      return res.status(404).json({ message: `No job matches ID ${jobId}.` })
+      res.status(404).json({ message: `No job matches ID ${jobId}.` })
     }
 
-    const jobDir = path.join(uploadFolder, job.uuid, 'results')
+    // const jobDir = path.join(uploadFolder, job.uuid, 'results')
+    const jobDir = path.join(uploadFolder, job.uuid)
 
     let bullmq: BilboMDBullMQ | undefined
+
     // Instantiate a bilbomdJob object with id and MongoDB info
     const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
-    if (job.__t === 'BilboMdPDB' || job.__t === 'BilboMdCRD' || job.__t === 'BilboMd') {
+    // The goal is to eventually use the job-specific object to store results needed for the front end
+    if (
+      job.__t === 'BilboMdPDB' ||
+      job.__t === 'BilboMdCRD' ||
+      job.__t === 'BilboMd' ||
+      job.__t === 'BilboMdSANS'
+    ) {
       bullmq = await getBullMQJob(job.uuid)
       if (bullmq && 'bilbomdStep' in bullmq) {
         bilbomdJob.bullmq = bullmq
@@ -867,6 +652,12 @@ const getJobById = async (req: Request, res: Response) => {
           bullmq.bilbomdStep as BilboMDSteps,
           jobDir
         )
+      }
+    } else if (job.__t === 'BilboMdAlphaFold') {
+      bullmq = await getBullMQJob(job.uuid)
+      if (bullmq) {
+        bilbomdJob.bullmq = bullmq
+        bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
       }
     } else if (job.__t === 'BilboMdScoper') {
       const scoperJob = job as IBilboMDScoperJob
@@ -888,31 +679,89 @@ const calculateNumEnsembles = async (
   bilbomdStep: BilboMDSteps,
   jobDir: string
 ): Promise<BilboMDSteps> => {
+  let numEnsembles = 0
+
+  // Define the results directory
+  const resultsDir = path.join(jobDir, 'results')
+
+  // Check if the results directory exists
   try {
-    const files = await fs.promises.readdir(jobDir)
+    await fs.promises.access(resultsDir, fs.constants.F_OK)
+  } catch {
+    // Log as info since it's normal that the directory might not exist yet
+    logger.info(`Results directory does not exist: ${resultsDir}`)
+    return {
+      ...bilbomdStep,
+      numEnsembles: 0 // Return 0 if the results folder is missing
+    }
+  }
+
+  // Proceed to scan the results directory if it exists
+  try {
+    const files = await fs.promises.readdir(resultsDir)
+    const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
+    const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
+    numEnsembles = ensembleFiles.length // Number of ensemble files found
+  } catch (error) {
+    logger.error(`calculateNumEnsembles Error reading directory: ${error}`)
+  }
+
+  return {
+    ...bilbomdStep,
+    numEnsembles: numEnsembles
+  }
+}
+
+const calculateNumEnsembles2 = async (
+  jobDir: string
+): Promise<{ numEnsembles: number; message?: string }> => {
+  const dirToScan = path.join(jobDir, 'results')
+
+  // Check if the results directory exists
+  try {
+    await fs.promises.access(dirToScan, fs.constants.F_OK)
+  } catch {
+    // Log as info since it's expected that the directory might not exist yet
+    logger.info(`Results directory does not exist: ${dirToScan}`)
+    return {
+      numEnsembles: 0,
+      message: 'Results directory not found yet.'
+    }
+  }
+
+  // Proceed to scan the results directory if it exists
+  try {
+    const files = await fs.promises.readdir(dirToScan)
     const ensemblePdbFilePattern = /ensemble_size_\d+_model\.pdb$/
     const ensembleFiles = files.filter((file) => ensemblePdbFilePattern.test(file))
     const numEnsembles = ensembleFiles.length
 
+    if (numEnsembles === 0) {
+      return {
+        numEnsembles: 0,
+        message: 'No ensemble files found yet.'
+      }
+    }
+
     return {
-      ...bilbomdStep,
       numEnsembles: numEnsembles
     }
   } catch (error) {
-    logger.info(`calculateNumEnsembles Error: ${error}`)
+    logger.error(`calculateNumEnsembles2 Error reading directory: ${error}`)
     return {
-      ...bilbomdStep,
-      numEnsembles: 0
+      numEnsembles: 0,
+      message: 'Error reading directory or no files found.'
     }
   }
 }
 
 const downloadJobResults = async (req: Request, res: Response) => {
-  if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
+  if (!req?.params?.id) res.status(400).json({ message: 'Job ID required.' })
 
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {
-    return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    return
   }
 
   const outputFolder = path.join(uploadFolder, job.uuid)
@@ -925,9 +774,9 @@ const downloadJobResults = async (req: Request, res: Response) => {
     await fs.promises.access(defaultResultFile)
     const filename = path.basename(defaultResultFile) // Extract filename for setting Content-Disposition
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    return res.download(defaultResultFile, filename, (err) => {
+    res.download(defaultResultFile, filename, (err) => {
       if (err) {
-        return res.status(500).json({
+        res.status(500).json({
           message: 'Could not download the file: ' + err
         })
       }
@@ -939,9 +788,9 @@ const downloadJobResults = async (req: Request, res: Response) => {
       await fs.promises.access(newResultFile)
       const filename = path.basename(newResultFile) // Extract new filename for setting Content-Disposition
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-      return res.download(newResultFile, filename, (err) => {
+      res.download(newResultFile, filename, (err) => {
         if (err) {
-          return res.status(500).json({
+          res.status(500).json({
             message: 'Could not download the file: ' + err
           })
         }
@@ -950,20 +799,21 @@ const downloadJobResults = async (req: Request, res: Response) => {
       logger.error(`Error accessing new result file: ${newFileError}`)
       // If neither file is found, log error and return a message
       logger.error(`No result files available for job ID: ${req.params.id}`)
-      return res.status(500).json({ message: 'No result files available.' })
+      res.status(500).json({ message: 'No result files available.' })
     }
   }
 }
 
 const getLogForStep = async (req: Request, res: Response) => {
-  if (!req?.params?.id) return res.status(400).json({ message: 'Job ID required.' })
+  if (!req?.params?.id) res.status(400).json({ message: 'Job ID required.' })
   // Check if req.params.id is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({ message: 'Invalid Job ID format.' })
+    res.status(400).json({ message: 'Invalid Job ID format.' })
   }
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {
-    return res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+    return
   }
   const step = req.query.step
   let logFile: string = ''
@@ -983,7 +833,7 @@ const getLogForStep = async (req: Request, res: Response) => {
   fs.readFile(logFile, 'utf8', (err, data) => {
     if (err) {
       // Handle any errors that occurred while reading the file
-      return res.status(500).json({ message: 'Error reading log file' })
+      res.status(500).json({ message: 'Error reading log file' })
     }
 
     // Send the log file content in a JSON response
@@ -1200,54 +1050,60 @@ const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const autoRg_script = '/app/scripts/autorg.py'
-  const args = [autoRg_script, 'expdata.dat']
+  const tempOutputFile = path.join(os.tmpdir(), `autoRg_${Date.now()}.json`)
+  const args = [autoRg_script, 'expdata.dat', tempOutputFile]
 
   return new Promise<AutoRgResults>((resolve, reject) => {
     const autoRg: ChildProcess = spawn('python', args, { cwd: dir })
-    let autoRg_json = ''
+
     autoRg.stdout?.on('data', (data: Buffer) => {
       const dataString = data.toString().trim()
+      const suppressMessage = "module 'scipy.integrate' has no attribute 'trapz'"
+
+      // Check if the message should be suppressed
+      if (dataString.includes(suppressMessage)) {
+        logger.info(`Suppressed message: ${suppressMessage}`)
+        return
+      }
+
       logger.info(`spawnAutoRgCalculator stdout: ${dataString}`)
-      logStream.write(dataString)
-      autoRg_json += dataString
+      logStream.write(dataString + '\n')
     })
+
     autoRg.stderr?.on('data', (data: Buffer) => {
-      logger.error(`spawnAutoRgCalculator stderr: ${data.toString()}`)
-      console.log(data)
-      errorStream.write(data.toString())
+      const dataString = data.toString().trim()
+      logger.error(`spawnAutoRgCalculator stderr: ${dataString}`)
+      errorStream.write(dataString + '\n')
     })
+
     autoRg.on('error', (error) => {
       logger.error(`spawnAutoRgCalculator error: ${error}`)
       reject(error)
     })
-    autoRg.on('exit', (code) => {
-      // Close streams explicitly once the process exits
-      const closeStreamsPromises = [
-        new Promise((resolveStream) => logStream.end(resolveStream)),
-        new Promise((resolveStream) => errorStream.end(resolveStream))
-      ]
 
-      Promise.all(closeStreamsPromises)
-        .then(() => {
-          // Only proceed once all streams are closed
-          if (code === 0) {
-            try {
-              const analysisResults = JSON.parse(autoRg_json)
-              logger.info(`spawnAutoRgCalculator success with exit code: ${code}`)
-              resolve(analysisResults)
-            } catch (parseError) {
-              logger.error(`Error parsing analysis results: ${parseError}`)
-              reject(parseError)
-            }
-          } else {
-            logger.error(`spawnAutoRgCalculator error with exit code: ${code}`)
-            reject(new Error(`spawnAutoRgCalculator error with exit code: ${code}`))
-          }
-        })
-        .catch((streamError) => {
-          logger.error(`Error closing file streams: ${streamError}`)
-          reject(streamError)
-        })
+    autoRg.on('exit', async (code) => {
+      // Close streams explicitly once the process exits
+      logStream.end()
+      errorStream.end()
+
+      if (code === 0) {
+        try {
+          const analysisResults = JSON.parse(
+            await fs.promises.readFile(tempOutputFile, 'utf-8')
+          )
+          logger.info(`spawnAutoRgCalculator success with exit code: ${code}`)
+          resolve(analysisResults)
+        } catch (parseError) {
+          logger.error(`Error parsing analysis results: ${parseError}`)
+          reject(parseError)
+        } finally {
+          // Clean up the temporary file
+          // await fs.promises.unlink(tempOutputFile)
+        }
+      } else {
+        logger.error(`spawnAutoRgCalculator error with exit code: ${code}`)
+        reject(new Error(`spawnAutoRgCalculator error with exit code: ${code}`))
+      }
     })
   })
 }
@@ -1262,7 +1118,7 @@ const writeJobParams = async (jobID: string): Promise<void> => {
     // Convert the Mongoose document to a plain object
     const jobObject = job.toObject({ virtuals: true, versionKey: false })
     // Exclude metadata like mongoose versionKey, etc, if necessary
-    delete jobObject.__v // Optionally remove version key if not done globally
+    // delete jobObject.__v // Optionally remove version key if not done globally
 
     // Serialize to JSON with pretty printing
     const jobJson = JSON.stringify(jobObject, null, 2)
@@ -1286,5 +1142,7 @@ export {
   getJobById,
   downloadJobResults,
   getLogForStep,
-  getAutoRg
+  getAutoRg,
+  writeJobParams,
+  sanitizeConstInpFile
 }

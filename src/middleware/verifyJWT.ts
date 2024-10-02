@@ -6,7 +6,8 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = (req.headers.authorization || req.headers.Authorization) as string
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Unauthorized' })
+    res.status(401).json({ message: 'Unauthorized' })
+    return
   }
 
   const token = authHeader.split(' ')[1]
@@ -17,7 +18,8 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
     { algorithms: ['HS256'] },
     (error, decoded) => {
       if (error) {
-        return res.status(403).json({ message: 'Forbidden - ', error })
+        res.status(403).json({ message: 'Forbidden - ', error })
+        return
       }
 
       const userInfo = decoded as { username: string; roles: string[] }
@@ -27,10 +29,11 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
         req.roles = userInfo.roles
         next()
       } else {
-        return res.status(403).json({ message: 'Forbidden - no userInfo' })
+        res.status(403).json({ message: 'Forbidden - no userInfo' })
+        return
       }
     }
   )
 }
 
-export default verifyJWT
+export { verifyJWT }

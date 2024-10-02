@@ -114,7 +114,7 @@ const updateUser = async (req: Request, res: Response) => {
     typeof active !== 'boolean' ||
     !email
   ) {
-    return res.status(400).json({ message: 'All fields are required' })
+    res.status(400).json({ message: 'All fields are required' })
   }
 
   // Does the user exist to update?
@@ -122,7 +122,8 @@ const updateUser = async (req: Request, res: Response) => {
   // logger.info('found user: %s', user)
 
   if (!user) {
-    return res.status(400).json({ message: 'User not found' })
+    res.status(400).json({ message: 'User not found' })
+    return
   }
 
   // Check for duplicate
@@ -133,7 +134,7 @@ const updateUser = async (req: Request, res: Response) => {
 
   // Allow updates to the original user
   if (duplicate && duplicate?._id.toString() !== id) {
-    return res.status(409).json({ message: 'Duplicate username' })
+    res.status(409).json({ message: 'Duplicate username' })
   }
 
   user.username = username
@@ -203,27 +204,28 @@ const deleteUser = async (req: Request, res: Response) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: 'User ID Required' })
+    res.status(400).json({ message: 'User ID Required' })
   }
 
   // Does the user still have assigned jobs?
   const job = await Job.findOne({ user: id }).lean().exec()
   if (job) {
-    return res.status(400).json({ message: 'User has jobs' })
+    res.status(400).json({ message: 'User has jobs' })
   }
 
   // Does the user exist to delete?
   const user = await User.findById(id).exec()
 
   if (!user) {
-    return res.status(400).json({ message: 'User not found' })
+    res.status(400).json({ message: 'User not found' })
+    return
   }
 
   const deleteResult = await user.deleteOne()
 
   // Check if a document was actually deleted
   if (deleteResult.deletedCount === 0) {
-    return res.status(404).json({ message: 'No user was deleted' })
+    res.status(404).json({ message: 'No user was deleted' })
   }
 
   const reply = `Username ${user.username} with ID ${user._id} deleted`
@@ -268,10 +270,10 @@ const deleteUser = async (req: Request, res: Response) => {
  *                   example: "User ID required"
  */
 const getUser = async (req: Request, res: Response) => {
-  if (!req?.params?.id) return res.status(400).json({ message: 'User ID required' })
+  if (!req?.params?.id) res.status(400).json({ message: 'User ID required' })
   const user = await User.findOne({ _id: req.params.id }).lean().exec()
   if (!user) {
-    return res.status(400).json({ message: `User ID ${req.params.id} not found` })
+    res.status(400).json({ message: `User ID ${req.params.id} not found` })
   }
   res.json(user)
 }
