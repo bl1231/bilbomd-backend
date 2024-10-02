@@ -94,6 +94,11 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.12.0
+  - Add BilboMD SANS backend capabilities
+  - Improve the step status granularity
+  - Add scaffolding for Python testing
+  - Refactor autorg.py to write results to a temporary file
 - 1.11.1
   - Add sanitizing function for user uploaded `const.inp` files to ensure no lines longer than 78 characters.
 - 1.11.0

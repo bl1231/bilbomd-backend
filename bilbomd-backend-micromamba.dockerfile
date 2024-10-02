@@ -77,7 +77,7 @@ RUN npm install -g npm@10.8.3
 USER bilbo:bilbomd
 
 # Configure bilbo bash shell for micromamba
-RUN micromamba shell init --shell bash 
+RUN micromamba shell init --shell bash
 
 # Copy package.json and package-lock.json
 COPY --chown=bilbo:bilbomd package*.json .
@@ -85,11 +85,14 @@ COPY --chown=bilbo:bilbomd package*.json .
 # Create .npmrc file using the build argument
 RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /home/bilbo/.npmrc
 
-# Install dependenciesdocker images
+# Install dependencies
 RUN npm ci --no-audit
 
 # Remove .npmrc file for security
 RUN rm /home/bilbo/.npmrc
+
+# Optionally, clean up the environment variable for security
+RUN unset GITHUB_TOKEN
 
 # Copy entire backend app
 COPY --chown=bilbo:bilbomd . .

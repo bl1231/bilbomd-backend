@@ -93,6 +93,31 @@ app.use('/api/v1', v1Router)
 // app.use('/v1/api-docs', express.static('./openapi/v1/swagger_v1.json'))
 // app.use('/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
 
+// Health check route
+// Define the possible MongoDB connection states
+const mongoConnectionStates: { [key: number]: string } = {
+  0: 'disconnected',
+  1: 'connected',
+  2: 'connecting',
+  3: 'disconnecting'
+}
+
+// Health check route
+app.get('/healthcheck', (req: Request, res: Response) => {
+  const mongoState: number = mongoose.connection.readyState
+
+  const healthStatus = {
+    app: 'healthy',
+    mongo: mongoConnectionStates[mongoState] || 'unknown'
+  }
+
+  if (mongoState !== 1) {
+    res.status(503).json(healthStatus) // Return 503 if MongoDB is not connected
+  } else {
+    res.status(200).json(healthStatus) // Return 200 if everything is healthy
+  }
+})
+
 // cron
 new CronJob('11 1 * * *', deleteOldJobs, null, true, 'America/Los_Angeles')
 // job.start()

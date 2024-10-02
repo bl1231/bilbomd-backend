@@ -19,6 +19,7 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
     (error, decoded) => {
       if (error) {
         res.status(403).json({ message: 'Forbidden - ', error })
+        return
       }
 
       const userInfo = decoded as { username: string; roles: string[] }
@@ -29,6 +30,7 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
         next()
       } else {
         res.status(403).json({ message: 'Forbidden - no userInfo' })
+        return
       }
     }
   )
