@@ -20,11 +20,11 @@
     "swagger": "npx ts-node src/openapi/swagger.ts"
   },
   "dependencies": {
-    "@bl1231/bilbomd-mongodb-schema": "^1.2.9",
+    "@bl1231/bilbomd-mongodb-schema": "^1.2.11",
     "@bull-board/api": "^5.23.0",
     "@bull-board/express": "^5.23.0",
     "axios": "^1.7.7",
-    "bullmq": "^5.14.0",
+    "bullmq": "^5.15.0",
     "cookie-parser": "~1.4.6",
     "cors": "^2.8.5",
     "cron": "^3.1.7",
@@ -52,8 +52,8 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/preset-env": "^7.25.4",
+    "@babel/core": "^7.25.7",
+    "@babel/preset-env": "^7.25.7",
     "@jest/globals": "^29.7.0",
     "@shelf/jest-mongodb": "^4.3.2",
     "@types/cookie-parser": "^1.4.7",
