@@ -32,7 +32,7 @@
     "eslint-plugin-jest": "^28.8.3",
     "express": "~4.21.0",
     "express-async-errors": "^3.1.1",
-    "express-rate-limit": "^7.4.0",
+    "express-rate-limit": "^7.4.1",
     "express-winston": "^4.2.0",
     "fs-extra": "^11.2.0",
     "handlebars": "^4.7.8",
