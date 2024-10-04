@@ -23,7 +23,7 @@ const sendVerificationEmail = (email: string, url: string, code: string) => {
       viewEngine: {
         extname: '.handlebars',
         layoutsDir: viewPath,
-        defaultLayout: false,
+        defaultLayout: 'false',
         partialsDir: partialsPath
       },
       viewPath: viewPath,
@@ -60,7 +60,7 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
       viewEngine: {
         extname: '.handlebars',
         layoutsDir: viewPath,
-        defaultLayout: false,
+        defaultLayout: 'false',
         partialsDir: partialsPath
       },
       viewPath: viewPath,
@@ -89,4 +89,62 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
     })
 }
 
-export { sendVerificationEmail, sendMagickLinkEmail }
+// Function to send OTP email using a template
+const sendOtpEmail = (email: string, otp: string) => {
+  logger.info(`Sending OTP email to ${email}$Password is ${otp}`)
+  transporter.use(
+    'compile',
+    hbs({
+      viewEngine: {
+        extname: '.handlebars',
+        layoutsDir: viewPath,
+        defaultLayout: 'false',
+        partialsDir: partialsPath
+      },
+      viewPath: viewPath,
+      extName: '.handlebars'
+    })
+  )
+
+  const mailOptions = {
+    from: user,
+    to: email,
+    subject: 'Your OTP Code',
+    template: 'otp',
+    context: {
+      onetimepasscode: otp
+    }
+  }
+
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      logger.info(`OTP Email sent to ${email} successfully!`)
+    })
+    .catch((error) => {
+      logger.error(`Error sending OTP email: ${error}`)
+    })
+}
+// Function to send OTP email without using a template
+// This function is used for local development
+const sendOtpEmailLocal = (email: string, otp: string) => {
+  logger.info(`Sending OTP email to ${email} and otp is ${otp}`)
+
+  const mailOptions = {
+    from: user,
+    to: email,
+    subject: 'Your OTP Code',
+    text: `Your OTP is: ${otp}`
+  }
+
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      logger.info(`OTP Email sent to ${email} successfully!`)
+    })
+    .catch((error) => {
+      logger.error(`Error sending OTP email: ${error}`)
+    })
+}
+
+export { sendVerificationEmail, sendMagickLinkEmail, sendOtpEmailLocal, sendOtpEmail }
