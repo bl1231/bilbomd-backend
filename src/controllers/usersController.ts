@@ -2,280 +2,319 @@ import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from '../middleware/loggers.js'
 import { Request, Response } from 'express'
+import { sendOtpEmail } from './../config/nodemailerConfig.js'
+import crypto from 'crypto'
 
-/**
- * @openapi
- * /users:
- *   get:
- *     summary: Get all users
- *     description: Retrieve a list of all users.
- *     tags:
- *       - User Management
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: A JSON array of user objects. Returns an empty array if no users are found.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
- *       500:
- *         description: Internal server error. Indicates an unexpected condition encountered on the server.
- */
+// Helper function to validate email format
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+// Helper function to validate username format
+const isValidUsername = (username: string): boolean => {
+  const usernameRegex = /^[a-zA-Z0-9_]+$/
+  return usernameRegex.test(username)
+}
+
 const getAllUsers = async (req: Request, res: Response) => {
   try {
     const users = await User.find().lean()
-    res.json(users)
+    res.json({ success: true, data: users })
   } catch (error) {
-    console.error(error)
     logger.error(error)
-    res.status(500).json({ message: 'Internal server error' })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
-/**
- * @openapi
- * /users:
- *   patch:
- *     summary: Update User
- *     description: Updates an existing user's information.
- *     tags:
- *       - User Management
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       description: User object to update.
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/User'
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The ID of the user to update.
- *         schema:
- *           type: string
- *     responses:
- *       '200':
- *         description: User updated successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Success message.
- *       '400':
- *         description: Bad request. Invalid input or missing fields.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *       '404':
- *         description: User not found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *       '409':
- *         description: Conflict. Duplicate username found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- */
-const updateUser = async (req: Request, res: Response) => {
+const updateUser = async (req: Request, res: Response): Promise<void> => {
   const { id, username, roles, active, email } = req.body
 
-  // Confirm data
-  if (
-    !id ||
-    !username ||
-    !Array.isArray(roles) ||
-    !roles.length ||
-    typeof active !== 'boolean' ||
-    !email
-  ) {
-    res.status(400).json({ message: 'All fields are required' })
+  // Validate inputs
+  if (!id) {
+    res.status(400).json({ success: false, message: 'User ID is required' })
+    return
   }
-
-  // Does the user exist to update?
-  const user = await User.findById(id).exec()
-  // logger.info('found user: %s', user)
-
-  if (!user) {
-    res.status(400).json({ message: 'User not found' })
+  if (!username || !isValidUsername(username)) {
+    res.status(400).json({ success: false, message: 'Invalid username format' })
+    return
+  }
+  if (!Array.isArray(roles) || !roles.length) {
+    res.status(400).json({ success: false, message: 'Roles are required' })
+    return
+  }
+  if (typeof active !== 'boolean') {
+    res.status(400).json({ success: false, message: 'Active status is required' })
+    return
+  }
+  if (!email || !isValidEmail(email)) {
+    res.status(400).json({ success: false, message: 'Invalid email format' })
     return
   }
 
-  // Check for duplicate
-  const duplicate = await User.findOne({ username })
-    .collation({ locale: 'en', strength: 2 })
-    .lean()
-    .exec()
+  try {
+    const user = await User.findById(id).exec()
 
-  // Allow updates to the original user
-  if (duplicate && duplicate?._id.toString() !== id) {
-    res.status(409).json({ message: 'Duplicate username' })
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
+    }
+
+    const duplicate = await User.findOne({ username })
+      .collation({ locale: 'en', strength: 2 })
+      .lean()
+      .exec()
+
+    if (duplicate && duplicate?._id.toString() !== id) {
+      res.status(409).json({ success: false, message: 'Duplicate username' })
+      return
+    }
+
+    user.username = username
+    user.roles = roles
+    user.active = active
+    user.email = email
+
+    const updatedUser = await user.save()
+
+    res.status(200).json({ success: true, message: `${updatedUser.username} updated` })
+  } catch (error) {
+    logger.error(error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
-
-  user.username = username
-  user.roles = roles
-  user.active = active
-  user.email = email
-
-  const updatedUser = await user.save()
-
-  res.status(200).json({ message: `${updatedUser.username} updated` })
 }
 
-/**
- * @openapi
- * /users/{id}:
- *   delete:
- *     summary: Delete a user
- *     description: Deletes a user by ID. Fails if the user has assigned jobs or if the user does not exist.
- *     tags:
- *       - User Management
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The unique identifier of the user to delete.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User deleted successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Confirmation message of deletion.
- *                   example: "Username johndoe with ID 12345 deleted"
- *       400:
- *         description: User ID not provided or user has assigned jobs and cannot be deleted.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *                   example: "User ID Required"
- *       404:
- *         description: User not found or no user was deleted.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *                   example: "User not found"
- */
-const deleteUser = async (req: Request, res: Response) => {
+const deleteUserById = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params
 
-  // Confirm data
   if (!id) {
-    res.status(400).json({ message: 'User ID Required' })
-  }
-
-  // Does the user still have assigned jobs?
-  const job = await Job.findOne({ user: id }).lean().exec()
-  if (job) {
-    res.status(400).json({ message: 'User has jobs' })
-  }
-
-  // Does the user exist to delete?
-  const user = await User.findById(id).exec()
-
-  if (!user) {
-    res.status(400).json({ message: 'User not found' })
+    res.status(400).json({ success: false, message: 'User ID is required' })
     return
   }
 
-  const deleteResult = await user.deleteOne()
+  try {
+    const job = await Job.findOne({ user: id }).lean().exec()
+    if (job) {
+      res.status(400).json({ success: false, message: 'User has jobs' })
+      return
+    }
 
-  // Check if a document was actually deleted
-  if (deleteResult.deletedCount === 0) {
-    res.status(404).json({ message: 'No user was deleted' })
+    const user = await User.findById(id).exec()
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
+    }
+
+    const deleteResult = await user.deleteOne()
+
+    if (deleteResult.deletedCount === 0) {
+      res.status(404).json({ success: false, message: 'No user was deleted' })
+      return
+    }
+
+    const reply = `Username ${user.username} with ID ${user._id} deleted`
+
+    res.status(200).json({ success: true, message: reply })
+  } catch (error) {
+    logger.error(error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
+}
+const deleteUserByUsername = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const username = req.params.username
+    if (!username || !isValidUsername(username)) {
+      res.status(400).json({ success: false, message: 'Invalid username format' })
+      return
+    }
 
-  const reply = `Username ${user.username} with ID ${user._id} deleted`
+    const user = await User.findOne({ username }).exec()
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
+    }
 
-  res.status(200).json({ message: reply })
+    const job = await Job.findOne({ user: user._id }).lean().exec()
+    if (job) {
+      res.status(409).json({ success: false, message: 'User has assigned jobs' })
+      return
+    }
+
+    const deleteResult = await user.deleteOne()
+    if (deleteResult.deletedCount === 0) {
+      res.status(500).json({ success: false, message: 'Failed to delete user' })
+      return
+    }
+
+    const reply = `User ${user.username} with ID ${user._id} deleted`
+    res.status(200).json({ success: true, message: reply })
+  } catch (error) {
+    logger.error('Error during user deletion:', error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
+  }
 }
 
-/**
- * @openapi
- * /users/{id}:
- *   get:
- *     summary: Get User by ID
- *     description: Retrieves detailed information about a user by their unique identifier.
- *     tags:
- *       - User Management
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Unique identifier of the user to retrieve.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User found and returned successfully.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       400:
- *         description: User ID not provided or user with specified ID not found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating the user ID was not provided or not found.
- *                   example: "User ID required"
- */
-const getUser = async (req: Request, res: Response) => {
-  if (!req?.params?.id) res.status(400).json({ message: 'User ID required' })
-  const user = await User.findOne({ _id: req.params.id }).lean().exec()
-  if (!user) {
-    res.status(400).json({ message: `User ID ${req.params.id} not found` })
+const getUser = async (req: Request, res: Response): Promise<void> => {
+  if (!req?.params?.id) {
+    res.status(400).json({ success: false, message: 'User ID is required' })
+    return
   }
-  res.json(user)
+
+  try {
+    const user = await User.findOne({ _id: req.params.id }).lean().exec()
+    if (!user) {
+      res
+        .status(404)
+        .json({ success: false, message: `User ID ${req.params.id} not found` })
+      return
+    }
+    res.json({ success: true, data: user })
+  } catch (error) {
+    logger.error(error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
+  }
 }
 
-export { getAllUsers, updateUser, deleteUser, getUser }
+const sendChangeEmailOtp = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username, currentEmail, newEmail } = req.body
+
+    if (!isValidEmail(currentEmail) || !isValidEmail(newEmail)) {
+      res.status(400).json({ success: false, message: 'Invalid email format' })
+      return
+    }
+
+    const user = await User.findOne({ username })
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
+    }
+
+    if (user.email === newEmail) {
+      res.status(400).json({
+        success: false,
+        message: 'The new email is the same as the current email.'
+      })
+      return
+    }
+
+    const duplicate = await User.findOne({ email: newEmail })
+    if (duplicate) {
+      res.status(409).json({ success: false, message: 'Duplicate email' })
+      return
+    }
+
+    if (user.email !== currentEmail) {
+      res.status(400).json({ success: false, message: 'Current email does not match' })
+      return
+    }
+
+    const otpCode = generateOtp()
+
+    user.otp = {
+      code: otpCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
+    }
+    user.newEmail = newEmail // Store the new email in the user's record
+    await user.save()
+
+    sendOtpEmail(newEmail, otpCode) // Send OTP to new email
+
+    res.status(200).json({ success: true, message: 'OTP sent successfully' })
+  } catch (error) {
+    logger.error('Failed to send change email OTP:', error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
+  }
+}
+
+const verifyOtp = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username, otp } = req.body
+
+    const user = await User.findOne({ username })
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
+    }
+
+    if (
+      user.otp?.code !== otp ||
+      (user.otp?.expiresAt && user.otp.expiresAt < new Date())
+    ) {
+      res.status(400).json({ success: false, message: 'Invalid or expired OTP' })
+      return
+    }
+
+    if (!user.newEmail) {
+      res.status(400).json({ success: false, message: 'No new email address found' })
+      return
+    }
+
+    user.previousEmails.push(user.email)
+    user.email = user.newEmail
+    user.newEmail = null // Clear the new email field
+    user.otp = null
+    await user.save()
+
+    res.status(200).json({ success: true, message: 'Email address updated successfully' })
+  } catch (error) {
+    logger.error('Failed to verify OTP:', error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
+  }
+}
+
+const resendOtp = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username } = req.body
+
+    if (!username || !isValidUsername(username)) {
+      res.status(400).json({ success: false, message: 'Invalid username format' })
+      return
+    }
+
+    const user = await User.findOne({ username })
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
+    }
+
+    if (!user.newEmail) {
+      res.status(400).json({ success: false, message: 'No new email address found' })
+      return
+    }
+
+    const otpCode = generateOtp()
+
+    user.otp = {
+      code: otpCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
+    }
+    await user.save()
+
+    sendOtpEmail(user.newEmail, otpCode) // Send OTP to new email
+
+    res.status(200).json({ success: true, message: 'OTP resent successfully' })
+  } catch (error) {
+    logger.error('Failed to resend OTP:', error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
+  }
+}
+
+function generateOtp(): string {
+  const otp = crypto.randomBytes(3).toString('hex') // Generates a 6-character OTP
+  return otp
+}
+
+export {
+  getAllUsers,
+  updateUser,
+  deleteUserById,
+  deleteUserByUsername,
+  getUser,
+  sendChangeEmailOtp,
+  verifyOtp,
+  resendOtp
+}
