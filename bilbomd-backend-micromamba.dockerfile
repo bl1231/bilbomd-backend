@@ -91,7 +91,7 @@ RUN npm ci --no-audit
 # Remove .npmrc file for security
 RUN rm /home/bilbo/.npmrc
 
-# Optionally, clean up the environment variable for security
+# Clean up the environment variable for security
 RUN unset GITHUB_TOKEN
 
 # Copy entire backend app
