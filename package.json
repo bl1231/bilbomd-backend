@@ -44,7 +44,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.15",
-    "nodemailer-express-handlebars": "^6.1.2",
+    "nodemailer-express-handlebars": "^7.0.0",
     "swagger-jsdoc": "^6.2.8",
     "typescript": "^5.6.2",
     "uuid": "^10.0.0",
