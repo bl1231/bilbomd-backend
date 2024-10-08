@@ -1,8 +1,0 @@
-define fixed1 sele ( resid 151:608 .and. segid PROA ) end
-cons fix sele fixed1 end 
-
-define rigid1 sele ( resid 46:67 .and. segid PROA ) end
-shape desc dock1 rigid sele rigid1 end 
-
-return 
-
