@@ -26,7 +26,7 @@ FROM bilbomd-backend-nodejs AS bilbomd-backend-bioxtasraw
 
 # install deps
 RUN apt-get update && \
-    apt-get install -y zip build-essential libarchive13 && \
+    apt-get install -y curl zip build-essential libarchive13 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
