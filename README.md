@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.12.2
+  - Update dependencies
+  - Add new API endpoints for User Account functionality
 - 1.12.0
   - Add BilboMD SANS backend capabilities
   - Improve the step status granularity
