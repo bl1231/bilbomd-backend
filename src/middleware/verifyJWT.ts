@@ -1,5 +1,16 @@
 import jwt from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
+// import { logger } from './loggers.js'
+
+interface DecodedJWT {
+  UserInfo: {
+    username: string
+    roles: string[]
+    email: string
+  }
+  iat: number
+  exp: number
+}
 
 const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   // Check both 'authorization' and 'Authorization' headers and cast to string
@@ -11,7 +22,7 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   }
 
   const token = authHeader.split(' ')[1]
-  // console.log('token: ', token)
+
   jwt.verify(
     token,
     process.env.ACCESS_TOKEN_SECRET || '',
@@ -22,11 +33,13 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
         return
       }
 
-      const userInfo = decoded as { username: string; roles: string[] }
+      const userInfo = (decoded as DecodedJWT).UserInfo
+      // logger.info(`Decoded JWT: ${JSON.stringify(userInfo)}`)
 
       if (userInfo) {
         req.user = userInfo.username
         req.roles = userInfo.roles
+        // logger.info(`User ${userInfo.username} has roles ${userInfo.roles}`)
         next()
       } else {
         res.status(403).json({ message: 'Forbidden - no userInfo' })
