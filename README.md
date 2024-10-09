@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.12.4
+  - Fix bug in mailer
 - 1.12.3
   - Fix Docker compose healthcheck
 - 1.12.2
