@@ -45,10 +45,33 @@ type AutoRgResults = {
 
 const getAllJobs = async (req: Request, res: Response) => {
   try {
-    const DBjobs: Array<IJob> = await Job.find().lean()
+    const username = req.user as string
+    const roles = req.roles as string[]
+
+    // Determine if the user is an admin or manager based on their roles
+    const isAdmin = roles.includes('Admin')
+    const isManager = roles.includes('Manager')
+
+    let jobFilter = {}
+    if (!isAdmin && !isManager) {
+      logger.info(`User ${username} is not an Admin or Manager - filtering by username`)
+      const user = await User.findOne({ username }).lean()
+
+      if (!user) {
+        res.status(404).json({ message: 'User not found' })
+        return
+      }
+
+      // Use the user's ObjectId to filter jobs
+      jobFilter = { user: user._id }
+    }
+
+    // const DBjobs: Array<IJob> = await Job.find().lean()
+    const DBjobs: Array<IJob> = await Job.find(jobFilter).lean()
 
     if (!DBjobs?.length) {
-      res.status(204).json({})
+      logger.info('No jobs found')
+      res.status(204).json({ message: 'No jobs found' })
       return
     }
 
