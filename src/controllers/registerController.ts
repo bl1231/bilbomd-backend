@@ -7,68 +7,9 @@ import { sendVerificationEmail } from '../config/nodemailerConfig.js'
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
-/**
- * @openapi
- * /register:
- *   post:
- *     summary: Create a New User
- *     description: Registers a new user with username and email. Returns a conflict error if the username or email already exists.
- *     tags:
- *       - User Management
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - user
- *               - email
- *             properties:
- *               user:
- *                 type: string
- *                 description: The username for the new user.
- *               email:
- *                 type: string
- *                 description: The email address for the new user.
- *     responses:
- *       201:
- *         description: Successfully created the new user.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: string
- *                   description: Success message.
- *                 code:
- *                   type: string
- *                   description: Confirmation code for the user.
- *       400:
- *         description: Bad request due to missing username or email, or invalid user data.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message explaining the reason for the bad request.
- *       409:
- *         description: Conflict due to duplicate username or email.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating a duplicate username or email.
- */
 const handleNewUser = async (req: Request, res: Response) => {
   const { user, email } = req.body
-  logger.info('handleNewUser: %s %s', user, email)
+  logger.info(`handleNewUser ${user}, ${email}`)
   // confirm we have required data
   if (!user || !email)
     res.status(400).json({
@@ -95,7 +36,7 @@ const handleNewUser = async (req: Request, res: Response) => {
     for (let i = 0; i < 36; i++) {
       code += characters[Math.floor(Math.random() * characters.length)]
     }
-    logger.info('made new confirmationCode: %s', code)
+    logger.info(`New user ${user} confirmationCode: ${code}`)
 
     //  120000 ms = 2 min
     // 3600000 ms = 1 hour
@@ -113,15 +54,15 @@ const handleNewUser = async (req: Request, res: Response) => {
       UUID: UUID,
       createdAt: Date()
     })
-    logger.info(newUser.username)
+    logger.info(`Created ${newUser.username}`)
 
     if (config.sendEmailNotifications) {
       sendVerificationEmail(email, bilboMdUrl, code)
     }
 
     res.status(201).json({ success: `New user ${user} created!`, code: code })
-  } catch (err) {
-    logger.error('error %s', err)
+  } catch (error) {
+    logger.error(`error creating new user: ${error}`)
     res.status(400).json({ message: 'Invalid user data received' })
   }
 }

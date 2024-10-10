@@ -44,7 +44,7 @@ const createNewSANSJob = async (req: Request, res: Response) => {
       { name: 'd2o_fraction', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
-        logger.error(err)
+        logger.error(`Failed to upload one or more files: ${err}`)
         return res.status(500).json({ message: 'Failed to upload one or more files' })
       }
 
@@ -66,13 +66,13 @@ const createNewSANSJob = async (req: Request, res: Response) => {
         // Handle the job creation
         await handleBilboMDSANSJob(req, res, user, UUID, jobDir)
       } catch (error) {
-        logger.error(error)
+        logger.error(`Error occurred during job creation: ${error}`)
         res.status(500).json({ message: 'Internal server error' })
       }
     })
   } catch (error) {
     // Handle errors related to directory creation
-    logger.error(error)
+    logger.error(`Failed to create job directory: ${error}`)
     res.status(500).json({ message: 'Failed to create job directory' })
   }
 }
@@ -188,7 +188,7 @@ const handleBilboMDSANSJob = async (
       uuid: newJob.uuid
     })
   } catch (error) {
-    logger.error(error)
+    logger.error(`Failed to create BilboMD SANS Job: ${error}`)
     res.status(500).json({ message: 'Failed to create BilboMD SANS Job' })
   }
 }

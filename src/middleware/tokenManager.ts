@@ -100,7 +100,7 @@ const ensureSFAuthenticated = async (
     req.sfApiToken = cachedToken
     next()
   } catch (error) {
-    console.error('Error ensuring SF API authentication:', error)
+    logger.error(`Failed to authenticate with SF API: ${error}`)
     res.status(500).send('Failed to authenticate with SF API')
   }
 }

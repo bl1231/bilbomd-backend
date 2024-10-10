@@ -13,7 +13,7 @@ const cleanup = () => {
   server.close((err) => {
     logger.info('Closed BilboMD ExpressJS server')
     if (err) {
-      console.error('Server shutdown error:', err)
+      logger.error(`Error closing server: ${err}`)
       process.exit(1)
     } else {
       logger.info('Server gracefully shut down.')

@@ -39,7 +39,7 @@ const queueScoperJob = async (data: BullMQData) => {
 
     return bullJob.id
   } catch (error) {
-    logger.error('Error adding job to queue:', error)
+    logger.error(`Error adding ${data.type} Job to ${scoperQueue.name} queue: ${error}`)
     throw error // Rethrow the error to handle it at a higher level if needed
   }
 }
