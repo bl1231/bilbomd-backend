@@ -33,7 +33,7 @@ const otp = async (req: Request, res: Response) => {
     const user: IUser | null = await User.findOne({ 'otp.code': code })
 
     if (user) {
-      logger.debug('Found User: %s', user)
+      logger.debug(`User found: ${user.username}`)
       // logger.info({ level: 'info', message: 'hello' })
       logger.info(`OTP login for user: ${user.username} email: ${user.email}`)
 
@@ -94,7 +94,7 @@ const otp = async (req: Request, res: Response) => {
       res.status(401).json({ message: 'Invalid OTP' })
     }
   } catch (error) {
-    logger.error('Error occurred while querying user: %s', error)
+    logger.error(`Error occurred while querying user: ${error}`)
     res.status(500).json({ message: 'Internal server error' })
   }
 }

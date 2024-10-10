@@ -55,7 +55,7 @@ export const getConfigsStuff = async (req: Request, res: Response): Promise<void
 
     res.json(configs)
   } catch (error) {
-    logger.error('Error fetching worker info or processing request:', error)
+    logger.error(`Error fetching worker info or processing request: ${error}`)
     res.status(500).json({
       message: 'Failed to retrieve configuration information',
       error: error

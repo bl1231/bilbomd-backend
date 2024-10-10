@@ -40,7 +40,7 @@ export const deleteOldJobs = async () => {
           await fs.remove(jobDir)
         }
       } catch (error) {
-        logger.error('Error deleting directory %s', error)
+        logger.error(`Error deleting job directory: ${jobDir} ${error}`)
       }
     }
 
@@ -50,6 +50,6 @@ export const deleteOldJobs = async () => {
     const deletedJobsCount = deleteResult.deletedCount
     logger.warn(`Deleted ${deletedJobsCount} jobs from MongoDB`)
   } catch (error) {
-    console.error('Error deleting old jobs:', error)
+    logger.error(`Error deleting old jobs: ${error}`)
   }
 }

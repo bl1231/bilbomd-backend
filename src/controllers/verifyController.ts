@@ -6,57 +6,6 @@ import { sendVerificationEmail } from '../config/nodemailerConfig.js'
 const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const bilboMdUrl: string = process.env.BILBOMD_URL ?? ''
 
-/**
- * @openapi
- * /verify:
- *   post:
- *     summary: Verify New User
- *     description: Verify a new user's registration using a confirmation code.
- *     tags:
- *       - User Management
- *     requestBody:
- *       description: The confirmation code to verify the new user.
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               code:
- *                 type: string
- *                 description: The confirmation code to verify the new user.
- *     responses:
- *        200:
- *         description: User verified successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Success message.
- *        400:
- *         description: Bad request. Invalid input or missing fields.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- *        500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message.
- */
 const verifyNewUser = async (req: Request, res: Response) => {
   try {
     const { code } = req.body
@@ -78,7 +27,7 @@ const verifyNewUser = async (req: Request, res: Response) => {
     user.status = 'Active'
     user.confirmationCode = null
     await user.save()
-    logger.info('%s verified!', user.email)
+    logger.info(`User ${user.username} ${user.email} verified`)
     res.json({ message: 'Verified' })
   } catch (error) {
     logger.error(`Error occurred during user verification: ${error}`)
@@ -86,67 +35,6 @@ const verifyNewUser = async (req: Request, res: Response) => {
   }
 }
 
-/**
- * @openapi
- * /verify/resend:
- *   post:
- *     summary: Resend Verification Code
- *     description: Resends a new verification code to the user's email.
- *     tags:
- *       - User Management
- *     requestBody:
- *       description: Email address of the user to resend the verification code to.
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 description: The email address of the user to whom the verification code should be resent.
- *     responses:
- *       201:
- *         description: A new verification code was successfully generated and sent.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Success message indicating the verification code was sent.
- *       400:
- *         description: Bad request due to missing email field.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating that the email field is required.
- *       401:
- *         description: Unauthorized because no user exists with the provided email.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Error message indicating no user found with that email.
- *       500:
- *         description: Internal server error occurred during the process.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: General error message for server-side errors.
- */
 const resendVerificationCode = async (req: Request, res: Response) => {
   try {
     const { email } = req.body

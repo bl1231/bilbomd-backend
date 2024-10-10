@@ -69,7 +69,7 @@ const queueJob = async (data: BullMQPdb2Crd): Promise<string> => {
     }
     return bullJob.id
   } catch (error) {
-    logger.error('Error adding job to queue:', error)
+    logger.error(`Error adding ${data.type} Job to ${pdb2crdQueue.name} queue: ${error}`)
     throw error // This ensures that the function either returns a string or raises an exception
   }
 }

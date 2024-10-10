@@ -22,7 +22,7 @@ const getAllUsers = async (req: Request, res: Response) => {
     const users = await User.find().lean()
     res.json({ success: true, data: users })
   } catch (error) {
-    logger.error(error)
+    logger.error(`Failed to get all users: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
@@ -79,7 +79,7 @@ const updateUser = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({ success: true, message: `${updatedUser.username} updated` })
   } catch (error) {
-    logger.error(error)
+    logger.error(`Failed to update user: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
@@ -117,7 +117,7 @@ const deleteUserById = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({ success: true, message: reply })
   } catch (error) {
-    logger.error(error)
+    logger.error(`Failed to delete user: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
@@ -150,7 +150,7 @@ const deleteUserByUsername = async (req: Request, res: Response): Promise<void> 
     const reply = `User ${user.username} with ID ${user._id} deleted`
     res.status(200).json({ success: true, message: reply })
   } catch (error) {
-    logger.error('Error during user deletion:', error)
+    logger.error(`Failed to delete user: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
@@ -171,7 +171,7 @@ const getUser = async (req: Request, res: Response): Promise<void> => {
     }
     res.json({ success: true, data: user })
   } catch (error) {
-    logger.error(error)
+    logger.error(`Failed to get user: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
@@ -224,7 +224,7 @@ const sendChangeEmailOtp = async (req: Request, res: Response): Promise<void> =>
 
     res.status(200).json({ success: true, message: 'OTP sent successfully' })
   } catch (error) {
-    logger.error('Failed to send change email OTP:', error)
+    logger.error(`Failed to send OTP: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
@@ -261,7 +261,7 @@ const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({ success: true, message: 'Email address updated successfully' })
   } catch (error) {
-    logger.error('Failed to verify OTP:', error)
+    logger.error(`Failed to verify OTP: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
@@ -298,7 +298,7 @@ const resendOtp = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({ success: true, message: 'OTP resent successfully' })
   } catch (error) {
-    logger.error('Failed to resend OTP:', error)
+    logger.error(`Failed to resend OTP: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
