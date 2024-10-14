@@ -91,14 +91,14 @@ const sendMagickLinkEmail = (email: string, url: string, otp: string) => {
 
 // Function to send OTP email using a template
 const sendOtpEmail = (email: string, otp: string) => {
-  logger.info(`Sending OTP email to ${email}$Password is ${otp}`)
+  logger.info(`Sending OTP email to ${email} Password is ${otp}`)
   transporter.use(
     'compile',
     hbs({
       viewEngine: {
         extname: '.handlebars',
         layoutsDir: viewPath,
-        defaultLayout: 'false',
+        defaultLayout: false,
         partialsDir: partialsPath
       },
       viewPath: viewPath,
