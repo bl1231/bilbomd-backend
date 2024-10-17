@@ -14,7 +14,8 @@
     "dev": "concurrently \"npm run watch-ts\" \"nodemon dist/server.js\"",
     "watch-ts": "tsc -w",
     "start": "npm run build && node dist/server.js",
-    "server": "nodemon ."
+    "server": "nodemon .",
+    "test": "vitest"
   },
   "dependencies": {
     "@bl1231/bilbomd-mongodb-schema": "^1.2.11",
@@ -71,6 +72,7 @@
     "rimraf": "^6.0.1",
     "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.9.0"
+    "typescript-eslint": "^8.9.0",
+    "vitest": "^2.1.3"
   }
 }

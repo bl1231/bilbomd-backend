@@ -1,0 +1,164 @@
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { handleNewUser } from '../registerController.js'
+import { User } from '@bl1231/bilbomd-mongodb-schema'
+import { sendVerificationEmail } from '../../config/nodemailerConfig.js'
+import { logger } from '../../middleware/loggers.js'
+import { Request, Response } from 'express'
+
+vi.mock('@bl1231/bilbomd-mongodb-schema', () => ({
+  User: {
+    findOne: vi.fn(),
+    create: vi.fn()
+  }
+}))
+
+vi.mock('../../config/nodemailerConfig', () => ({
+  sendVerificationEmail: vi.fn()
+}))
+
+vi.mock('../../middleware/loggers', () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn()
+  }
+}))
+
+vi.mock('../../config/config', () => ({
+  config: {
+    sendEmailNotifications: true
+  }
+}))
+
+const mockRequest = (body: { user?: string; email?: string }): Partial<Request> => ({
+  body
+})
+
+const mockResponse = (): Partial<Response> => {
+  const res = {
+    status: vi.fn().mockReturnThis(),
+    json: vi.fn().mockReturnThis()
+  }
+  return res
+}
+
+describe('handleNewUser Unit Tests', () => {
+  afterEach(() => {
+    vi.clearAllMocks() // Reset mocks after each test
+  })
+
+  it('should return 400 if username or email is missing', async () => {
+    const req = mockRequest({}) // No user or email
+    const res = mockResponse()
+
+    await handleNewUser(req as Request, res as Response)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Username and email are required.'
+    })
+  })
+
+  it('should return 409 if username is already taken', async () => {
+    User.findOne.mockReturnValueOnce({
+      collation: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValueOnce({ username: 'testuser' }) // Duplicate user
+    })
+
+    const req = mockRequest({ user: 'testuser', email: 'testemail@example.com' })
+    const res = mockResponse()
+
+    await handleNewUser(req as Request, res as Response)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith({ message: 'Duplicate username' })
+  })
+
+  it('should return 409 if email is already taken', async () => {
+    User.findOne.mockReturnValueOnce({
+      collation: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValueOnce(null) // No duplicate username
+    })
+
+    User.findOne.mockReturnValueOnce({
+      collation: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValueOnce({ email: 'testemail@example.com' }) // Duplicate email
+    })
+
+    const req = mockRequest({ user: 'testuser', email: 'testemail@example.com' })
+    const res = mockResponse()
+
+    await handleNewUser(req as Request, res as Response)
+
+    expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith({ message: 'Duplicate email' })
+  })
+
+  it('should successfully create a new user and send a verification email', async () => {
+    User.findOne.mockReturnValueOnce({
+      collation: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValueOnce(null) // No duplicate username
+    })
+
+    User.findOne.mockReturnValueOnce({
+      collation: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValueOnce(null) // No duplicate email
+    })
+
+    User.create.mockResolvedValueOnce({
+      username: 'testuser',
+      email: 'testemail@example.com'
+    })
+
+    const req = mockRequest({ user: 'testuser', email: 'testemail@example.com' })
+    const res = mockResponse()
+
+    await handleNewUser(req as Request, res as Response)
+
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.json).toHaveBeenCalledWith({
+      success: 'New user testuser created!',
+      code: expect.any(String)
+    })
+
+    // Ensure email was sent
+    expect(sendVerificationEmail).toHaveBeenCalledWith(
+      'testemail@example.com',
+      expect.any(String), // bilboMdUrl
+      expect.any(String) // confirmation code
+    )
+  })
+
+  it('should return 400 if there is an error creating the user', async () => {
+    User.findOne.mockReturnValueOnce({
+      collation: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValueOnce(null) // No duplicate username
+    })
+
+    User.findOne.mockReturnValueOnce({
+      collation: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValueOnce(null) // No duplicate email
+    })
+
+    User.create.mockRejectedValueOnce(new Error('Database error'))
+
+    const req = mockRequest({ user: 'testuser', email: 'testemail@example.com' })
+    const res = mockResponse()
+
+    await handleNewUser(req as Request, res as Response)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Invalid user data received'
+    })
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('error creating new user')
+    )
+  })
+})
