@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.12.6
+  - Fix problem with nodemailer templates
 - 1.12.5
   - Filter jobs returned to non-admin users
 - 1.12.4
