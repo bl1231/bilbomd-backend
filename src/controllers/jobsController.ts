@@ -67,7 +67,7 @@ const getAllJobs = async (req: Request, res: Response) => {
     }
 
     // const DBjobs: Array<IJob> = await Job.find().lean()
-    const DBjobs: Array<IJob> = await Job.find(jobFilter).lean()
+    const DBjobs = (await Job.find(jobFilter).lean()) as IJob[]
 
     if (!DBjobs?.length) {
       logger.info('No jobs found')
