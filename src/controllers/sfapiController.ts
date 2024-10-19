@@ -140,6 +140,7 @@ const getStatus = async (req: Request, res: Response) => {
 
   if (!success) {
     res.status(500).json({ error })
+    return
   }
 
   res.json(data)
@@ -152,6 +153,7 @@ const getOutages = async (req: Request, res: Response) => {
 
   if (!success) {
     res.status(500).json({ error })
+    return
   }
 
   res.json(data)
@@ -161,6 +163,7 @@ const getUser = async (req: Request, res: Response) => {
   const username = 'sclassen'
   if (!req.sfApiToken) {
     res.status(401).json({ error: 'No SF API token provided.' })
+    return
   }
   const { success, data, error } = await makeSFApiRequest({
     endpoint: '/account',
@@ -172,6 +175,7 @@ const getUser = async (req: Request, res: Response) => {
 
   if (!success) {
     res.status(500).json({ error })
+    return
   }
 
   res.json(data)
@@ -181,6 +185,7 @@ const getProjectHours = async (req: Request, res: Response) => {
   const projectName = req.params.repocode
   if (!req.sfApiToken) {
     res.status(401).json({ error: 'No SF API token provided.' })
+    return
   }
 
   try {
@@ -191,6 +196,7 @@ const getProjectHours = async (req: Request, res: Response) => {
 
     if (!success) {
       res.status(500).json({ error })
+      return
     }
 
     if (!data) {
