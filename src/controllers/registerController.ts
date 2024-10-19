@@ -24,11 +24,20 @@ const handleNewUser = async (req: Request, res: Response) => {
   if (duplicateUser) res.status(409).json({ message: 'Duplicate username' })
 
   // check for duplicate emails in the db
-  const duplicate = await User.findOne({ email: email })
+  const duplicateEmail = await User.findOne({
+    $or: [{ email: email }, { previousEmails: { $in: [email] } }]
+  })
     .collation({ locale: 'en', strength: 2 })
     .lean()
-    .exec()
-  if (duplicate) res.status(409).json({ message: 'Duplicate email' })
+    .exec();
+  
+  if (duplicateEmail) {
+    res.status(409).json({
+      success: false,
+      message: 'The email is already in use in one of the accounts'
+    });
+    return;
+  }
 
   try {
     //create a unique confirmation code
