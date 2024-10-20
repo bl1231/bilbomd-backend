@@ -40,7 +40,10 @@ const downloadPDB = async (req: Request, res: Response) => {
 const getFoxsData = async (req: Request, res: Response) => {
   const jobId = req.params.id
 
-  if (!jobId) return res.status(400).json({ message: 'Job ID required.' })
+  if (!jobId) {
+    res.status(400).json({ message: 'Job ID required.' })
+    return
+  }
 
   const job = await Job.findOne({ _id: jobId }).exec()
   if (!job) {
@@ -56,7 +59,7 @@ const getFoxsData = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error(`Error getting FoXS data: ${error}`)
-    return res.status(500).json({ message: 'Error processing FoXS data.' })
+    res.status(500).json({ message: 'Error processing FoXS data.' })
   }
 }
 

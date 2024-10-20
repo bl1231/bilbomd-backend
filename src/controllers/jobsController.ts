@@ -631,7 +631,8 @@ const deleteJob = async (req: Request, res: Response) => {
 const getJobById = async (req: Request, res: Response) => {
   const jobId = req.params.id
   if (!jobId) {
-    return res.status(400).json({ message: 'Job ID required.' })
+    res.status(400).json({ message: 'Job ID required.' })
+    return
   }
 
   try {
@@ -644,7 +645,8 @@ const getJobById = async (req: Request, res: Response) => {
       | IBilboMDSANSJob
 
     if (!job) {
-      return res.status(404).json({ message: `No job matches ID ${jobId}.` })
+      res.status(404).json({ message: `No job matches ID ${jobId}.` })
+      return
     }
 
     // const jobDir = path.join(uploadFolder, job.uuid, 'results')
@@ -832,7 +834,8 @@ const getLogForStep = async (req: Request, res: Response) => {
   if (!req?.params?.id) res.status(400).json({ message: 'Job ID required.' })
   // Check if req.params.id is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({ message: 'Invalid Job ID format.' })
+    res.status(400).json({ message: 'Invalid Job ID format.' })
+    return
   }
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {
