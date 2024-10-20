@@ -164,11 +164,11 @@ const createNewJob = async (req: Request, res: Response) => {
           logger.info('about to handleBilboMDScoperJob')
           await handleBilboMDScoperJob(req, res, user, UUID)
         } else {
-          res.status(400).json({ message: 'Invalid job type' })
+          return res.status(400).json({ message: 'Invalid job type' })
         }
       } catch (error) {
         logger.error(error)
-        res.status(500).json({ message: 'Internal server error' })
+        return res.status(500).json({ message: 'Internal server error' })
       }
     })
   } catch (error) {
@@ -548,6 +548,7 @@ const deleteJob = async (req: Request, res: Response) => {
   // Confirm that client sent id
   if (!id) {
     res.status(400).json({ message: 'Job ID required' })
+    return
   }
 
   // Find the job to delete
@@ -564,6 +565,7 @@ const deleteJob = async (req: Request, res: Response) => {
   // Check if a document was actually deleted
   if (deleteResult.deletedCount === 0) {
     res.status(404).json({ message: 'No job was deleted' })
+    return
   }
 
   // Remove from disk
@@ -573,6 +575,7 @@ const deleteJob = async (req: Request, res: Response) => {
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
       res.status(404).json({ message: 'Directory not found on disk' })
+      return
     }
     // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
     // because there are dangles NFS lock files present.
@@ -629,6 +632,7 @@ const getJobById = async (req: Request, res: Response) => {
   const jobId = req.params.id
   if (!jobId) {
     res.status(400).json({ message: 'Job ID required.' })
+    return
   }
 
   try {
@@ -642,6 +646,7 @@ const getJobById = async (req: Request, res: Response) => {
 
     if (!job) {
       res.status(404).json({ message: `No job matches ID ${jobId}.` })
+      return
     }
 
     // const jobDir = path.join(uploadFolder, job.uuid, 'results')
@@ -799,9 +804,8 @@ const downloadJobResults = async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
     res.download(defaultResultFile, filename, (err) => {
       if (err) {
-        res.status(500).json({
-          message: 'Could not download the file: ' + err
-        })
+        res.status(500).json({ message: `Could not download the file: ${err}` })
+        return
       }
     })
   } catch (error) {
@@ -813,9 +817,8 @@ const downloadJobResults = async (req: Request, res: Response) => {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
       res.download(newResultFile, filename, (err) => {
         if (err) {
-          res.status(500).json({
-            message: 'Could not download the file: ' + err
-          })
+          res.status(500).json({ message: `Could not download the file: ${err}` })
+          return
         }
       })
     } catch (newFileError) {
@@ -832,6 +835,7 @@ const getLogForStep = async (req: Request, res: Response) => {
   // Check if req.params.id is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     res.status(400).json({ message: 'Invalid Job ID format.' })
+    return
   }
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {

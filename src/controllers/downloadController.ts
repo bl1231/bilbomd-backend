@@ -40,7 +40,10 @@ const downloadPDB = async (req: Request, res: Response) => {
 const getFoxsData = async (req: Request, res: Response) => {
   const jobId = req.params.id
 
-  if (!jobId) res.status(400).json({ message: 'Job ID required.' })
+  if (!jobId) {
+    res.status(400).json({ message: 'Job ID required.' })
+    return
+  }
 
   const job = await Job.findOne({ _id: jobId }).exec()
   if (!job) {
