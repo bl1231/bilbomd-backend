@@ -28,20 +28,31 @@ const handleNewUser = async (req: Request, res: Response) => {
     return
   }
 
-  // check for duplicate emails in the db
-  const duplicateEmail = await User.findOne({
-    $or: [{ email: email }, { previousEmails: { $in: [email] } }]
+  // Check for duplicate email in the email field
+  const duplicateEmail = await User.findOne({ email: email })
+    .collation({ locale: 'en', strength: 2 })
+    .lean()
+    .exec()
+
+  if (duplicateEmail) {
+    res.status(409).json({
+      message: 'Duplicate email'
+    })
+    return
+  }
+
+  const duplicatePreviousEmail = await User.findOne({
+    previousEmails: { $in: [email] }
   })
     .collation({ locale: 'en', strength: 2 })
     .lean()
-    .exec();
-  
-  if (duplicateEmail) {
+    .exec()
+
+  if (duplicatePreviousEmail) {
     res.status(409).json({
-      success: false,
-      message: 'The email is already in use in one of the accounts'
-    });
-    return;
+      message: 'This email is already used in an existing account.'
+    })
+    return
   }
 
   try {
