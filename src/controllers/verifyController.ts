@@ -11,9 +11,10 @@ const verifyNewUser = async (req: Request, res: Response) => {
     const { code } = req.body
     if (!code) {
       res.status(400).json({ message: 'Confirmation code required.' })
+      return
     }
-
     logger.info(`Received verification ${code}`)
+
     const user = await User.findOne({ 'confirmationCode.code': code })
 
     if (!user) {
@@ -40,12 +41,11 @@ const resendVerificationCode = async (req: Request, res: Response) => {
     const { email } = req.body
     logger.info(`Request to resendVerificationCode for: ${email}`)
 
-    // Confirm we have required data
     if (!email) {
       res.status(400).json({ message: 'Email required.' })
+      return
     }
 
-    // Check for user in the db
     const foundUser = await User.findOne({ email })
 
     if (!foundUser) {

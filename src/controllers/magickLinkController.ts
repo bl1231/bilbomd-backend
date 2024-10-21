@@ -11,6 +11,7 @@ const generateMagickLink = async (req: Request, res: Response) => {
 
   if (!email) {
     res.status(400).json({ message: 'email is required' })
+    return
   }
 
   const foundUser = await User.findOne({ email }).exec()
@@ -22,10 +23,12 @@ const generateMagickLink = async (req: Request, res: Response) => {
 
   if (foundUser.status === 'Pending') {
     res.status(403).json({ message: 'Pending', email })
+    return
   }
 
   if (!foundUser.active) {
     res.status(403).json({ message: 'account deactivated' })
+    return
   }
 
   try {
