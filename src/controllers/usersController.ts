@@ -2,7 +2,7 @@ import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from '../middleware/loggers.js'
 import { Request, Response } from 'express'
-import { sendOtpEmail } from './../config/nodemailerConfig.js'
+import { sendOtpEmail, sendUpdatedEmailMessage } from './../config/nodemailerConfig.js'
 import crypto from 'crypto'
 
 // Helper function to validate email format
@@ -247,17 +247,19 @@ const verifyOtp = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ success: false, message: 'Invalid or expired OTP' })
       return
     }
+    const oldEmail = user.email
 
     if (!user.newEmail) {
       res.status(400).json({ success: false, message: 'No new email address found' })
       return
     }
-
     user.previousEmails.push(user.email)
     user.email = user.newEmail
     user.newEmail = null // Clear the new email field
     user.otp = null
     await user.save()
+
+    sendUpdatedEmailMessage(user.email, oldEmail)
 
     res.status(200).json({ success: true, message: 'Email address updated successfully' })
   } catch (error) {
