@@ -50,7 +50,8 @@ const handleNewUser = async (req: Request, res: Response) => {
 
   if (duplicatePreviousEmail) {
     res.status(409).json({
-      message: 'This email is already used in an existing account.'
+      message:
+        'It looks like you have changed your email. Please try logging in with your updated email address or check your inbox for the updated email.'
     })
     return
   }
