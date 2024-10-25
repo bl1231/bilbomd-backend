@@ -52,7 +52,7 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.8",
+    "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.25.8",
     "@jest/globals": "^29.7.0",
     "@shelf/jest-mongodb": "^4.3.2",
