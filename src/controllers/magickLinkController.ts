@@ -17,8 +17,20 @@ const generateMagickLink = async (req: Request, res: Response) => {
   const foundUser = await User.findOne({ email }).exec()
 
   if (!foundUser) {
-    res.status(401).json({ message: 'no account with that email' })
-    return
+    // Email not found in current emails, check previousEmails
+    const userWithOldEmail = await User.findOne({ previousEmails: email }).exec()
+
+    if (userWithOldEmail) {
+      res.status(400).json({
+        message:
+          'It looks like you have changed your email. Please try logging in with your updated email address or check your inbox for the updated email.'
+      })
+      return
+    } else {
+      // Email not found at all
+      res.status(401).json({ message: 'no account with that email' })
+      return
+    }
   }
 
   if (foundUser.status === 'Pending') {
