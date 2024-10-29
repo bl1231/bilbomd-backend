@@ -186,10 +186,49 @@ const sendUpdatedEmailMessage = (newEmail: string, oldEmail: string) => {
     })
 }
 
+const sendDeleteAccountSuccessEmail = (email: string, username: string) => {
+  logger.info(`Sending delete account success email to ${email}`)
+
+  transporter.use(
+    'compile',
+    hbs({
+      viewEngine: {
+        extname: '.handlebars',
+        layoutsDir: viewPath,
+        defaultLayout: false,
+        partialsDir: partialsPath
+      },
+      viewPath: viewPath,
+      extName: '.handlebars'
+    })
+  )
+
+  const mailOptions = {
+    from: user,
+    to: email,
+    subject: 'Account Deleted Successfully',
+    template: 'deleteAccount',
+    context: {
+      username: username
+    }
+  }
+
+  // Send the email
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      logger.info(`Delete account success email sent to ${email} successfully!`)
+    })
+    .catch((error) => {
+      logger.error(`Error sending delete account success email: ${error}`)
+    })
+}
+
 export {
   sendVerificationEmail,
   sendMagickLinkEmail,
   sendOtpEmailLocal,
   sendOtpEmail,
-  sendUpdatedEmailMessage
+  sendUpdatedEmailMessage,
+  sendDeleteAccountSuccessEmail
 }
