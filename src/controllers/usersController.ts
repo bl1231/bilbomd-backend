@@ -6,7 +6,7 @@ import {
   sendOtpEmail,
   sendUpdatedEmailMessage,
   sendDeleteAccountSuccessEmail
-} from './../config/nodemailerConfig.js'
+} from '../config/nodemailerConfig.js'
 import crypto from 'crypto'
 
 // Helper function to validate email format
@@ -125,6 +125,7 @@ const deleteUserById = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
+
 const deleteUserByUsername = async (req: Request, res: Response): Promise<void> => {
   const username = req.params.username
 
@@ -154,7 +155,7 @@ const deleteUserByUsername = async (req: Request, res: Response): Promise<void> 
     }
 
     try {
-      await sendDeleteAccountSuccessEmail(user.email, user.username)
+      sendDeleteAccountSuccessEmail(user.email, user.username)
       logger.info(`Deletion success email sent to ${user.email}`)
     } catch (emailError) {
       logger.error(`Failed to send deletion email to ${user.email}: ${emailError}`)
