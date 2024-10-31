@@ -2,7 +2,11 @@ import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from '../middleware/loggers.js'
 import { Request, Response } from 'express'
-import { sendOtpEmail, sendUpdatedEmailMessage } from './../config/nodemailerConfig.js'
+import {
+  sendOtpEmail,
+  sendUpdatedEmailMessage,
+  sendDeleteAccountSuccessEmail
+} from '../config/nodemailerConfig.js'
 import crypto from 'crypto'
 
 // Helper function to validate email format
@@ -121,36 +125,46 @@ const deleteUserById = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
-const deleteUserByUsername = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const username = req.params.username
-    if (!username || !isValidUsername(username)) {
-      res.status(400).json({ success: false, message: 'Invalid username format' })
-      return
-    }
 
+const deleteUserByUsername = async (req: Request, res: Response): Promise<void> => {
+  const username = req.params.username
+
+  if (!username || !isValidUsername(username)) {
+    res.status(400).json({ success: false, message: 'Invalid username format' })
+    return
+  }
+
+  try {
     const user = await User.findOne({ username }).exec()
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
 
-    const job = await Job.findOne({ user: user._id }).lean().exec()
-    if (job) {
+    const hasAssignedJobs = await Job.exists({ user: user._id })
+    if (hasAssignedJobs) {
       res.status(409).json({ success: false, message: 'User has assigned jobs' })
       return
     }
 
-    const deleteResult = await user.deleteOne()
+    const deleteResult = await User.deleteOne({ _id: user._id }).exec()
     if (deleteResult.deletedCount === 0) {
+      logger.error(`Failed to delete user ${username} with ID ${user._id}`)
       res.status(500).json({ success: false, message: 'Failed to delete user' })
       return
     }
 
-    const reply = `User ${user.username} with ID ${user._id} deleted`
+    try {
+      sendDeleteAccountSuccessEmail(user.email, user.username)
+      logger.info(`Deletion success email sent to ${user.email}`)
+    } catch (emailError) {
+      logger.error(`Failed to send deletion email to ${user.email}: ${emailError}`)
+    }
+
+    const reply = `User ${user.username} with ID ${user._id} deleted successfully`
     res.status(200).json({ success: true, message: reply })
   } catch (error) {
-    logger.error(`Failed to delete user: ${error}`)
+    logger.error(`Failed to delete user ${username}: ${error}`)
     res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
