@@ -209,6 +209,7 @@ const handleBilboMDJob = async (
       const_inp_file: constInpFile,
       data_file: dataFile,
       conformational_sampling: req.body.num_conf,
+      rg: req.body.rg,
       rg_min: req.body.rg_min,
       rg_max: req.body.rg_max,
       status: 'Submitted',
