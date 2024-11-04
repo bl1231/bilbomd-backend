@@ -94,7 +94,10 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
-- 1.26.7
+- 1.12.8
+  - Now adding Rg to mongo Job entries
+  - Update dependencies
+- 1.12.7
   - Improvements to the email reset workflow
 - 1.12.6
   - Fix problem with nodemailer templates
