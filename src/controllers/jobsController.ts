@@ -25,9 +25,7 @@ import {
   BilboMdAutoJob,
   IBilboMDAutoJob,
   BilboMdScoperJob,
-  IBilboMDScoperJob,
-  IBilboMDAlphaFoldJob,
-  IBilboMDSANSJob
+  IBilboMDScoperJob
 } from '@bl1231/bilbomd-mongodb-schema'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
@@ -637,13 +635,7 @@ const getJobById = async (req: Request, res: Response) => {
   }
 
   try {
-    const job = (await Job.findOne({ _id: jobId }).exec()) as
-      | IBilboMDPDBJob
-      | IBilboMDCRDJob
-      | IBilboMDAutoJob
-      | IBilboMDScoperJob
-      | IBilboMDAlphaFoldJob
-      | IBilboMDSANSJob
+    const job = await Job.findOne({ _id: jobId }).exec()
 
     if (!job) {
       res.status(404).json({ message: `No job matches ID ${jobId}.` })
@@ -689,11 +681,11 @@ const getJobById = async (req: Request, res: Response) => {
         bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
       }
     } else if (job.__t === 'BilboMdScoper') {
-      const scoperJob = job as IBilboMDScoperJob
+      // const scoperJob = job
       bullmq = await getBullMQScoperJob(job.uuid)
       if (bullmq) {
         bilbomdJob.bullmq = bullmq
-        bilbomdJob.scoper = await getScoperStatus(scoperJob)
+        bilbomdJob.scoper = await getScoperStatus(job as unknown as IBilboMDScoperJob)
       }
     }
     // logger.info(bilbomdJob)

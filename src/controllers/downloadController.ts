@@ -52,7 +52,7 @@ const getFoxsData = async (req: Request, res: Response) => {
   }
   try {
     if (job.__t === 'BilboMdScoper') {
-      const scoperJob = job as IBilboMDScoperJob
+      const scoperJob = job as unknown as IBilboMDScoperJob
       await getFoxsScoperData(scoperJob, res)
     } else {
       await getFoxsBilboData(job, res)
