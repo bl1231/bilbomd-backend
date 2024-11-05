@@ -27,7 +27,7 @@
     "bullmq": "^5.23.0",
     "cookie-parser": "~1.4.7",
     "cors": "^2.8.5",
-    "cron": "^3.1.8",
+    "cron": "^3.1.9",
     "dotenv": "^16.4.5",
     "eslint-plugin-jest": "^28.8.3",
     "express": "~4.21.1",
