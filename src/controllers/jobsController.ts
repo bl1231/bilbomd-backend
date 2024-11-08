@@ -154,7 +154,7 @@ const createNewJob = async (req: Request, res: Response) => {
 
         if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
           logger.info(`about to handleBilboMDJob ${req.body.bilbomd_mode}`)
-          await handleBilboMDJob(req, res, user, UUID, jobDir)
+          await handleBilboMDJob(req, res, user, UUID)
         } else if (bilbomd_mode === 'auto') {
           logger.info('about to handleBilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, user, UUID)
@@ -180,8 +180,7 @@ const handleBilboMDJob = async (
   req: Request,
   res: Response,
   user: IUser,
-  UUID: string,
-  jobDir: string
+  UUID: string
 ) => {
   try {
     const { bilbomd_mode: bilbomdMode } = req.body
@@ -193,6 +192,7 @@ const handleBilboMDJob = async (
     const dataFile = files['expdata'][0].originalname.toLowerCase()
 
     // Rename the original constinp file to create a backup
+    const jobDir = path.join(uploadFolder, UUID)
     const constInpFilePath = path.join(jobDir, constInpFile)
     const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
 
@@ -308,6 +308,9 @@ const handleBilboMDAutoJob = async (
     logger.info(`PDB File: ${pdbFileName}`)
     logger.info(`PAE File: ${paeFileName}`)
 
+    const jobDir = path.join(uploadFolder, UUID)
+    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
+
     const now = new Date()
 
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
@@ -316,6 +319,9 @@ const handleBilboMDAutoJob = async (
       pdb_file: pdbFileName,
       pae_file: paeFileName,
       data_file: datFileName,
+      rg: autorgResults.rg,
+      rg_min: autorgResults.rg_min,
+      rg_max: autorgResults.rg_max,
       conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
@@ -1164,5 +1170,6 @@ export {
   getLogForStep,
   getAutoRg,
   writeJobParams,
-  sanitizeConstInpFile
+  sanitizeConstInpFile,
+  spawnAutoRgCalculator
 }
