@@ -304,12 +304,12 @@ const handleBilboMDAutoJob = async (
     const datFileName =
       files['dat_file'] && files['dat_file'][0]
         ? files['dat_file'][0].originalname.toLowerCase()
-        : 'missing.json'
+        : 'missing.dat'
     logger.info(`PDB File: ${pdbFileName}`)
     logger.info(`PAE File: ${paeFileName}`)
 
     const jobDir = path.join(uploadFolder, UUID)
-    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
+    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
 
     const now = new Date()
 
@@ -1009,7 +1009,10 @@ const getAutoRg = async (req: Request, res: Response) => {
           return res.status(401).json({ message: 'No user found with that email' })
         }
 
-        const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
+        const autorgResults: AutoRgResults = await spawnAutoRgCalculator(
+          jobDir,
+          'expdata.dat'
+        )
         logger.info(`autorgResults: ${JSON.stringify(autorgResults)}`)
 
         res.status(200).json({
@@ -1070,14 +1073,17 @@ const getAutoRg = async (req: Request, res: Response) => {
   }
 }
 
-const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
+const spawnAutoRgCalculator = async (
+  dir: string,
+  datFileName: string
+): Promise<AutoRgResults> => {
   const logFile = path.join(dir, 'autoRg.log')
   const errorFile = path.join(dir, 'autoRg_error.log')
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const autoRg_script = '/app/scripts/autorg.py'
   const tempOutputFile = path.join(os.tmpdir(), `autoRg_${Date.now()}.json`)
-  const args = [autoRg_script, 'expdata.dat', tempOutputFile]
+  const args = [autoRg_script, datFileName, tempOutputFile]
 
   return new Promise<AutoRgResults>((resolve, reject) => {
     const autoRg: ChildProcess = spawn('python', args, { cwd: dir })

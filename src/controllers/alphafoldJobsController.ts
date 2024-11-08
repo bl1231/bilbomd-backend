@@ -110,7 +110,7 @@ const handleBilboMDAlphaFoldJobCreation = async (
         : 'missing.dat'
 
     const jobDir = path.join(uploadFolder, UUID)
-    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
+    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
     const now = new Date()
 
     const newJob: IBilboMDAlphaFoldJob = new BilboMdAlphaFoldJob({
