@@ -10,10 +10,16 @@ import {
 } from '@bl1231/bilbomd-mongodb-schema'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
-import { writeJobParams } from './jobsController.js'
+import { writeJobParams, spawnAutoRgCalculator } from './jobsController.js'
 import { queueJob } from '../queues/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
+
+type AutoRgResults = {
+  rg: number
+  rg_min: number
+  rg_max: number
+}
 
 const createNewAlphaFoldJob = async (req: Request, res: Response) => {
   const UUID = uuid()
@@ -102,12 +108,18 @@ const handleBilboMDAlphaFoldJobCreation = async (
       files['dat_file'] && files['dat_file'][0]
         ? files['dat_file'][0].originalname.toLowerCase()
         : 'missing.dat'
+
+    const jobDir = path.join(uploadFolder, UUID)
+    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
     const now = new Date()
 
     const newJob: IBilboMDAlphaFoldJob = new BilboMdAlphaFoldJob({
       title: req.body.title,
       uuid: UUID,
       data_file: datFileName,
+      rg: autorgResults.rg,
+      rg_min: autorgResults.rg_min,
+      rg_max: autorgResults.rg_max,
       fasta_file: 'af-entities.fasta',
       alphafold_entities,
       conformational_sampling: 3,
