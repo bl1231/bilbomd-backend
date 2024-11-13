@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.13.1 (11/12/2024)
+  - Add new option for Scoper jobs to fix c1/c2 values
 - 1.13.0 (11/08/2024)
   - Add `rg`, `rg_min`, and `rg_max` to all Auto and AF jobs
 - 1.12.9 (11/04/2024)
