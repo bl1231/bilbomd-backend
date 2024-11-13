@@ -402,7 +402,7 @@ const handleBilboMDScoperJob = async (
   UUID: string
 ) => {
   try {
-    const { bilbomd_mode: bilbomdMode } = req.body
+    const { bilbomd_mode: bilbomdMode, title, fixc1c2 } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(
       `PDB File: ${
@@ -415,12 +415,13 @@ const handleBilboMDScoperJob = async (
       }`
     )
     const now = new Date()
-    // logger.info(`now:  ${now.toDateString()}`)
+    logger.info(`fixc1c2: ${fixc1c2}`)
     const newJob: IBilboMDScoperJob = new BilboMdScoperJob({
-      title: req.body.title,
+      title,
       uuid: UUID,
       pdb_file: files['pdb_file'][0].originalname.toLowerCase(),
       data_file: files['dat_file'][0].originalname.toLowerCase(),
+      fixc1c2,
       status: 'Submitted',
       time_submitted: now,
       user: user,
