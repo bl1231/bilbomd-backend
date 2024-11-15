@@ -219,6 +219,7 @@ const handleBilboMDJob = async (
         heat: {},
         md: {},
         dcd2pdb: {},
+        pdb_remediate: {},
         foxs: {},
         multifoxs: {},
         results: {},
@@ -240,8 +241,7 @@ const handleBilboMDJob = async (
         conformational_sampling: num_conf,
         rg,
         rg_min,
-        rg_max,
-        steps: { ...commonJobData.steps, pdb2crd: {} } // Add pdb2crd step
+        rg_max
       })
     } else if (bilbomdMode === 'pdb') {
       const pdbFile = files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
@@ -253,7 +253,8 @@ const handleBilboMDJob = async (
         conformational_sampling: num_conf,
         rg,
         rg_min,
-        rg_max
+        rg_max,
+        steps: { ...commonJobData.steps, pdb2crd: {} } // Add pdb2crd step
       })
     }
 
