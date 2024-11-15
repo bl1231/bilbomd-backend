@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.13.2 (11/15/2024)
+  - Adjustments to jobHandler code for PDB remediation step
 - 1.13.1 (11/12/2024)
   - Add new option for Scoper jobs to fix c1/c2 values
 - 1.13.0 (11/08/2024)
