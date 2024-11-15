@@ -18,6 +18,8 @@ import {
 import {
   Job,
   IJob,
+  User,
+  IUser,
   BilboMdPDBJob,
   IBilboMDPDBJob,
   BilboMdCRDJob,
@@ -25,9 +27,9 @@ import {
   BilboMdAutoJob,
   IBilboMDAutoJob,
   BilboMdScoperJob,
-  IBilboMDScoperJob
+  IBilboMDScoperJob,
+  IBilboMDSteps
 } from '@bl1231/bilbomd-mongodb-schema'
-import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
 import { BilboMDScoperSteps, BilboMDSteps } from '../types/bilbomd.js'
@@ -183,38 +185,35 @@ const handleBilboMDJob = async (
   UUID: string
 ) => {
   try {
-    const { bilbomd_mode: bilbomdMode } = req.body
+    const { bilbomd_mode: bilbomdMode, title, num_conf, rg, rg_min, rg_max } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(`bilbomdMode: ${bilbomdMode}`)
-    logger.info(`title: ${req.body.title}`)
+    logger.info(`title: ${title}`)
 
     const constInpFile = files['constinp'][0].originalname.toLowerCase()
     const dataFile = files['expdata'][0].originalname.toLowerCase()
 
-    // Rename the original constinp file to create a backup
+    // Create and sanitize job directory and files
     const jobDir = path.join(uploadFolder, UUID)
     const constInpFilePath = path.join(jobDir, constInpFile)
     const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
 
     await fs.copyFile(constInpFilePath, constInpOrigFilePath)
-
-    // Sanitize the uploaded file (constInpFilePath)
     await sanitizeConstInpFile(constInpFilePath)
 
-    const jobData = {
-      title: req.body.title,
+    // Initialize common job data
+    const commonJobData = {
+      __t: '',
+      title,
       uuid: UUID,
-      const_inp_file: constInpFile,
-      data_file: dataFile,
-      conformational_sampling: req.body.num_conf,
-      rg: req.body.rg,
-      rg_min: req.body.rg_min,
-      rg_max: req.body.rg_max,
       status: 'Submitted',
+      data_file: dataFile,
+      const_inp_file: constInpFile, // Add const_inp_file here
       time_submitted: new Date(),
-      user: user,
+      user,
+      progress: 0,
+      cleanup_in_progress: false,
       steps: {
-        pdb2crd: {},
         minimize: {},
         initfoxs: {},
         heat: {},
@@ -224,42 +223,49 @@ const handleBilboMDJob = async (
         multifoxs: {},
         results: {},
         email: {}
-      }
+      } as IBilboMDSteps
     }
 
     let newJob: IBilboMDPDBJob | IBilboMDCRDJob | undefined
 
     if (bilbomdMode === 'crd_psf') {
-      const psfFile = files['psf_file']
-        ? files['psf_file'][0].originalname.toLowerCase()
-        : ''
-      const crdFile = files['crd_file']
-        ? files['crd_file'][0].originalname.toLowerCase()
-        : ''
-      // Add specific fields for CRD/PSF mode
-      Object.assign(jobData, { psf_file: psfFile, crd_file: crdFile })
-      newJob = new BilboMdCRDJob(jobData)
+      const psfFile = files['psf_file']?.[0]?.originalname.toLowerCase() || ''
+      const crdFile = files['crd_file']?.[0]?.originalname.toLowerCase() || ''
+
+      newJob = new BilboMdCRDJob({
+        ...commonJobData,
+        __t: 'BilboMdCRD',
+        psf_file: psfFile,
+        crd_file: crdFile,
+        conformational_sampling: num_conf,
+        rg,
+        rg_min,
+        rg_max,
+        steps: { ...commonJobData.steps, pdb2crd: {} } // Add pdb2crd step
+      })
     } else if (bilbomdMode === 'pdb') {
-      const pdbFile = files['pdb_file']
-        ? files['pdb_file'][0].originalname.toLowerCase()
-        : ''
-      // Add specific field for PDB mode
-      Object.assign(jobData, { pdb_file: pdbFile })
-      newJob = new BilboMdPDBJob(jobData)
+      const pdbFile = files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
+
+      newJob = new BilboMdPDBJob({
+        ...commonJobData,
+        __t: 'BilboMdPDB',
+        pdb_file: pdbFile,
+        conformational_sampling: num_conf,
+        rg,
+        rg_min,
+        rg_max
+      })
     }
 
-    // Ensure newJob is defined before proceeding
+    // Handle unsupported modes
     if (!newJob) {
-      // Handle the case where newJob wasn't set due to an unsupported bilbomdMode
       logger.error(`Unsupported bilbomd_mode: ${bilbomdMode}`)
       return res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
     }
-    logger.info(newJob)
-    // Save the job to MongoDB
+
+    // Save the job and write job parameters
     await newJob.save()
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
-
-    // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
 
     // Queue the job
@@ -273,6 +279,7 @@ const handleBilboMDJob = async (
     logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
     logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
 
+    // Respond with job details
     res.status(200).json({
       message: `New ${bilbomdMode} Job successfully created`,
       jobid: newJob.id,
