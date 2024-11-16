@@ -19,17 +19,6 @@ export default [
       'jest/no-identical-title': 'error',
       'jest/prefer-to-have-length': 'warn',
       'jest/valid-expect': 'error'
-      // 'import/extensions': [
-      //   'error',
-      //   'ignorePackages',
-      //   {
-      //     js: 'always',
-      //     jsx: 'always',
-      //     ts: 'always',
-      //     tsx: 'always',
-      //     mjs: 'always'
-      //   }
-      // ]
     }
   }
 ]
