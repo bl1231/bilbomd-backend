@@ -1,25 +1,12 @@
 import { logger } from '../middleware/loggers.js'
 import { config } from '../config/config.js'
-// import mongoose from 'mongoose'
 import multer from 'multer'
 import fs from 'fs-extra'
-// import os from 'os'
-// import readline from 'readline'
 import path from 'path'
 import { v4 as uuid, validate as uuidValidate, version as uuidVersion } from 'uuid'
-// import { spawn } from 'child_process'
-// import { queueJob, getBullMQJob } from '../queues/bilbomd.js'
-// import { queueScoperJob, getBullMQScoperJob } from '../queues/scoper.js'
-// import {
-//   queueJob as queuePdb2CrdJob,
-//   waitForJobCompletion,
-//   pdb2crdQueueEvents
-// } from '../queues/pdb2crd.js'
 import { User, IUser, MultiJob } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
-// import { ChildProcess } from 'child_process'
-// import { BilboMDScoperSteps, BilboMDSteps } from '../types/bilbomd.js'
-// import { BilboMDJob, BilboMDBullMQ } from '../types/bilbomd.js'
+import { queueJob } from '../queues/multimd.js'
 
 const createNewMultiJob = async (req: Request, res: Response) => {
   const UUID = uuid()
@@ -48,6 +35,7 @@ const createNewMultiJob = async (req: Request, res: Response) => {
       }
       try {
         const email = req.email
+        logger.info(`Processing MultiJob creation for e-mail: ${email}`)
 
         const foundUser = await User.findOne({ email }).exec()
         if (!foundUser) {
@@ -79,19 +67,19 @@ const handleBilboMDMultiJobCreation = async (
 
   const bilbomdUUIDs = req.body.bilbomdUUIDs
 
-  // Validate `bilbomdUUIDs` is an array and has at least two elements
   if (!Array.isArray(bilbomdUUIDs) || bilbomdUUIDs.length < 2) {
-    return res
-      .status(400)
-      .json({ message: 'bilbomdUUIDs must be an array of at least 2 UUIDs' })
+    logger.error('Invalid bilbomdUUIDs: Must be an array with at least 2 elements')
+    return res.status(400).json({
+      message: 'bilbomdUUIDs must be an array of at least 2 UUIDs'
+    })
   }
 
-  // Validate each UUID in the array
   const invalidUUIDs = bilbomdUUIDs.filter(
     (id) => !uuidValidate(id) || uuidVersion(id) !== 4
   )
 
   if (invalidUUIDs.length > 0) {
+    logger.error(`Invalid UUIDs detected: ${invalidUUIDs.join(', ')}`)
     return res.status(400).json({
       message: `Invalid UUIDs detected: ${invalidUUIDs.join(
         ', '
@@ -112,6 +100,17 @@ const handleBilboMDMultiJobCreation = async (
 
     await newMultiJob.save()
     logger.info(`New MultiJob created with UUID: ${UUID}`)
+
+    // Could write out params.json here if needed for NERSC
+
+    // Queue the MultiJob
+    const BullId = await queueJob({
+      type: 'BilboMDMultiJob',
+      title: newMultiJob.title,
+      uuid: newMultiJob.uuid,
+      jobid: newMultiJob.id
+    })
+    logger.info(`MultiJob queued with BullId: ${BullId}`)
 
     return res.status(201).json({ message: 'MultiJob created successfully', uuid: UUID })
   } catch (error) {
