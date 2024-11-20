@@ -39,6 +39,7 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
       if (userInfo) {
         req.user = userInfo.username
         req.roles = userInfo.roles
+        req.email = userInfo.email
         // logger.info(`User ${userInfo.username} has roles ${userInfo.roles}`)
         next()
       } else {
