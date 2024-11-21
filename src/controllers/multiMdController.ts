@@ -28,7 +28,7 @@ const createNewMultiJob = async (req: Request, res: Response) => {
 
     const upload = multer({ storage: storage })
 
-    upload.fields([{ name: 'bilbomdUUIDs', maxCount: 1 }])(req, res, async (err) => {
+    upload.fields([{ name: 'bilbomd_uuids', maxCount: 1 }])(req, res, async (err) => {
       if (err) {
         logger.error(err)
         return res.status(500).json({ message: 'Failed to upload one or more files' })
@@ -65,16 +65,16 @@ const handleBilboMDMultiJobCreation = async (
 ) => {
   logger.info(`Processing MultiJob creation for UUID: ${UUID}`)
 
-  const bilbomdUUIDs = req.body.bilbomdUUIDs
+  const bilbomd_uuids = req.body.bilbomd_uuids
 
-  if (!Array.isArray(bilbomdUUIDs) || bilbomdUUIDs.length < 2) {
-    logger.error('Invalid bilbomdUUIDs: Must be an array with at least 2 elements')
+  if (!Array.isArray(bilbomd_uuids) || bilbomd_uuids.length < 2) {
+    logger.error('Invalid bilbomd_uuids: Must be an array with at least 2 elements')
     return res.status(400).json({
-      message: 'bilbomdUUIDs must be an array of at least 2 UUIDs'
+      message: 'bilbomd_uuids must be an array of at least 2 UUIDs'
     })
   }
 
-  const invalidUUIDs = bilbomdUUIDs.filter(
+  const invalidUUIDs = bilbomd_uuids.filter(
     (id) => !uuidValidate(id) || uuidVersion(id) !== 4
   )
 
@@ -83,7 +83,7 @@ const handleBilboMDMultiJobCreation = async (
     return res.status(400).json({
       message: `Invalid UUIDs detected: ${invalidUUIDs.join(
         ', '
-      )}. All bilbomdUUIDs must be valid v4 UUIDs.`
+      )}. All bilbomd_uuids must be valid v4 UUIDs.`
     })
   }
 
@@ -92,7 +92,7 @@ const handleBilboMDMultiJobCreation = async (
     const newMultiJob = new MultiJob({
       title: req.body.title,
       uuid: UUID,
-      bilbomd_uuids: bilbomdUUIDs,
+      bilbomd_uuids: bilbomd_uuids,
       user: user._id,
       status: 'Submitted',
       time_submitted: new Date()
