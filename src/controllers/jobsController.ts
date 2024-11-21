@@ -28,7 +28,9 @@ import {
   IBilboMDAutoJob,
   BilboMdScoperJob,
   IBilboMDScoperJob,
-  IBilboMDSteps
+  IBilboMDSteps,
+  MultiJob,
+  IMultiJob
 } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
@@ -66,36 +68,42 @@ const getAllJobs = async (req: Request, res: Response) => {
       jobFilter = { user: user._id }
     }
 
-    // const DBjobs: Array<IJob> = await Job.find().lean()
-    const DBjobs = (await Job.find(jobFilter).lean()) as IJob[]
+    // Fetch jobs from both Job and MultiJob collections
+    const [DBjobs, DBmultiJobs] = await Promise.all([
+      Job.find(jobFilter).lean() as Promise<IJob[]>,
+      MultiJob.find(jobFilter).lean() as Promise<IMultiJob[]>
+    ])
 
-    if (!DBjobs?.length) {
+    // Combine both job types
+    const allJobs = [...DBjobs, ...DBmultiJobs]
+
+    if (!allJobs?.length) {
       logger.info('No jobs found')
       res.status(204).json({ message: 'No jobs found' })
       return
     }
 
-    const bilboMDJobs = await Promise.all(
-      DBjobs.map(async (mongo) => {
+    // Process and format jobs
+    const formattedJobs = await Promise.all(
+      allJobs.map(async (mongo) => {
         const user = await User.findById(mongo.user).lean().exec()
 
-        let bullmq
+        let bullmq = null
         if (['BilboMd', 'BilboMdAuto'].includes(mongo.__t)) {
           bullmq = await getBullMQJob(mongo.uuid)
         } else if (mongo.__t === 'BilboMdScoper') {
           bullmq = await getBullMQScoperJob(mongo.uuid)
         }
 
-        const bilboMDJobtest = {
+        return {
           mongo,
           bullmq,
           username: user?.username
         }
-        // logger.info(bilboMDJobtest)
-        return bilboMDJobtest
       })
     )
-    res.status(200).json(bilboMDJobs)
+
+    res.status(200).json(formattedJobs)
   } catch (error) {
     logger.error(error)
     console.log(error)
@@ -559,87 +567,105 @@ const wrapLine = (line: string): string[] => {
 const deleteJob = async (req: Request, res: Response) => {
   const { id } = req.params
 
-  // Confirm that client sent id
   if (!id) {
     res.status(400).json({ message: 'Job ID required' })
     return
   }
 
-  // Find the job to delete
-  const job = await Job.findById(id).exec()
+  try {
+    // Check if the job is a standard Job or a MultiJob
+    const job = await Job.findById(id).exec()
+    const multiJob = await MultiJob.findById(id).exec()
 
-  if (!job) {
-    res.status(400).json({ message: 'Job not found' })
-    return
+    if (!job && !multiJob) {
+      res.status(400).json({ message: 'Job not found' })
+      return
+    }
+
+    if (job) {
+      // Handle standard Job deletion
+      await handleStandardJobDeletion(job, res)
+    } else if (multiJob) {
+      // Handle MultiJob deletion
+      await handleMultiJobDeletion(multiJob, res)
+    }
+  } catch (error) {
+    logger.error(`Error deleting job: ${error}`)
+    res.status(500).json({ message: 'Internal server error during job deletion' })
   }
+}
 
-  // Delete the job from MongoDB
+const handleStandardJobDeletion = async (job: IJob, res: Response) => {
   const deleteResult = await job.deleteOne()
 
-  // Check if a document was actually deleted
-  if (deleteResult.deletedCount === 0) {
+  if (!deleteResult) {
     res.status(404).json({ message: 'No job was deleted' })
     return
   }
 
-  // Remove from disk
-  const jobDir = path.join(uploadFolder, job.uuid)
+  await removeJobDirectory(job.uuid, res)
+
+  const reply = `Deleted Job: '${job.title}' with ID ${job._id} and UUID: ${job.uuid}`
+  res.status(200).json({ reply })
+}
+
+const handleMultiJobDeletion = async (multiJob: IMultiJob, res: Response) => {
+  // Delete the MultiJob itself
+  const deleteResult = await multiJob.deleteOne()
+
+  if (!deleteResult) {
+    res.status(404).json({ message: 'No MultiJob was deleted' })
+    return
+  }
+
+  await removeJobDirectory(multiJob.uuid, res)
+
+  const reply = `Deleted MultiJob: '${multiJob.title}' with ID ${multiJob._id} and UUID: ${multiJob.uuid}`
+  res.status(200).json({ reply })
+}
+
+const removeJobDirectory = async (uuid: string, res: Response) => {
+  const jobDir = path.join(uploadFolder, uuid)
   try {
-    // Check if the directory exists and remove it
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
-      res.status(404).json({ message: 'Directory not found on disk' })
+      logger.warn(`Directory not found on disk for UUID: ${uuid}`)
       return
     }
-    // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
-    // because there are dangles NFS lock files present.
-    // This complicated bit of code is an attempt to make the job deletion function more robust.
+
     const maxAttempts = 10
     let attempt = 0
     const start = Date.now()
+
     while (attempt < maxAttempts) {
       try {
         logger.info(`Attempt ${attempt + 1} to remove ${jobDir}`)
         await fs.remove(jobDir)
         logger.info(`Removed ${jobDir}`)
         break
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          typeof error === 'object' &&
-          error !== null &&
-          'code' in error
-        ) {
-          if (error.code === 'ENOTEMPTY' || error.code === 'EBUSY') {
-            // Log and wait before retrying
-            logger.warn(
-              `Attempt ${attempt + 1} to remove directory failed ${
-                error.code
-              }, retrying...`
-            )
-            await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1))) // Exponential back-off could be considered
-            attempt++
-          } else {
-            // Re-throw if it's an unexpected error
-            throw error
-          }
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException // Explicitly cast the error
+        if (error.code === 'ENOTEMPTY' || error.code === 'EBUSY') {
+          logger.warn(
+            `Attempt ${attempt + 1} to remove directory failed: ${
+              error.code
+            }, retrying...`
+          )
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
+          attempt++
         } else {
-          console.log(error)
+          throw error // Re-throw if it's an unexpected error
         }
       }
     }
-    const end = Date.now() // Get end time in milliseconds
-    const duration = end - start // Calculate the duration in milliseconds
-    logger.info(`Total time to attempt removal of ${jobDir}: ${duration} milliseconds.`)
+
+    const end = Date.now()
+    const duration = end - start
+    logger.info(`Total time to attempt removal of ${jobDir}: ${duration} ms.`)
   } catch (error) {
     logger.error(`Error deleting directory: ${error}`)
-    res.status(500).send('Error deleting directory')
+    res.status(500).json({ message: 'Error deleting directory' })
   }
-
-  // Create response message
-  const reply = `Deleted Job: '${job.title}' with ID ${job._id} and UUID: ${job.uuid}`
-
-  res.status(200).json({ reply })
 }
 
 const getJobById = async (req: Request, res: Response) => {
@@ -650,61 +676,77 @@ const getJobById = async (req: Request, res: Response) => {
   }
 
   try {
+    // Search in both collections
     const job = await Job.findOne({ _id: jobId }).exec()
+    const multiJob = job ? null : await MultiJob.findOne({ _id: jobId }).exec()
 
-    if (!job) {
+    // Handle case where job is not found in either collection
+    if (!job && !multiJob) {
       res.status(404).json({ message: `No job matches ID ${jobId}.` })
       return
     }
 
-    // const jobDir = path.join(uploadFolder, job.uuid, 'results')
-    const jobDir = path.join(uploadFolder, job.uuid)
+    // Determine job type
+    if (job) {
+      // Process Job collection entries
+      const jobDir = path.join(uploadFolder, job.uuid)
+      let bullmq: BilboMDBullMQ | undefined
 
-    let bullmq: BilboMDBullMQ | undefined
+      const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
-    // Instantiate a bilbomdJob object with id and MongoDB info
-    const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
+      if (
+        job.__t === 'BilboMdPDB' ||
+        job.__t === 'BilboMdCRD' ||
+        job.__t === 'BilboMd' ||
+        job.__t === 'BilboMdSANS'
+      ) {
+        bullmq = await getBullMQJob(job.uuid)
+        if (bullmq && 'bilbomdStep' in bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.classic = await calculateNumEnsembles(
+            bullmq.bilbomdStep as BilboMDSteps,
+            jobDir
+          )
+        }
+      } else if (job.__t === 'BilboMdAuto') {
+        bullmq = await getBullMQJob(job.uuid)
+        if (bullmq && 'bilbomdStep' in bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.auto = await calculateNumEnsembles(
+            bullmq.bilbomdStep as BilboMDSteps,
+            jobDir
+          )
+        }
+      } else if (job.__t === 'BilboMdAlphaFold') {
+        bullmq = await getBullMQJob(job.uuid)
+        if (bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
+        }
+      } else if (job.__t === 'BilboMdScoper') {
+        bullmq = await getBullMQScoperJob(job.uuid)
+        if (bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.scoper = await getScoperStatus(job as unknown as IBilboMDScoperJob)
+        }
+      }
 
-    // The goal is to eventually use the job-specific object to store results needed for the front end
-    if (
-      job.__t === 'BilboMdPDB' ||
-      job.__t === 'BilboMdCRD' ||
-      job.__t === 'BilboMd' ||
-      job.__t === 'BilboMdSANS'
-    ) {
-      bullmq = await getBullMQJob(job.uuid)
-      if (bullmq && 'bilbomdStep' in bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.classic = await calculateNumEnsembles(
-          bullmq.bilbomdStep as BilboMDSteps,
-          jobDir
-        )
+      res.status(200).json(bilbomdJob)
+    } else if (multiJob) {
+      // Process MultiJob collection entries
+      const multiJobDir = path.join(uploadFolder, multiJob.uuid)
+
+      // Construct a response for MultiJob
+      const multiJobResponse = {
+        id: jobId,
+        mongo: multiJob,
+        jobDir: multiJobDir,
+        status: multiJob.status,
+        progress: multiJob.progress
       }
-    } else if (job.__t === 'BilboMdAuto') {
-      bullmq = await getBullMQJob(job.uuid)
-      if (bullmq && 'bilbomdStep' in bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.auto = await calculateNumEnsembles(
-          bullmq.bilbomdStep as BilboMDSteps,
-          jobDir
-        )
-      }
-    } else if (job.__t === 'BilboMdAlphaFold') {
-      bullmq = await getBullMQJob(job.uuid)
-      if (bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
-      }
-    } else if (job.__t === 'BilboMdScoper') {
-      // const scoperJob = job
-      bullmq = await getBullMQScoperJob(job.uuid)
-      if (bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.scoper = await getScoperStatus(job as unknown as IBilboMDScoperJob)
-      }
+
+      res.status(200).json(multiJobResponse)
     }
-    // logger.info(bilbomdJob)
-    res.status(200).json(bilbomdJob)
   } catch (error) {
     logger.error(`Error retrieving job: ${error}`)
     res.status(500).json({ message: 'Failed to retrieve job.' })
