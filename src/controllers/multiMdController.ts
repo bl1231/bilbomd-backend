@@ -93,6 +93,7 @@ const handleBilboMDMultiJobCreation = async (
       title: req.body.title,
       uuid: UUID,
       bilbomd_uuids: bilbomd_uuids,
+      data_file_from: req.body.data_file_from,
       user: user._id,
       status: 'Submitted',
       time_submitted: new Date()
