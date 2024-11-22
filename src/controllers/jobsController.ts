@@ -834,49 +834,50 @@ const calculateNumEnsembles2 = async (
 }
 
 const downloadJobResults = async (req: Request, res: Response) => {
-  if (!req?.params?.id) res.status(400).json({ message: 'Job ID required.' })
+  const { id } = req.params
 
-  const job = await Job.findOne({ _id: req.params.id }).exec()
-  if (!job) {
-    res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+  if (!id) {
+    res.status(400).json({ message: 'Job ID required.' })
     return
   }
 
-  const outputFolder = path.join(uploadFolder, job.uuid)
-  const defaultResultFile = path.join(outputFolder, 'results.tar.gz')
-  const uuidPrefix = job.uuid.split('-')[0]
-  const newResultFile = path.join(outputFolder, `results-${uuidPrefix}.tar.gz`)
-
-  // Attempt to access and send the default results file
   try {
-    await fs.promises.access(defaultResultFile)
-    const filename = path.basename(defaultResultFile) // Extract filename for setting Content-Disposition
+    // Find the job in either Job or MultiJob collection
+    const job = await Job.findById(id).exec()
+    const multiJob = await MultiJob.findById(id).exec()
+
+    if (!job && !multiJob) {
+      res.status(404).json({ message: `No job matches ID ${id}.` })
+      return
+    }
+
+    // Determine the result file path based on job type
+    const { uuid } = job || multiJob!
+    const outputFolder = path.join(uploadFolder, uuid)
+    const uuidPrefix = uuid.split('-')[0]
+    const resultFilePath = path.join(outputFolder, `results-${uuidPrefix}.tar.gz`)
+
+    // Check if the results file exists
+    try {
+      await fs.access(resultFilePath)
+    } catch (error) {
+      res.status(404).json({ message: 'Results file not found.' })
+      logger.warn(`Results file not found for job ID: ${id} - ${error}`)
+      return
+    }
+
+    // Set headers and initiate file download
+    const filename = path.basename(resultFilePath)
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.download(defaultResultFile, filename, (err) => {
+    res.download(resultFilePath, filename, (err) => {
       if (err) {
-        res.status(500).json({ message: `Could not download the file: ${err}` })
-        return
+        logger.error(`Error during file download: ${err}`)
+        res.status(500).json({ message: `Could not download the file: ${err.message}` })
       }
     })
   } catch (error) {
-    logger.error(`Error accessing default result file: ${error}`)
-    // If the default file is not found, try the new file name
-    try {
-      await fs.promises.access(newResultFile)
-      const filename = path.basename(newResultFile) // Extract new filename for setting Content-Disposition
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-      res.download(newResultFile, filename, (err) => {
-        if (err) {
-          res.status(500).json({ message: `Could not download the file: ${err}` })
-          return
-        }
-      })
-    } catch (newFileError) {
-      logger.error(`Error accessing new result file: ${newFileError}`)
-      // If neither file is found, log error and return a message
-      logger.error(`No result files available for job ID: ${req.params.id}`)
-      res.status(500).json({ message: 'No result files available.' })
-    }
+    logger.error(`Error retrieving job: ${error}`)
+    res.status(500).json({ message: 'An error occurred while processing your request.' })
   }
 }
 
