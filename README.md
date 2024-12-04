@@ -94,7 +94,10 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
-- 1.14.1 (11.22/2024)
+- 1.14.2 (12/04/2024)
+  - Update dependencies
+  - Run `npm audit fix`
+- 1.14.1 (11/22/2024)
   - Add config option to enable/disable BilboMD Multi
 - 1.14.0 (11/21/2024)
   - Add BilboMD Multi pipeline
