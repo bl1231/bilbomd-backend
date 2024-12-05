@@ -94,6 +94,28 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.14.2 (12/04/2024)
+  - Update dependencies
+  - Run `npm audit fix`
+- 1.14.1 (11/22/2024)
+  - Add config option to enable/disable BilboMD Multi
+- 1.14.0 (11/21/2024)
+  - Add BilboMD Multi pipeline
+- 1.13.2 (11/15/2024)
+  - Adjustments to jobHandler code for PDB remediation step
+- 1.13.1 (11/12/2024)
+  - Add new option for Scoper jobs to fix c1/c2 values
+- 1.13.0 (11/08/2024)
+  - Add `rg`, `rg_min`, and `rg_max` to all Auto and AF jobs
+- 1.12.9 (11/04/2024)
+  - Simplify package name from `bilbomd-backend/bilbomd-backend` to `bilbomd-backend`
+- 1.12.8
+  - Now adding Rg to mongo Job entries
+  - Update dependencies
+- 1.12.7
+  - Improvements to the email reset workflow
+- 1.12.6
+  - Fix problem with nodemailer templates
 - 1.12.5
   - Filter jobs returned to non-admin users
 - 1.12.4

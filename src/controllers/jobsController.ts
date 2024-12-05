@@ -18,6 +18,8 @@ import {
 import {
   Job,
   IJob,
+  User,
+  IUser,
   BilboMdPDBJob,
   IBilboMDPDBJob,
   BilboMdCRDJob,
@@ -26,10 +28,10 @@ import {
   IBilboMDAutoJob,
   BilboMdScoperJob,
   IBilboMDScoperJob,
-  IBilboMDAlphaFoldJob,
-  IBilboMDSANSJob
+  IBilboMDSteps,
+  MultiJob,
+  IMultiJob
 } from '@bl1231/bilbomd-mongodb-schema'
-import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Express, Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
 import { BilboMDScoperSteps, BilboMDSteps } from '../types/bilbomd.js'
@@ -66,36 +68,42 @@ const getAllJobs = async (req: Request, res: Response) => {
       jobFilter = { user: user._id }
     }
 
-    // const DBjobs: Array<IJob> = await Job.find().lean()
-    const DBjobs: Array<IJob> = await Job.find(jobFilter).lean()
+    // Fetch jobs from both Job and MultiJob collections
+    const [DBjobs, DBmultiJobs] = await Promise.all([
+      Job.find(jobFilter).lean() as Promise<IJob[]>,
+      MultiJob.find(jobFilter).lean() as Promise<IMultiJob[]>
+    ])
 
-    if (!DBjobs?.length) {
+    // Combine both job types
+    const allJobs = [...DBjobs, ...DBmultiJobs]
+
+    if (!allJobs?.length) {
       logger.info('No jobs found')
       res.status(204).json({ message: 'No jobs found' })
       return
     }
 
-    const bilboMDJobs = await Promise.all(
-      DBjobs.map(async (mongo) => {
+    // Process and format jobs
+    const formattedJobs = await Promise.all(
+      allJobs.map(async (mongo) => {
         const user = await User.findById(mongo.user).lean().exec()
 
-        let bullmq
+        let bullmq = null
         if (['BilboMd', 'BilboMdAuto'].includes(mongo.__t)) {
           bullmq = await getBullMQJob(mongo.uuid)
         } else if (mongo.__t === 'BilboMdScoper') {
           bullmq = await getBullMQScoperJob(mongo.uuid)
         }
 
-        const bilboMDJobtest = {
+        return {
           mongo,
           bullmq,
           username: user?.username
         }
-        // logger.info(bilboMDJobtest)
-        return bilboMDJobtest
       })
     )
-    res.status(200).json(bilboMDJobs)
+
+    res.status(200).json(formattedJobs)
   } catch (error) {
     logger.error(error)
     console.log(error)
@@ -156,7 +164,7 @@ const createNewJob = async (req: Request, res: Response) => {
 
         if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
           logger.info(`about to handleBilboMDJob ${req.body.bilbomd_mode}`)
-          await handleBilboMDJob(req, res, user, UUID, jobDir)
+          await handleBilboMDJob(req, res, user, UUID)
         } else if (bilbomd_mode === 'auto') {
           logger.info('about to handleBilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, user, UUID)
@@ -164,11 +172,11 @@ const createNewJob = async (req: Request, res: Response) => {
           logger.info('about to handleBilboMDScoperJob')
           await handleBilboMDScoperJob(req, res, user, UUID)
         } else {
-          res.status(400).json({ message: 'Invalid job type' })
+          return res.status(400).json({ message: 'Invalid job type' })
         }
       } catch (error) {
         logger.error(error)
-        res.status(500).json({ message: 'Internal server error' })
+        return res.status(500).json({ message: 'Internal server error' })
       }
     })
   } catch (error) {
@@ -182,85 +190,91 @@ const handleBilboMDJob = async (
   req: Request,
   res: Response,
   user: IUser,
-  UUID: string,
-  jobDir: string
+  UUID: string
 ) => {
   try {
-    const { bilbomd_mode: bilbomdMode } = req.body
+    const { bilbomd_mode: bilbomdMode, title, num_conf, rg, rg_min, rg_max } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(`bilbomdMode: ${bilbomdMode}`)
-    logger.info(`title: ${req.body.title}`)
+    logger.info(`title: ${title}`)
 
     const constInpFile = files['constinp'][0].originalname.toLowerCase()
     const dataFile = files['expdata'][0].originalname.toLowerCase()
 
-    // Rename the original constinp file to create a backup
+    // Create and sanitize job directory and files
+    const jobDir = path.join(uploadFolder, UUID)
     const constInpFilePath = path.join(jobDir, constInpFile)
     const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
 
     await fs.copyFile(constInpFilePath, constInpOrigFilePath)
-
-    // Sanitize the uploaded file (constInpFilePath)
     await sanitizeConstInpFile(constInpFilePath)
 
-    const jobData = {
-      title: req.body.title,
+    // Initialize common job data
+    const commonJobData = {
+      __t: '',
+      title,
       uuid: UUID,
-      const_inp_file: constInpFile,
-      data_file: dataFile,
-      conformational_sampling: req.body.num_conf,
-      rg_min: req.body.rg_min,
-      rg_max: req.body.rg_max,
       status: 'Submitted',
+      data_file: dataFile,
+      const_inp_file: constInpFile, // Add const_inp_file here
       time_submitted: new Date(),
-      user: user,
+      user,
+      progress: 0,
+      cleanup_in_progress: false,
       steps: {
-        pdb2crd: {},
         minimize: {},
         initfoxs: {},
         heat: {},
         md: {},
         dcd2pdb: {},
+        pdb_remediate: {},
         foxs: {},
         multifoxs: {},
         results: {},
         email: {}
-      }
+      } as IBilboMDSteps
     }
 
     let newJob: IBilboMDPDBJob | IBilboMDCRDJob | undefined
 
     if (bilbomdMode === 'crd_psf') {
-      const psfFile = files['psf_file']
-        ? files['psf_file'][0].originalname.toLowerCase()
-        : ''
-      const crdFile = files['crd_file']
-        ? files['crd_file'][0].originalname.toLowerCase()
-        : ''
-      // Add specific fields for CRD/PSF mode
-      Object.assign(jobData, { psf_file: psfFile, crd_file: crdFile })
-      newJob = new BilboMdCRDJob(jobData)
+      const psfFile = files['psf_file']?.[0]?.originalname.toLowerCase() || ''
+      const crdFile = files['crd_file']?.[0]?.originalname.toLowerCase() || ''
+
+      newJob = new BilboMdCRDJob({
+        ...commonJobData,
+        __t: 'BilboMdCRD',
+        psf_file: psfFile,
+        crd_file: crdFile,
+        conformational_sampling: num_conf,
+        rg,
+        rg_min,
+        rg_max
+      })
     } else if (bilbomdMode === 'pdb') {
-      const pdbFile = files['pdb_file']
-        ? files['pdb_file'][0].originalname.toLowerCase()
-        : ''
-      // Add specific field for PDB mode
-      Object.assign(jobData, { pdb_file: pdbFile })
-      newJob = new BilboMdPDBJob(jobData)
+      const pdbFile = files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
+
+      newJob = new BilboMdPDBJob({
+        ...commonJobData,
+        __t: 'BilboMdPDB',
+        pdb_file: pdbFile,
+        conformational_sampling: num_conf,
+        rg,
+        rg_min,
+        rg_max,
+        steps: { ...commonJobData.steps, pdb2crd: {} } // Add pdb2crd step
+      })
     }
 
-    // Ensure newJob is defined before proceeding
+    // Handle unsupported modes
     if (!newJob) {
-      // Handle the case where newJob wasn't set due to an unsupported bilbomdMode
       logger.error(`Unsupported bilbomd_mode: ${bilbomdMode}`)
       return res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
     }
-    logger.info(newJob)
-    // Save the job to MongoDB
+
+    // Save the job and write job parameters
     await newJob.save()
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
-
-    // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
 
     // Queue the job
@@ -274,6 +288,7 @@ const handleBilboMDJob = async (
     logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
     logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
 
+    // Respond with job details
     res.status(200).json({
       message: `New ${bilbomdMode} Job successfully created`,
       jobid: newJob.id,
@@ -305,9 +320,12 @@ const handleBilboMDAutoJob = async (
     const datFileName =
       files['dat_file'] && files['dat_file'][0]
         ? files['dat_file'][0].originalname.toLowerCase()
-        : 'missing.json'
+        : 'missing.dat'
     logger.info(`PDB File: ${pdbFileName}`)
     logger.info(`PAE File: ${paeFileName}`)
+
+    const jobDir = path.join(uploadFolder, UUID)
+    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
 
     const now = new Date()
 
@@ -317,6 +335,9 @@ const handleBilboMDAutoJob = async (
       pdb_file: pdbFileName,
       pae_file: paeFileName,
       data_file: datFileName,
+      rg: autorgResults.rg,
+      rg_min: autorgResults.rg_min,
+      rg_max: autorgResults.rg_max,
       conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
@@ -397,7 +418,7 @@ const handleBilboMDScoperJob = async (
   UUID: string
 ) => {
   try {
-    const { bilbomd_mode: bilbomdMode } = req.body
+    const { bilbomd_mode: bilbomdMode, title, fixc1c2 } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(
       `PDB File: ${
@@ -410,12 +431,13 @@ const handleBilboMDScoperJob = async (
       }`
     )
     const now = new Date()
-    // logger.info(`now:  ${now.toDateString()}`)
+    logger.info(`fixc1c2: ${fixc1c2}`)
     const newJob: IBilboMDScoperJob = new BilboMdScoperJob({
-      title: req.body.title,
+      title,
       uuid: UUID,
       pdb_file: files['pdb_file'][0].originalname.toLowerCase(),
       data_file: files['dat_file'][0].originalname.toLowerCase(),
+      fixc1c2,
       status: 'Submitted',
       time_submitted: now,
       user: user,
@@ -545,153 +567,186 @@ const wrapLine = (line: string): string[] => {
 const deleteJob = async (req: Request, res: Response) => {
   const { id } = req.params
 
-  // Confirm that client sent id
   if (!id) {
     res.status(400).json({ message: 'Job ID required' })
-  }
-
-  // Find the job to delete
-  const job = await Job.findById(id).exec()
-
-  if (!job) {
-    res.status(400).json({ message: 'Job not found' })
     return
   }
 
-  // Delete the job from MongoDB
+  try {
+    // Check if the job is a standard Job or a MultiJob
+    const job = await Job.findById(id).exec()
+    const multiJob = await MultiJob.findById(id).exec()
+
+    if (!job && !multiJob) {
+      res.status(400).json({ message: 'Job not found' })
+      return
+    }
+
+    if (job) {
+      // Handle standard Job deletion
+      await handleStandardJobDeletion(job, res)
+    } else if (multiJob) {
+      // Handle MultiJob deletion
+      await handleMultiJobDeletion(multiJob, res)
+    }
+  } catch (error) {
+    logger.error(`Error deleting job: ${error}`)
+    res.status(500).json({ message: 'Internal server error during job deletion' })
+  }
+}
+
+const handleStandardJobDeletion = async (job: IJob, res: Response) => {
   const deleteResult = await job.deleteOne()
 
-  // Check if a document was actually deleted
-  if (deleteResult.deletedCount === 0) {
+  if (!deleteResult) {
     res.status(404).json({ message: 'No job was deleted' })
+    return
   }
 
-  // Remove from disk
-  const jobDir = path.join(uploadFolder, job.uuid)
+  await removeJobDirectory(job.uuid, res)
+
+  const reply = `Deleted Job: '${job.title}' with ID ${job._id} and UUID: ${job.uuid}`
+  res.status(200).json({ reply })
+}
+
+const handleMultiJobDeletion = async (multiJob: IMultiJob, res: Response) => {
+  // Delete the MultiJob itself
+  const deleteResult = await multiJob.deleteOne()
+
+  if (!deleteResult) {
+    res.status(404).json({ message: 'No MultiJob was deleted' })
+    return
+  }
+
+  await removeJobDirectory(multiJob.uuid, res)
+
+  const reply = `Deleted MultiJob: '${multiJob.title}' with ID ${multiJob._id} and UUID: ${multiJob.uuid}`
+  res.status(200).json({ reply })
+}
+
+const removeJobDirectory = async (uuid: string, res: Response) => {
+  const jobDir = path.join(uploadFolder, uuid)
   try {
-    // Check if the directory exists and remove it
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
-      res.status(404).json({ message: 'Directory not found on disk' })
+      logger.warn(`Directory not found on disk for UUID: ${uuid}`)
+      return
     }
-    // Not sure if this is a NetApp issue or a Docker issue, but sometimes this fails
-    // because there are dangles NFS lock files present.
-    // This complicated bit of code is an attempt to make the job deletion function more robust.
+
     const maxAttempts = 10
     let attempt = 0
     const start = Date.now()
+
     while (attempt < maxAttempts) {
       try {
         logger.info(`Attempt ${attempt + 1} to remove ${jobDir}`)
         await fs.remove(jobDir)
         logger.info(`Removed ${jobDir}`)
         break
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          typeof error === 'object' &&
-          error !== null &&
-          'code' in error
-        ) {
-          if (error.code === 'ENOTEMPTY' || error.code === 'EBUSY') {
-            // Log and wait before retrying
-            logger.warn(
-              `Attempt ${attempt + 1} to remove directory failed ${
-                error.code
-              }, retrying...`
-            )
-            await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1))) // Exponential back-off could be considered
-            attempt++
-          } else {
-            // Re-throw if it's an unexpected error
-            throw error
-          }
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException // Explicitly cast the error
+        if (error.code === 'ENOTEMPTY' || error.code === 'EBUSY') {
+          logger.warn(
+            `Attempt ${attempt + 1} to remove directory failed: ${
+              error.code
+            }, retrying...`
+          )
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
+          attempt++
         } else {
-          console.log(error)
+          throw error // Re-throw if it's an unexpected error
         }
       }
     }
-    const end = Date.now() // Get end time in milliseconds
-    const duration = end - start // Calculate the duration in milliseconds
-    logger.info(`Total time to attempt removal of ${jobDir}: ${duration} milliseconds.`)
+
+    const end = Date.now()
+    const duration = end - start
+    logger.info(`Total time to attempt removal of ${jobDir}: ${duration} ms.`)
   } catch (error) {
     logger.error(`Error deleting directory: ${error}`)
-    res.status(500).send('Error deleting directory')
+    res.status(500).json({ message: 'Error deleting directory' })
   }
-
-  // Create response message
-  const reply = `Deleted Job: '${job.title}' with ID ${job._id} and UUID: ${job.uuid}`
-
-  res.status(200).json({ reply })
 }
 
 const getJobById = async (req: Request, res: Response) => {
   const jobId = req.params.id
   if (!jobId) {
     res.status(400).json({ message: 'Job ID required.' })
+    return
   }
 
   try {
-    const job = (await Job.findOne({ _id: jobId }).exec()) as
-      | IBilboMDPDBJob
-      | IBilboMDCRDJob
-      | IBilboMDAutoJob
-      | IBilboMDScoperJob
-      | IBilboMDAlphaFoldJob
-      | IBilboMDSANSJob
+    // Search in both collections
+    const job = await Job.findOne({ _id: jobId }).exec()
+    const multiJob = job ? null : await MultiJob.findOne({ _id: jobId }).exec()
 
-    if (!job) {
+    // Handle case where job is not found in either collection
+    if (!job && !multiJob) {
       res.status(404).json({ message: `No job matches ID ${jobId}.` })
+      return
     }
 
-    // const jobDir = path.join(uploadFolder, job.uuid, 'results')
-    const jobDir = path.join(uploadFolder, job.uuid)
+    // Determine job type
+    if (job) {
+      // Process Job collection entries
+      const jobDir = path.join(uploadFolder, job.uuid)
+      let bullmq: BilboMDBullMQ | undefined
 
-    let bullmq: BilboMDBullMQ | undefined
+      const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
 
-    // Instantiate a bilbomdJob object with id and MongoDB info
-    const bilbomdJob: BilboMDJob = { id: jobId, mongo: job }
+      if (
+        job.__t === 'BilboMdPDB' ||
+        job.__t === 'BilboMdCRD' ||
+        job.__t === 'BilboMd' ||
+        job.__t === 'BilboMdSANS'
+      ) {
+        bullmq = await getBullMQJob(job.uuid)
+        if (bullmq && 'bilbomdStep' in bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.classic = await calculateNumEnsembles(
+            bullmq.bilbomdStep as BilboMDSteps,
+            jobDir
+          )
+        }
+      } else if (job.__t === 'BilboMdAuto') {
+        bullmq = await getBullMQJob(job.uuid)
+        if (bullmq && 'bilbomdStep' in bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.auto = await calculateNumEnsembles(
+            bullmq.bilbomdStep as BilboMDSteps,
+            jobDir
+          )
+        }
+      } else if (job.__t === 'BilboMdAlphaFold') {
+        bullmq = await getBullMQJob(job.uuid)
+        if (bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
+        }
+      } else if (job.__t === 'BilboMdScoper') {
+        bullmq = await getBullMQScoperJob(job.uuid)
+        if (bullmq) {
+          bilbomdJob.bullmq = bullmq
+          bilbomdJob.scoper = await getScoperStatus(job as unknown as IBilboMDScoperJob)
+        }
+      }
 
-    // The goal is to eventually use the job-specific object to store results needed for the front end
-    if (
-      job.__t === 'BilboMdPDB' ||
-      job.__t === 'BilboMdCRD' ||
-      job.__t === 'BilboMd' ||
-      job.__t === 'BilboMdSANS'
-    ) {
-      bullmq = await getBullMQJob(job.uuid)
-      if (bullmq && 'bilbomdStep' in bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.classic = await calculateNumEnsembles(
-          bullmq.bilbomdStep as BilboMDSteps,
-          jobDir
-        )
+      res.status(200).json(bilbomdJob)
+    } else if (multiJob) {
+      // Process MultiJob collection entries
+      const multiJobDir = path.join(uploadFolder, multiJob.uuid)
+
+      // Construct a response for MultiJob
+      const multiJobResponse = {
+        id: jobId,
+        mongo: multiJob,
+        jobDir: multiJobDir,
+        status: multiJob.status,
+        progress: multiJob.progress
       }
-    } else if (job.__t === 'BilboMdAuto') {
-      bullmq = await getBullMQJob(job.uuid)
-      if (bullmq && 'bilbomdStep' in bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.auto = await calculateNumEnsembles(
-          bullmq.bilbomdStep as BilboMDSteps,
-          jobDir
-        )
-      }
-    } else if (job.__t === 'BilboMdAlphaFold') {
-      bullmq = await getBullMQJob(job.uuid)
-      if (bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.alphafold = await calculateNumEnsembles2(jobDir)
-      }
-    } else if (job.__t === 'BilboMdScoper') {
-      const scoperJob = job as IBilboMDScoperJob
-      bullmq = await getBullMQScoperJob(job.uuid)
-      if (bullmq) {
-        bilbomdJob.bullmq = bullmq
-        bilbomdJob.scoper = await getScoperStatus(scoperJob)
-      }
+
+      res.status(200).json(multiJobResponse)
     }
-    // logger.info(bilbomdJob)
-    res.status(200).json(bilbomdJob)
   } catch (error) {
     logger.error(`Error retrieving job: ${error}`)
     res.status(500).json({ message: 'Failed to retrieve job.' })
@@ -779,51 +834,50 @@ const calculateNumEnsembles2 = async (
 }
 
 const downloadJobResults = async (req: Request, res: Response) => {
-  if (!req?.params?.id) res.status(400).json({ message: 'Job ID required.' })
+  const { id } = req.params
 
-  const job = await Job.findOne({ _id: req.params.id }).exec()
-  if (!job) {
-    res.status(204).json({ message: `No job matches ID ${req.params.id}.` })
+  if (!id) {
+    res.status(400).json({ message: 'Job ID required.' })
     return
   }
 
-  const outputFolder = path.join(uploadFolder, job.uuid)
-  const defaultResultFile = path.join(outputFolder, 'results.tar.gz')
-  const uuidPrefix = job.uuid.split('-')[0]
-  const newResultFile = path.join(outputFolder, `results-${uuidPrefix}.tar.gz`)
-
-  // Attempt to access and send the default results file
   try {
-    await fs.promises.access(defaultResultFile)
-    const filename = path.basename(defaultResultFile) // Extract filename for setting Content-Disposition
+    // Find the job in either Job or MultiJob collection
+    const job = await Job.findById(id).exec()
+    const multiJob = await MultiJob.findById(id).exec()
+
+    if (!job && !multiJob) {
+      res.status(404).json({ message: `No job matches ID ${id}.` })
+      return
+    }
+
+    // Determine the result file path based on job type
+    const { uuid } = job || multiJob!
+    const outputFolder = path.join(uploadFolder, uuid)
+    const uuidPrefix = uuid.split('-')[0]
+    const resultFilePath = path.join(outputFolder, `results-${uuidPrefix}.tar.gz`)
+
+    // Check if the results file exists
+    try {
+      await fs.access(resultFilePath)
+    } catch (error) {
+      res.status(404).json({ message: 'Results file not found.' })
+      logger.warn(`Results file not found for job ID: ${id} - ${error}`)
+      return
+    }
+
+    // Set headers and initiate file download
+    const filename = path.basename(resultFilePath)
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.download(defaultResultFile, filename, (err) => {
+    res.download(resultFilePath, filename, (err) => {
       if (err) {
-        res.status(500).json({
-          message: 'Could not download the file: ' + err
-        })
+        logger.error(`Error during file download: ${err}`)
+        res.status(500).json({ message: `Could not download the file: ${err.message}` })
       }
     })
   } catch (error) {
-    logger.error(`Error accessing default result file: ${error}`)
-    // If the default file is not found, try the new file name
-    try {
-      await fs.promises.access(newResultFile)
-      const filename = path.basename(newResultFile) // Extract new filename for setting Content-Disposition
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-      res.download(newResultFile, filename, (err) => {
-        if (err) {
-          res.status(500).json({
-            message: 'Could not download the file: ' + err
-          })
-        }
-      })
-    } catch (newFileError) {
-      logger.error(`Error accessing new result file: ${newFileError}`)
-      // If neither file is found, log error and return a message
-      logger.error(`No result files available for job ID: ${req.params.id}`)
-      res.status(500).json({ message: 'No result files available.' })
-    }
+    logger.error(`Error retrieving job: ${error}`)
+    res.status(500).json({ message: 'An error occurred while processing your request.' })
   }
 }
 
@@ -832,6 +886,7 @@ const getLogForStep = async (req: Request, res: Response) => {
   // Check if req.params.id is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     res.status(400).json({ message: 'Invalid Job ID format.' })
+    return
   }
   const job = await Job.findOne({ _id: req.params.id }).exec()
   if (!job) {
@@ -1006,7 +1061,10 @@ const getAutoRg = async (req: Request, res: Response) => {
           return res.status(401).json({ message: 'No user found with that email' })
         }
 
-        const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir)
+        const autorgResults: AutoRgResults = await spawnAutoRgCalculator(
+          jobDir,
+          'expdata.dat'
+        )
         logger.info(`autorgResults: ${JSON.stringify(autorgResults)}`)
 
         res.status(200).json({
@@ -1067,14 +1125,17 @@ const getAutoRg = async (req: Request, res: Response) => {
   }
 }
 
-const spawnAutoRgCalculator = async (dir: string): Promise<AutoRgResults> => {
+const spawnAutoRgCalculator = async (
+  dir: string,
+  datFileName: string
+): Promise<AutoRgResults> => {
   const logFile = path.join(dir, 'autoRg.log')
   const errorFile = path.join(dir, 'autoRg_error.log')
   const logStream = fs.createWriteStream(logFile)
   const errorStream = fs.createWriteStream(errorFile)
   const autoRg_script = '/app/scripts/autorg.py'
   const tempOutputFile = path.join(os.tmpdir(), `autoRg_${Date.now()}.json`)
-  const args = [autoRg_script, 'expdata.dat', tempOutputFile]
+  const args = [autoRg_script, datFileName, tempOutputFile]
 
   return new Promise<AutoRgResults>((resolve, reject) => {
     const autoRg: ChildProcess = spawn('python', args, { cwd: dir })
@@ -1167,5 +1228,6 @@ export {
   getLogForStep,
   getAutoRg,
   writeJobParams,
-  sanitizeConstInpFile
+  sanitizeConstInpFile,
+  spawnAutoRgCalculator
 }

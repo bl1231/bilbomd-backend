@@ -54,7 +54,7 @@ const otp = async (req: Request, res: Response) => {
       }
 
       const accessToken: string = jwt.sign(accessTokenPayload, accessTokenSecret, {
-        expiresIn: '15m'
+        expiresIn: '2m'
       })
 
       const accessTokenData: AccessToken = {
@@ -134,7 +134,7 @@ const refresh = async (req: Request, res: Response) => {
           }
         },
         accessTokenSecret,
-        { expiresIn: '15m' }
+        { expiresIn: '2m' }
       )
       // console.log(accessToken)
       res.json({ accessToken })

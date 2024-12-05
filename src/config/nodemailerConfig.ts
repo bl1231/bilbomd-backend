@@ -146,5 +146,89 @@ const sendOtpEmailLocal = (email: string, otp: string) => {
       logger.error(`Error sending OTP email: ${error}`)
     })
 }
+const sendUpdatedEmailMessage = (newEmail: string, oldEmail: string) => {
+  logger.info(`Sending updated email message to ${oldEmail}; new email is ${newEmail}`)
 
-export { sendVerificationEmail, sendMagickLinkEmail, sendOtpEmailLocal, sendOtpEmail }
+  // Configure the Handlebars template engine
+  transporter.use(
+    'compile',
+    hbs({
+      viewEngine: {
+        extname: '.handlebars',
+        layoutsDir: viewPath,
+        defaultLayout: false,
+        partialsDir: partialsPath
+      },
+      viewPath: viewPath,
+      extName: '.handlebars'
+    })
+  )
+
+  const mailOptions = {
+    from: user,
+    to: oldEmail,
+    subject: 'Your Email Address Has Been Updated',
+    template: 'emailUpdated',
+    context: {
+      oldEmail: oldEmail,
+      newEmail: newEmail
+    }
+  }
+
+  // Send the email
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      logger.info(`Email update notification sent to ${oldEmail} successfully!`)
+    })
+    .catch((error) => {
+      logger.error(`Error sending email update notification: ${error}`)
+    })
+}
+
+const sendDeleteAccountSuccessEmail = (email: string, username: string) => {
+  logger.info(`Sending delete account success email to ${email}`)
+
+  transporter.use(
+    'compile',
+    hbs({
+      viewEngine: {
+        extname: '.handlebars',
+        layoutsDir: viewPath,
+        defaultLayout: false,
+        partialsDir: partialsPath
+      },
+      viewPath: viewPath,
+      extName: '.handlebars'
+    })
+  )
+
+  const mailOptions = {
+    from: user,
+    to: email,
+    subject: 'Account Deleted Successfully',
+    template: 'deleteAccount',
+    context: {
+      username: username
+    }
+  }
+
+  // Send the email
+  transporter
+    .sendMail(mailOptions)
+    .then(() => {
+      logger.info(`Delete account success email sent to ${email} successfully!`)
+    })
+    .catch((error) => {
+      logger.error(`Error sending delete account success email: ${error}`)
+    })
+}
+
+export {
+  sendVerificationEmail,
+  sendMagickLinkEmail,
+  sendOtpEmailLocal,
+  sendOtpEmail,
+  sendUpdatedEmailMessage,
+  sendDeleteAccountSuccessEmail
+}

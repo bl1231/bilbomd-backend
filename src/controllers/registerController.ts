@@ -11,24 +11,50 @@ const handleNewUser = async (req: Request, res: Response) => {
   const { user, email } = req.body
   logger.info(`handleNewUser ${user}, ${email}`)
   // confirm we have required data
-  if (!user || !email)
-    return res.status(400).json({
+  if (!user || !email) {
+    res.status(400).json({
       message: 'Username and email are required.'
     })
+    return
+  }
 
   // check for duplicate username in the db
   const duplicateUser = await User.findOne({ username: user })
     .collation({ locale: 'en', strength: 2 })
     .lean()
     .exec()
-  if (duplicateUser) return res.status(409).json({ message: 'Duplicate username' })
+  if (duplicateUser) {
+    res.status(409).json({ message: 'Duplicate username' })
+    return
+  }
 
-  // check for duplicate emails in the db
-  const duplicate = await User.findOne({ email: email })
+  // Check for duplicate email in the email field
+  const duplicateEmail = await User.findOne({ email: email })
     .collation({ locale: 'en', strength: 2 })
     .lean()
     .exec()
-  if (duplicate) return res.status(409).json({ message: 'Duplicate email' })
+
+  if (duplicateEmail) {
+    res.status(409).json({
+      message: 'Duplicate email'
+    })
+    return
+  }
+
+  const duplicatePreviousEmail = await User.findOne({
+    previousEmails: { $in: [email] }
+  })
+    .collation({ locale: 'en', strength: 2 })
+    .lean()
+    .exec()
+
+  if (duplicatePreviousEmail) {
+    res.status(409).json({
+      message:
+        'It looks like you have changed your email. Please try logging in with your updated email address or check your inbox for the updated email.'
+    })
+    return
+  }
 
   try {
     //create a unique confirmation code

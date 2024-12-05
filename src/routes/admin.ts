@@ -4,7 +4,7 @@ import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js'
 import { ExpressAdapter } from '@bull-board/express'
 import { Queue as QueueMQ } from 'bullmq'
-import { verifyJWT } from '../middleware/verifyJWT.js'
+// import { verifyJWT } from '../middleware/verifyJWT.js'
 
 const basePath = '/admin/bullmq'
 
@@ -25,6 +25,7 @@ const redis = new Redis(redisOptions)
 const bilbomdQueue = new QueueMQ('bilbomd', { connection: redis })
 const bilbomdScoperQueue = new QueueMQ('bilbomd-scoper', { connection: redis })
 const pdb2crdQueue = new QueueMQ('pdb2crd', { connection: redis })
+const multimdQueue = new QueueMQ('multimd', { connection: redis })
 
 const serverAdapter = new ExpressAdapter()
 serverAdapter.setBasePath(basePath)
@@ -33,12 +34,13 @@ createBullBoard({
   queues: [
     new BullMQAdapter(bilbomdQueue),
     new BullMQAdapter(bilbomdScoperQueue),
-    new BullMQAdapter(pdb2crdQueue)
+    new BullMQAdapter(pdb2crdQueue),
+    new BullMQAdapter(multimdQueue)
   ],
   serverAdapter: serverAdapter
 })
 
-router.use(verifyJWT)
+// router.use(verifyJWT)
 
 router.use('/', serverAdapter.getRouter())
 
