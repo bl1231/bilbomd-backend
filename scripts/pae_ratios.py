@@ -11,8 +11,8 @@ import numpy as np
 
 # This is defining the pLDDT threshold for determing flex/rigid
 # which Alphafold2 writes to the B-factor column
-B_THRESHOLD = 50.00
-PAE_POWER = 2.0
+# B_THRESHOLD = 50.00
+# PAE_POWER = 2.0
 MIN_CLUSTER_LENGTH = 5
 CONST_FILE_PATH = "const.inp"
 CLUSTER_FILE = "clusters.csv"
@@ -106,7 +106,12 @@ def correct_json_brackets(pae, output_file_path):
 
 
 def define_clusters_for_selected_pae(
-    pae_file: str, row_start: int, row_end: int, col_start: int, col_end: int
+    pae_file: str,
+    row_start: int,
+    row_end: int,
+    col_start: int,
+    col_end: int,
+    pae_power: float,
 ):
     """
     Define PAE clusters
@@ -142,8 +147,8 @@ def define_clusters_for_selected_pae(
     graph_resolution = 1
     # Avoid divide-by-zero by adding a small epsilon value to the denominator
     epsilon = 1e-6  # You can adjust this value based on your specific needs
-    weights = 1 / (pae_matrix + epsilon) ** PAE_POWER
-    print(f"PAE_POWER: {PAE_POWER}")
+    weights = 1 / (pae_matrix + epsilon) ** pae_power
+    print(f"pae_power: {pae_power}")
 
     g = igraph.Graph()
     size = weights.shape[0]
@@ -379,7 +384,11 @@ def identify_new_rigid_domain(
 
 
 def define_rigid_bodies(
-    clusters: list, crd_file: str, first_resnum: int, chain_segment_list: list
+    clusters: list,
+    crd_file: str,
+    first_resnum: int,
+    chain_segment_list: list,
+    plddt_cutoff: float,
 ) -> list:
     """
     Define all Rigid Domains
@@ -406,7 +415,7 @@ def define_rigid_bodies(
                 )
 
                 # If the average B-factor is above the threshold, identify a new rigid domain
-                if bfactor_avg > B_THRESHOLD:
+                if bfactor_avg > plddt_cutoff:
                     new_rigid_domain = identify_new_rigid_domain(
                         crd_file,
                         first_resnum_cluster,
@@ -492,8 +501,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pae_power",
         type=float,
-        help="PAE power used to weight the cluster_leiden() function",
+        help="PAE power used to weight the cluster_leiden() function (default: 2.0)",
         default=2.0,
+    )
+    parser.add_argument(
+        "--plddt_cutoff",
+        type=float,
+        help="pLDDT cutoff value to filter residues (default: 50.0)",
+        default=50,
     )
 
     args = parser.parse_args()
@@ -516,23 +531,17 @@ if __name__ == "__main__":
 
     correct_json_brackets(args.pae_file, TEMP_FILE_JSON)
 
-    # print(
-    #     f"row_start: {SELECTED_ROWS_START}\n"
-    #     f"row_end:{SELECTED_ROWS_END}\n"
-    #     f"col_start:{SELECTED_COLS_START}\n"
-    #     f"col_end:{SELECTED_COLS_END}\n"
-    # )
     pae_clusters = define_clusters_for_selected_pae(
         TEMP_FILE_JSON,
         SELECTED_ROWS_START,
         SELECTED_ROWS_END,
         SELECTED_COLS_START,
         SELECTED_COLS_END,
+        args.pae_power,
     )
-    # print(f"pae_clusters: {pae_clusters}")
 
     rigid_bodies_from_pae = define_rigid_bodies(
-        pae_clusters, args.crd_file, first_residue, chain_segments
+        pae_clusters, args.crd_file, first_residue, chain_segments, args.plddt_cutoff
     )
 
     write_const_file(rigid_bodies_from_pae, CONST_FILE_PATH)
