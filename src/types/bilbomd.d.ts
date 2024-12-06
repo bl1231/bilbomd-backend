@@ -53,6 +53,7 @@ export type BullMQPdb2Crd = {
   uuid: string
   pdb_file: string
   pae_power: string
+  plddt_cutoff: string
 }
 
 export type BilboMDBullMQ = {
