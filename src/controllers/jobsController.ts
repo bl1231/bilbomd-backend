@@ -373,7 +373,8 @@ const handleBilboMDAutoJob = async (
         title: 'convert PDB to CRD',
         uuid: UUID,
         pdb_file: pdbFileName,
-        pae_power: '2.0'
+        pae_power: '2.0',
+        plddt_cutoff: '50'
       })
       logger.info(`Pdb2Crd Job assigned UUID: ${UUID}`)
       logger.info(`Pdb2Crd Job assigned BullMQ ID: ${Pdb2CrdBullId}`)
