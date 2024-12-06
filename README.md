@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.15.0 (12/06/2024)
+  - Update af2paeController to handle new PAE Fiffy with a slider to control
+    pLDDT cutoff value used by `par_ratios.py`
 - 1.14.2 (12/04/2024)
   - Update dependencies
   - Run `npm audit fix`
