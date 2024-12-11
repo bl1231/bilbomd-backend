@@ -39,6 +39,7 @@ const createNewSANSJob = async (req: Request, res: Response) => {
       { name: 'pdb_file', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
       { name: 'inp_file', maxCount: 1 },
+      { name: 'rg', maxCount: 1 },
       { name: 'rg_min', maxCount: 1 },
       { name: 'rg_max', maxCount: 1 },
       { name: 'd2o_fraction', maxCount: 1 }
@@ -132,6 +133,7 @@ const handleBilboMDSANSJob = async (
       data_file: dataFile,
       const_inp_file: constInpFile,
       conformational_sampling: 1,
+      rg: req.body.rg,
       rg_min: req.body.rg_min,
       rg_max: req.body.rg_max,
       status: 'Submitted',
