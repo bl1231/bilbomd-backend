@@ -94,7 +94,7 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
-- 1.15.1 (12/11/2024)
+- 1.15.2 (12/11/2024)
   - Add `rg` to BilboMD SANS jobs.
 - 1.15.0 (12/06/2024)
   - Update af2paeController to handle new PAE Fiffy with a slider to control
