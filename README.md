@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.0 (12/16/2024)
+  - Add new file download API needed for `bilbomd-ui` `v1.17.0`
 - 1.15.2 (12/11/2024)
   - Add `rg` to BilboMD SANS jobs.
 - 1.15.0 (12/06/2024)
