@@ -11,7 +11,7 @@ import { queueJob } from '../queues/multimd.js'
 const createNewMultiJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(config.uploadDir, UUID)
-  let user: IUser
+  // let user: IUser
 
   try {
     await fs.mkdir(jobDir, { recursive: true })
@@ -31,7 +31,8 @@ const createNewMultiJob = async (req: Request, res: Response) => {
     upload.fields([{ name: 'bilbomd_uuids', maxCount: 1 }])(req, res, async (err) => {
       if (err) {
         logger.error(err)
-        return res.status(500).json({ message: 'Failed to upload one or more files' })
+        res.status(500).json({ message: 'Failed to upload one or more files' })
+        return
       }
       try {
         const email = req.email
@@ -39,12 +40,18 @@ const createNewMultiJob = async (req: Request, res: Response) => {
 
         const foundUser = await User.findOne({ email }).exec()
         if (!foundUser) {
-          return res.status(401).json({ message: 'No user found with that email' })
+          res.status(401).json({ message: 'No user found with that email' })
+          return
         }
 
-        user = foundUser
+        // Update jobCount and jobTypes
+        const bilbomd_mode = 'multimd'
+        const jobTypeField = `jobTypes.${bilbomd_mode}`
+        await User.findByIdAndUpdate(foundUser._id, {
+          $inc: { jobCount: 1, [jobTypeField]: 1 }
+        })
 
-        await handleBilboMDMultiJobCreation(req, res, user, UUID)
+        await handleBilboMDMultiJobCreation(req, res, foundUser, UUID)
       } catch (error) {
         logger.error(error)
         res.status(500).json({ message: 'Internal server error' })

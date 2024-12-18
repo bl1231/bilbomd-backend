@@ -19,7 +19,6 @@ const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 const createNewSANSJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, UUID)
-  let user: IUser
   logger.info(`createNewSANSJob ${UUID}`)
   try {
     await fs.mkdir(jobDir, { recursive: true })
@@ -46,7 +45,8 @@ const createNewSANSJob = async (req: Request, res: Response) => {
     ])(req, res, async (err) => {
       if (err) {
         logger.error(`Failed to upload one or more files: ${err}`)
-        return res.status(500).json({ message: 'Failed to upload one or more files' })
+        res.status(500).json({ message: 'Failed to upload one or more files' })
+        return
       }
 
       try {
@@ -55,17 +55,23 @@ const createNewSANSJob = async (req: Request, res: Response) => {
         const foundUser = await User.findOne({ email }).exec()
 
         if (!foundUser) {
-          return res.status(401).json({ message: 'No user found with that email' })
+          res.status(401).json({ message: 'No user found with that email' })
+          return
         }
 
         if (!bilbomd_mode) {
-          return res.status(400).json({ message: 'No job type provided' })
+          res.status(400).json({ message: 'No job type provided' })
+          return
         }
 
-        user = foundUser
+        // Update jobCount and jobTypes
+        const jobTypeField = `jobTypes.${bilbomd_mode}`
+        await User.findByIdAndUpdate(foundUser._id, {
+          $inc: { jobCount: 1, [jobTypeField]: 1 }
+        })
 
         // Handle the job creation
-        await handleBilboMDSANSJob(req, res, user, UUID, jobDir)
+        await handleBilboMDSANSJob(req, res, foundUser, UUID, jobDir)
       } catch (error) {
         logger.error(`Error occurred during job creation: ${error}`)
         res.status(500).json({ message: 'Internal server error' })
