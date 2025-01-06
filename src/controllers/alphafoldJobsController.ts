@@ -24,7 +24,7 @@ type AutoRgResults = {
 const createNewAlphaFoldJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, UUID)
-  let user: IUser
+
   logger.info('createNewAlphaFoldJob')
   try {
     await fs.mkdir(jobDir, { recursive: true })
@@ -43,7 +43,8 @@ const createNewAlphaFoldJob = async (req: Request, res: Response) => {
     upload.fields([{ name: 'dat_file', maxCount: 1 }])(req, res, async (err) => {
       if (err) {
         logger.error(err)
-        return res.status(500).json({ message: 'Failed to upload one or more files' })
+        res.status(500).json({ message: 'Failed to upload one or more files' })
+        return
       }
 
       try {
@@ -57,28 +58,33 @@ const createNewAlphaFoldJob = async (req: Request, res: Response) => {
 
         // Check if the number of entities exceeds the maximum allowed
         if (parsedEntities.length > 20) {
-          return res
-            .status(400)
-            .json({ message: 'You can only submit up to 20 entities.' })
+          res.status(400).json({ message: 'You can only submit up to 20 entities.' })
+          return
         }
 
         const foundUser = await User.findOne({ email }).exec()
 
         if (!foundUser) {
-          return res.status(401).json({ message: 'No user found with that email' })
+          res.status(401).json({ message: 'No user found with that email' })
+          return
         }
 
         if (!bilbomd_mode) {
-          return res.status(400).json({ message: 'No job type provided' })
+          res.status(400).json({ message: 'No job type provided' })
+          return
         }
 
-        user = foundUser
+        // Update jobCount and jobTypes
+        const jobTypeField = `jobTypes.${bilbomd_mode}`
+        await User.findByIdAndUpdate(foundUser._id, {
+          $inc: { jobCount: 1, [jobTypeField]: 1 }
+        })
 
         // Create the FASTA file
         await createFastaFile(parsedEntities, jobDir)
 
         // Handle the job creation
-        await handleBilboMDAlphaFoldJobCreation(req, res, user, UUID, parsedEntities)
+        await handleBilboMDAlphaFoldJobCreation(req, res, foundUser, UUID, parsedEntities)
       } catch (error) {
         logger.error(error)
         res.status(500).json({ message: 'Internal server error' })
