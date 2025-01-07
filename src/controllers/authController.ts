@@ -27,12 +27,21 @@ interface RefreshToken {
 const otp = async (req: Request, res: Response) => {
   try {
     const { otp: code } = req.body
+    logger.info(`Received OTP: ${code}`)
 
-    if (!code) res.status(400).json({ message: 'OTP required.' })
+    if (!code) {
+      res.status(400).json({ message: 'OTP required.' })
+      return
+    }
 
     const user: IUser | null = await User.findOne({ 'otp.code': code })
 
     if (user) {
+      if (!user.active) {
+        logger.warn('User is not active')
+        res.status(401).json({ message: 'Unauthorized - User is not active`' })
+        return
+      }
       logger.debug(`User found: ${user.username}`)
       // logger.info({ level: 'info', message: 'hello' })
       logger.info(`OTP login for user: ${user.username} email: ${user.email}`)
@@ -120,7 +129,7 @@ const refresh = async (req: Request, res: Response) => {
     try {
       const foundUser = await User.findOne({ email: decoded.email }).exec()
       // console.log('foundUser --->', foundUser)
-      if (!foundUser) {
+      if (!foundUser || !foundUser.active) {
         res.status(401).json({ message: 'Unauthorized' })
         return
       }
@@ -152,7 +161,7 @@ const refresh = async (req: Request, res: Response) => {
 const logout = (req: Request, res: Response) => {
   const cookies = req.cookies
   if (!cookies?.jwt) res.sendStatus(204) //No content
-  res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true })
+  res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true }) // May need to adjust to match cookie settings from above
   res.json({ message: 'Cookie cleared' })
 }
 
