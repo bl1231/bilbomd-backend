@@ -20,7 +20,7 @@ const handleNewUser = async (req: Request, res: Response) => {
 
   // check for duplicate username in the db
   const duplicateUser = await User.findOne({ username: user })
-    .collation({ locale: 'en', strength: 2 })
+    .collation({ locale: 'en', strength: 2 }) // provide case-insensitive search
     .lean()
     .exec()
   if (duplicateUser) {
@@ -30,7 +30,7 @@ const handleNewUser = async (req: Request, res: Response) => {
 
   // Check for duplicate email in the email field
   const duplicateEmail = await User.findOne({ email: email })
-    .collation({ locale: 'en', strength: 2 })
+    .collation({ locale: 'en', strength: 2 }) // provide case-insensitive search
     .lean()
     .exec()
 
@@ -44,7 +44,7 @@ const handleNewUser = async (req: Request, res: Response) => {
   const duplicatePreviousEmail = await User.findOne({
     previousEmails: { $in: [email] }
   })
-    .collation({ locale: 'en', strength: 2 })
+    .collation({ locale: 'en', strength: 2 }) // provide case-insensitive search
     .lean()
     .exec()
 

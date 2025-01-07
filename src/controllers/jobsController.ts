@@ -70,8 +70,8 @@ const getAllJobs = async (req: Request, res: Response) => {
 
     // Fetch jobs from both Job and MultiJob collections
     const [DBjobs, DBmultiJobs] = await Promise.all([
-      Job.find(jobFilter).lean<IJob[]>().exec(),
-      MultiJob.find(jobFilter).lean<IMultiJob[]>().exec()
+      Job.find(jobFilter).populate('user').lean<IJob[]>().exec(),
+      MultiJob.find(jobFilter).populate('user').lean<IMultiJob[]>().exec()
     ])
 
     // Combine both job types
@@ -86,8 +86,6 @@ const getAllJobs = async (req: Request, res: Response) => {
     // Process and format jobs
     const formattedJobs = await Promise.all(
       allJobs.map(async (mongo) => {
-        const user = await User.findById(mongo.user).lean().exec()
-
         let bullmq = null
         if (['BilboMd', 'BilboMdAuto'].includes(mongo.__t)) {
           bullmq = await getBullMQJob(mongo.uuid)
@@ -95,10 +93,15 @@ const getAllJobs = async (req: Request, res: Response) => {
           bullmq = await getBullMQScoperJob(mongo.uuid)
         }
 
+        // Manually assign the id field from _id
+        if (mongo.user && mongo.user._id) {
+          mongo.user.id = mongo.user._id.toString()
+        }
+
         return {
           mongo,
           bullmq,
-          username: user?.username
+          username: mongo.user.username
         }
       })
     )
