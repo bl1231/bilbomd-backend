@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.1 (1/7/2025)
+  - Track job submission stats for each user
+  - Refactor and Cleanup to handle UI changes
 - 1.16.0 (12/16/2024)
   - Add new file download API needed for `bilbomd-ui` `v1.17.0`
 - 1.15.2 (12/11/2024)
