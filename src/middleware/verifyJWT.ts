@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
-// import { logger } from './loggers.js'
 
 interface DecodedJWT {
   UserInfo: {
@@ -34,13 +33,11 @@ const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
       }
 
       const userInfo = (decoded as DecodedJWT).UserInfo
-      // logger.info(`Decoded JWT: ${JSON.stringify(userInfo)}`)
 
       if (userInfo) {
         req.user = userInfo.username
         req.roles = userInfo.roles
         req.email = userInfo.email
-        // logger.info(`User ${userInfo.username} has roles ${userInfo.roles}`)
         next()
       } else {
         res.status(403).json({ message: 'Forbidden - no userInfo' })
