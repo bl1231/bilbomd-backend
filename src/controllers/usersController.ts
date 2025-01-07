@@ -65,7 +65,7 @@ const updateUser = async (req: Request, res: Response): Promise<void> => {
     }
 
     const duplicate = await User.findOne({ username })
-      .collation({ locale: 'en', strength: 2 })
+      .collation({ locale: 'en', strength: 2 }) // provide case-insensitive search
       .lean()
       .exec()
 
