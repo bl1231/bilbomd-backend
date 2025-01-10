@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.2 (1/10/2025)
+  - Add `deploySite` env variable to config
 - 1.16.1 (1/7/2025)
   - Track job submission stats for each user
   - Refactor and Cleanup to handle UI changes
