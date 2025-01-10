@@ -41,6 +41,7 @@ export const getConfigsStuff = async (req: Request, res: Response): Promise<void
     // Construct the response object
     const configs = {
       mode: process.env.BILBOMD_ENV || '',
+      deploySite: process.env.BILBOMD_DEPLOY_SITE || '',
       useNersc: process.env.USE_NERSC || 'false',
       nerscProject: process.env.NERSC_PROJECT || 'm1234',
       tokenExpires: process.env.SFAPI_TOKEN_EXPIRES || '2024-05-22 04:20',
