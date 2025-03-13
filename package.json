@@ -23,8 +23,8 @@
     "@bl1231/bilbomd-mongodb-schema": "^1.4.9",
     "@bull-board/api": "^6.7.10",
     "@bull-board/express": "^6.7.10",
-    "axios": "^1.8.1",
-    "bullmq": "^5.41.7",
+    "axios": "^1.8.3",
+    "bullmq": "^5.42.0",
     "cookie-parser": "~1.4.7",
     "cors": "^2.8.5",
     "cron": "^4.1.0",
@@ -51,7 +51,7 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.9",
+    "@babel/core": "^7.26.10",
     "@babel/preset-env": "^7.26.9",
     "@jest/globals": "^29.7.0",
     "@shelf/jest-mongodb": "^5.1.0",
@@ -63,23 +63,23 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/morgan": "^1.9.9",
     "@types/multer": "^1.4.12",
-    "@types/node": "^22.13.9",
+    "@types/node": "^22.13.10",
     "@types/nodemailer": "^6.4.17",
     "@types/nodemailer-express-handlebars": "^4.0.5",
     "@types/supertest": "^6.0.2",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.26.0",
-    "@typescript-eslint/parser": "^8.26.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
     "concurrently": "^9.1.2",
     "copyfiles": "^2.4.1",
-    "eslint": "^9.21.0",
+    "eslint": "^9.22.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "npm-run-all": "^4.1.5",
     "rimraf": "^6.0.1",
     "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.26.0"
+    "typescript-eslint": "^8.26.1"
   }
 }

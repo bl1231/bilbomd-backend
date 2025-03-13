@@ -860,14 +860,28 @@ const downloadJobResults = async (req: Request, res: Response) => {
     const { uuid } = job || multiJob!
     const outputFolder = path.join(uploadFolder, uuid)
     const uuidPrefix = uuid.split('-')[0]
-    const resultFilePath = path.join(outputFolder, `results-${uuidPrefix}.tar.gz`)
 
-    // Check if the results file exists
-    try {
-      await fs.access(resultFilePath)
-    } catch (error) {
+    // Possible result file paths
+    const possiblePaths = [
+      path.join(outputFolder, `results-${uuidPrefix}.tar.gz`),
+      path.join(outputFolder, `results.tar.gz`),
+    ]
+
+    let resultFilePath: string | null = null
+
+    // Check for the first existing file
+    for (const filePath of possiblePaths) {
+      try {
+        await fs.access(filePath)
+        resultFilePath = filePath
+        break
+      } catch (error) {
+        logger.warn(`Results file not found at ${filePath} ${error}`)
+      }
+    }
+
+    if (!resultFilePath) {
       res.status(404).json({ message: 'Results file not found.' })
-      logger.warn(`Results file not found for job ID: ${id} - ${error}`)
       return
     }
 

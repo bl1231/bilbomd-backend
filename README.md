@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.3 (3/12/2025)
+  - Fix file download bug affecting Scoper jobs
 - 1.16.2 (1/10/2025)
   - Add `deploySite` env variable to config
 - 1.16.1 (1/7/2025)
