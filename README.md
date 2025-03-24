@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.4 (3/24/2025)
+  - Add config option to hide/show main login alert message
 - 1.16.3 (3/12/2025)
   - Fix file download bug affecting Scoper jobs
 - 1.16.2 (1/10/2025)
