@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.5 (3/31/2025)
+  - Update dependencies
+  - Bump `@bl1231/bilbomd-mongodb-schema@1.5.0`
 - 1.16.4 (3/24/2025)
   - Add config option to hide/show main login alert message
 - 1.16.3 (3/12/2025)
