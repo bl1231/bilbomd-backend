@@ -10,9 +10,7 @@ import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn.js'
 import { CronJob } from 'cron'
 import { deleteOldJobs } from './middleware/jobCleaner.js'
-// import swaggerUi from 'swagger-ui-express'
-// import swaggerDocumentV1 from './openapi/v1/swagger_v1.json'
-import rootRoutes from './routes/root.js'
+// import rootRoutes from './routes/root.js'
 import sfapiRoutes from './routes/sfapi.js'
 import registerRoutes from './routes/register.js'
 import verifyRoutes from './routes/verify.js'
@@ -62,7 +60,7 @@ app.use(cookieParser())
 app.use('/', express.static('public'))
 
 // Root routes (no version)
-app.use('/', rootRoutes)
+// app.use('/', rootRoutes)
 
 app.use('/admin/bullmq', adminRoutes)
 
@@ -85,13 +83,6 @@ v1Router.use('/configs', configsRoutes)
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
-
-// Swagger documentation for Version 1
-// Adjust Swagger documentation path
-// app.use('/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
-
-// app.use('/v1/api-docs', express.static('./openapi/v1/swagger_v1.json'))
-// app.use('/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocumentV1))
 
 // Health check route
 // Define the possible MongoDB connection states
@@ -122,7 +113,7 @@ app.get('/healthcheck', (req: Request, res: Response) => {
 new CronJob('11 1 * * *', deleteOldJobs, null, true, 'America/Los_Angeles')
 // job.start()
 
-app.all('*', (req: Request, res: Response) => {
+app.all(/.*/, (req, res) => {
   res.status(404)
   if (req.accepts('html')) {
     res.sendFile(path.join(viewsPath, '404.html'))
