@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.6 (3/31/2025)
+  - forgot to bump schema dep
 - 1.16.5 (3/31/2025)
   - Update dependencies
   - Bump `@bl1231/bilbomd-mongodb-schema@1.5.0`
