@@ -5,7 +5,7 @@ const router = express.Router()
 
 const viewsPath = '/app/views'
 
-router.get('^/$|/index(.html)?', (req, res) => {
+router.get(/^\/$|\/index(\.html)?$/, (req, res) => {
   res.sendFile(path.join(viewsPath, 'index.html'))
 })
 
