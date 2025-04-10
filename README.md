@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.16.7 (4/10/2025)
+  - Bump ExpressJS from v4 to v5
+  - Update npm dependencies
 - 1.16.6 (3/31/2025)
   - forgot to bump schema dep
 - 1.16.5 (3/31/2025)
