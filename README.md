@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.17.0 (4/11/2025)
+  - Add new API endpoint for BilboMD statistics
 - 1.16.7 (4/10/2025)
   - Bump ExpressJS from v4 to v5
   - Update npm dependencies
