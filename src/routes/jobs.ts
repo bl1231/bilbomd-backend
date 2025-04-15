@@ -1,13 +1,12 @@
 import express from 'express'
 import {
-  getAllJobs,
-  createNewJob,
-  deleteJob,
   updateJobStatus,
   downloadJobResults,
-  getJobById,
   getLogForStep
 } from '../controllers/jobsController.js'
+import { getAllJobs, getJobById } from '../controllers/jobs/getJobs.js'
+import { createNewJob } from '../controllers/jobs/createJob.js'
+import { deleteJob } from '../controllers/jobs/deleteJob.js'
 import { createNewAlphaFoldJob } from '../controllers/alphafoldJobsController.js'
 import { createNewSANSJob } from '../controllers/sansJobController.js'
 import { createNewMultiJob } from '../controllers/multiMdController.js'
