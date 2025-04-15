@@ -74,3 +74,9 @@ export type BilboMDJob = {
   auto?: BilboMDSteps
   alphafold?: BilboMDAlphaFoldResults
 }
+
+export type AutoRgResults = {
+  rg: number
+  rg_min: number
+  rg_max: number
+}
