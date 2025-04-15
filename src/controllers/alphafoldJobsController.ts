@@ -9,8 +9,8 @@ import {
   IAlphaFoldEntity
 } from '@bl1231/bilbomd-mongodb-schema'
 import { User, IUser } from '@bl1231/bilbomd-mongodb-schema'
-import { Express, Request, Response } from 'express'
-import { writeJobParams, spawnAutoRgCalculator } from './jobsController.js'
+import { Request, Response } from 'express'
+import { writeJobParams, spawnAutoRgCalculator } from './jobs/index.js'
 import { queueJob } from '../queues/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')

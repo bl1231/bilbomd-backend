@@ -13,6 +13,7 @@ import {
   pdb2crdQueueEvents
 } from '../../queues/pdb2crd.js'
 import {
+  Job,
   User,
   IUser,
   BilboMdPDBJob,
@@ -85,9 +86,13 @@ const createNewJob = async (req: Request, res: Response) => {
         })
 
         // Route to the appropriate handler
+        const isResubmission = req.body.resubmit === 'true'
+        const originalJobId = req.body.original_job_id || null
+        logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
+
         if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
           logger.info(`Handling BilboMDJob: ${bilbomd_mode}`)
-          await handleBilboMDJob(req, res, foundUser, UUID)
+          await handleBilboMDJob(req, res, foundUser, UUID, isResubmission, originalJobId)
         } else if (bilbomd_mode === 'auto') {
           logger.info('Handling BilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, foundUser, UUID)
@@ -112,7 +117,9 @@ const handleBilboMDJob = async (
   req: Request,
   res: Response,
   user: IUser,
-  UUID: string
+  UUID: string,
+  isResubmission: boolean = false,
+  originalJobId: string | null = null
 ) => {
   try {
     const { bilbomd_mode: bilbomdMode, title, num_conf, rg, rg_min, rg_max } = req.body
@@ -120,16 +127,39 @@ const handleBilboMDJob = async (
     logger.info(`bilbomdMode: ${bilbomdMode}`)
     logger.info(`title: ${title}`)
 
-    const constInpFile = files['constinp'][0].originalname.toLowerCase()
-    const dataFile = files['expdata'][0].originalname.toLowerCase()
+    let constInpFile = ''
+    let dataFile = ''
 
-    // Create and sanitize job directory and files
-    const jobDir = path.join(uploadFolder, UUID)
-    const constInpFilePath = path.join(jobDir, constInpFile)
-    const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
+    if (isResubmission && originalJobId) {
+      const originalJob = (await Job.findById(originalJobId)) as
+        | IBilboMDPDBJob
+        | IBilboMDCRDJob
+      if (!originalJob) {
+        res.status(404).json({ message: 'Original job not found' })
+        return
+      }
 
-    await fs.copyFile(constInpFilePath, constInpOrigFilePath)
-    await sanitizeConstInpFile(constInpFilePath)
+      const originalDir = path.join(uploadFolder, originalJob.uuid)
+      const newDir = path.join(uploadFolder, UUID)
+
+      constInpFile = originalJob.const_inp_file
+      dataFile = originalJob.data_file
+
+      await fs.copy(path.join(originalDir, constInpFile), path.join(newDir, constInpFile))
+      await fs.copy(path.join(originalDir, dataFile), path.join(newDir, dataFile))
+      logger.info(
+        `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
+      )
+    } else {
+      constInpFile = files['constinp'][0].originalname.toLowerCase()
+      dataFile = files['expdata'][0].originalname.toLowerCase()
+
+      const jobDir = path.join(uploadFolder, UUID)
+      const constInpFilePath = path.join(jobDir, constInpFile)
+      const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
+      await fs.copyFile(constInpFilePath, constInpOrigFilePath)
+      await sanitizeConstInpFile(constInpFilePath)
+    }
 
     // Initialize common job data
     const commonJobData = {
@@ -158,10 +188,28 @@ const handleBilboMDJob = async (
     }
 
     let newJob: IBilboMDPDBJob | IBilboMDCRDJob | undefined
-
+    logger.info(`Creating job for bilbomd_mode: ${bilbomdMode}`)
     if (bilbomdMode === 'crd_psf') {
-      const psfFile = files['psf_file']?.[0]?.originalname.toLowerCase() || ''
-      const crdFile = files['crd_file']?.[0]?.originalname.toLowerCase() || ''
+      let psfFile = ''
+      let crdFile = ''
+
+      if (isResubmission && originalJobId) {
+        const originalJob = (await Job.findById(originalJobId)) as IBilboMDCRDJob
+        if (!originalJob) {
+          res.status(404).json({ message: 'Original CRD job not found' })
+          return
+        }
+        psfFile = originalJob.psf_file
+        crdFile = originalJob.crd_file
+
+        const originalDir = path.join(uploadFolder, originalJob.uuid)
+        const newDir = path.join(uploadFolder, UUID)
+        await fs.copy(path.join(originalDir, psfFile), path.join(newDir, psfFile))
+        await fs.copy(path.join(originalDir, crdFile), path.join(newDir, crdFile))
+      } else {
+        psfFile = files['psf_file']?.[0]?.originalname.toLowerCase() || ''
+        crdFile = files['crd_file']?.[0]?.originalname.toLowerCase() || ''
+      }
 
       newJob = new BilboMdCRDJob({
         ...commonJobData,
@@ -174,7 +222,22 @@ const handleBilboMDJob = async (
         rg_max
       })
     } else if (bilbomdMode === 'pdb') {
-      const pdbFile = files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
+      let pdbFile = ''
+
+      if (isResubmission && originalJobId) {
+        const originalJob = (await Job.findById(originalJobId)) as IBilboMDPDBJob
+        if (!originalJob) {
+          res.status(404).json({ message: 'Original PDB job not found' })
+          return
+        }
+        pdbFile = originalJob.pdb_file
+
+        const originalDir = path.join(uploadFolder, originalJob.uuid)
+        const newDir = path.join(uploadFolder, UUID)
+        await fs.copy(path.join(originalDir, pdbFile), path.join(newDir, pdbFile))
+      } else {
+        pdbFile = files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
+      }
 
       newJob = new BilboMdPDBJob({
         ...commonJobData,

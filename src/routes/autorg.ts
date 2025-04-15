@@ -1,5 +1,5 @@
 import express from 'express'
-import { getAutoRg } from '../controllers/jobsController.js'
+import { getAutoRg } from '../controllers/jobs/index.js'
 import { verifyJWT } from '../middleware/verifyJWT.js'
 
 const router = express.Router()
