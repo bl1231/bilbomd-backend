@@ -17,11 +17,6 @@ const updateJobStatus = async (req: Request, res: Response) => {
     return
   }
 
-  // Check current status
-  if (job.status == status) {
-    res.status(400).json({ message: `nothing to do - status already ${job.status}` })
-  }
-
   if (job.status == status) {
     res.status(400).json({ message: 'nothing to do' })
   }
