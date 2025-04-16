@@ -12,6 +12,7 @@ import { Request, Response } from 'express'
 import { AutoRgResults } from '../../types/bilbomd.js'
 import { writeJobParams } from './jobUtils.js'
 import { spawnAutoRgCalculator } from './autoRg.js'
+import fs from 'fs-extra'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -22,24 +23,44 @@ const handleBilboMDAutoJob = async (
   UUID: string
 ) => {
   try {
-    const { bilbomd_mode: bilbomdMode } = req.body
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-    const pdbFileName =
-      files['pdb_file'] && files['pdb_file'][0]
-        ? files['pdb_file'][0].originalname.toLowerCase()
-        : 'missing.pdb'
-    const paeFileName =
-      files['pae_file'] && files['pae_file'][0]
-        ? files['pae_file'][0].originalname.toLowerCase()
-        : 'missing.json'
-    const datFileName =
-      files['dat_file'] && files['dat_file'][0]
-        ? files['dat_file'][0].originalname.toLowerCase()
-        : 'missing.dat'
+    const isResubmission = req.body.resubmit === 'true'
+    const originalJobId = req.body.original_job_id || null
+    logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
+
+    let pdbFileName = ''
+    let paeFileName = ''
+    let datFileName = ''
+
+    const jobDir = path.join(uploadFolder, UUID)
+
+    if (isResubmission && originalJobId) {
+      const originalJob = await BilboMdAutoJob.findById(originalJobId)
+      if (!originalJob) {
+        res.status(404).json({ message: 'Original job not found' })
+        return
+      }
+
+      const originalDir = path.join(uploadFolder, originalJob.uuid)
+      pdbFileName = originalJob.pdb_file
+      paeFileName = originalJob.pae_file
+      datFileName = originalJob.data_file
+
+      await fs.copy(path.join(originalDir, pdbFileName), path.join(jobDir, pdbFileName))
+      await fs.copy(path.join(originalDir, paeFileName), path.join(jobDir, paeFileName))
+      await fs.copy(path.join(originalDir, datFileName), path.join(jobDir, datFileName))
+      logger.info(
+        `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
+      )
+    } else {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+      pdbFileName = files['pdb_file']?.[0]?.originalname.toLowerCase() || 'missing.pdb'
+      paeFileName = files['pae_file']?.[0]?.originalname.toLowerCase() || 'missing.json'
+      datFileName = files['dat_file']?.[0]?.originalname.toLowerCase() || 'missing.dat'
+    }
+
     logger.info(`PDB File: ${pdbFileName}`)
     logger.info(`PAE File: ${paeFileName}`)
 
-    const jobDir = path.join(uploadFolder, UUID)
     const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
 
     const now = new Date()
@@ -70,12 +91,13 @@ const handleBilboMDAutoJob = async (
         multifoxs: {},
         results: {},
         email: {}
-      }
+      },
+      ...(isResubmission && originalJobId ? { resubmitted_from: originalJobId } : {})
     })
 
     // Save the job to the database
     await newJob.save()
-    logger.info(`${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
+    logger.info(`${req.body.bilbomd_mode} Job saved to MongoDB: ${newJob.id}`)
 
     // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
@@ -107,17 +129,17 @@ const handleBilboMDAutoJob = async (
 
     // Queue the job
     const BullId = await queueJob({
-      type: bilbomdMode,
+      type: req.body.bilbomd_mode,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
     })
 
-    logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
-    logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
+    logger.info(`${req.body.bilbomd_mode} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${req.body.bilbomd_mode} Job assigned BullMQ ID: ${BullId}`)
 
     res.status(200).json({
-      message: `New ${bilbomdMode} Job ${newJob.title} successfully created`,
+      message: `New ${req.body.bilbomd_mode} Job ${newJob.title} successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
