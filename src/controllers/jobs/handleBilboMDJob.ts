@@ -20,11 +20,13 @@ const handleBilboMDJob = async (
   req: Request,
   res: Response,
   user: IUser,
-  UUID: string,
-  isResubmission: boolean = false,
-  originalJobId: string | null = null
+  UUID: string
 ) => {
   try {
+    const isResubmission = req.body.resubmit === 'true'
+    const originalJobId = req.body.original_job_id || null
+    logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
+
     const { bilbomd_mode: bilbomdMode, title, num_conf, rg, rg_min, rg_max } = req.body
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(`bilbomdMode: ${bilbomdMode}`)
@@ -71,7 +73,7 @@ const handleBilboMDJob = async (
       uuid: UUID,
       status: 'Submitted',
       data_file: dataFile,
-      const_inp_file: constInpFile, // Add const_inp_file here
+      const_inp_file: constInpFile,
       time_submitted: new Date(),
       user,
       progress: 0,
@@ -150,14 +152,16 @@ const handleBilboMDJob = async (
         rg,
         rg_min,
         rg_max,
-        steps: { ...commonJobData.steps, pdb2crd: {} } // Add pdb2crd step
+        steps: { ...commonJobData.steps, pdb2crd: {} },
+        ...(isResubmission && originalJobId ? { resubmitted_from: originalJobId } : {})
       })
     }
 
     // Handle unsupported modes
     if (!newJob) {
       logger.error(`Unsupported bilbomd_mode: ${bilbomdMode}`)
-      return res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
+      res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
+      return
     }
 
     // Save the job and write job parameters

@@ -8,7 +8,8 @@ import {
   User,
   IBilboMDScoperJob,
   MultiJob,
-  IMultiJob
+  IMultiJob,
+  IUser
 } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { BilboMDSteps } from '../../types/bilbomd.js'
@@ -66,15 +67,17 @@ const getAllJobs = async (req: Request, res: Response) => {
           bullmq = await getBullMQScoperJob(mongo.uuid)
         }
 
-        // Manually assign the id field from _id
-        if (mongo.user && mongo.user._id) {
-          mongo.user.id = mongo.user._id.toString()
+        let username = 'unknown'
+        if (mongo.user && typeof mongo.user === 'object' && 'username' in mongo.user) {
+          const user = mongo.user as IUser
+          user.id = user._id.toString()
+          username = user.username
         }
 
         return {
           mongo,
           bullmq,
-          username: mongo.user.username
+          username
         }
       })
     )

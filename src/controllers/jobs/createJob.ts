@@ -64,13 +64,9 @@ const createNewJob = async (req: Request, res: Response) => {
         })
 
         // Route to the appropriate handler
-        const isResubmission = req.body.resubmit === 'true'
-        const originalJobId = req.body.original_job_id || null
-        logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
-
+        logger.info(`Handling BilboMDJob: ${bilbomd_mode}`)
         if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
-          logger.info(`Handling BilboMDJob: ${bilbomd_mode}`)
-          await handleBilboMDJob(req, res, foundUser, UUID, isResubmission, originalJobId)
+          await handleBilboMDJob(req, res, foundUser, UUID)
         } else if (bilbomd_mode === 'auto') {
           logger.info('Handling BilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, foundUser, UUID)
@@ -79,6 +75,7 @@ const createNewJob = async (req: Request, res: Response) => {
           await handleBilboMDScoperJob(req, res, foundUser, UUID)
         } else {
           res.status(400).json({ message: 'Invalid job type' })
+          return
         }
       } catch (error) {
         logger.error(error)
