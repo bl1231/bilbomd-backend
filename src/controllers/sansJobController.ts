@@ -10,8 +10,8 @@ import {
   User,
   IUser
 } from '@bl1231/bilbomd-mongodb-schema'
-import { Express, Request, Response } from 'express'
-import { sanitizeConstInpFile, writeJobParams } from './jobsController.js'
+import { Request, Response } from 'express'
+import { sanitizeConstInpFile, writeJobParams } from './jobs/index.js'
 import { queueJob } from '../queues/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
