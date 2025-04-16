@@ -94,6 +94,10 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.18.0 (4/16/2025)
+  - Adds new endpoints and refactors several backend controllers for job resubmission and management.
+  - Reorganized job controller exports to a separate directory.
+  - Updated imports across routes and controllers.
 - 1.17.0 (4/11/2025)
   - Add new API endpoint for BilboMD statistics
 - 1.16.7 (4/10/2025)
