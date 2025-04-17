@@ -1,3 +1,5 @@
+import type { IUser } from '@bl1231/bilbomd-mongodb-schema'
+
 export {}
 
 declare global {
@@ -8,6 +10,7 @@ declare global {
       email?: string
       sfApiToken?: string
       id?: string
+      apiUser?: IUser
     }
   }
 }

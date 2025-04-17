@@ -10,7 +10,6 @@ import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn.js'
 import { CronJob } from 'cron'
 import { deleteOldJobs } from './middleware/jobCleaner.js'
-// import rootRoutes from './routes/root.js'
 import sfapiRoutes from './routes/sfapi.js'
 import registerRoutes from './routes/register.js'
 import verifyRoutes from './routes/verify.js'
@@ -23,6 +22,7 @@ import autorgRoutes from './routes/autorg.js'
 import bullmqRoutes from './routes/bullmq.js'
 import configsRoutes from './routes/configs.js'
 import statsRoutes from './routes/stats.js'
+import externalRoutes from './routes/external.js'
 
 // Instantiate the app
 const app: Express = express()
@@ -82,6 +82,7 @@ v1Router.use('/autorg', autorgRoutes)
 v1Router.use('/bullmq', bullmqRoutes)
 v1Router.use('/configs', configsRoutes)
 v1Router.use('/stats', statsRoutes)
+v1Router.use('/external/jobs', externalRoutes)
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
