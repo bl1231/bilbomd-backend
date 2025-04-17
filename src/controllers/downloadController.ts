@@ -64,8 +64,8 @@ const getFoxsData = async (req: Request, res: Response) => {
 }
 
 const getFoxsScoperData = async (job: IBilboMDScoperJob, res: Response) => {
-  const datFileBase = job.data_file.split('.')[0]
-  const pdbFileBase = job.pdb_file.split('.')[0]
+  const datFileBase = path.basename(job.data_file, path.extname(job.data_file))
+  const pdbFileBase = path.basename(job.pdb_file, path.extname(job.pdb_file))
   const topKFile = path.join(uploadFolder, job.uuid, 'top_k_dirname.txt')
   const pdbNumber = await readTopKNum(topKFile)
 
