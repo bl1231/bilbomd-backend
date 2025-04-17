@@ -1,5 +1,7 @@
+# --------------------------------------------------------------------------------------
 # Build stage 1 - Install Miniforge3
-FROM node:22-slim AS bilbomd-backend-step1
+# FROM node:22-slim AS bilbomd-backend-step1
+FROM node:22 AS bilbomd-backend-step1
 
 RUN apt-get update && \
     apt-get install -y ncat ca-certificates wget libgl1-mesa-dev && \
@@ -22,7 +24,7 @@ RUN conda env update -f /tmp/environment.yml && \
     rm /tmp/environment.yml && \
     conda clean -afy
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Build stage 2 - Install BioXTAS
 FROM bilbomd-backend-step1 AS bilbomd-backend-step2
 
@@ -43,7 +45,7 @@ WORKDIR /tmp/bioxtasraw-master
 RUN python setup.py build_ext --inplace && \
     pip install .
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Build stage 3 - Install backend app
 FROM bilbomd-backend-step2 AS bilbomd-backend
 ARG USER_ID
