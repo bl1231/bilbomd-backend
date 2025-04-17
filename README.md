@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.18.1 (4/17/2025)
+  - Fix bug with Scoper FoXS analysis processing filenames having multiple `.`s
 - 1.18.0 (4/16/2025)
   - Adds new endpoints and refactors several backend controllers for job resubmission and management.
   - Reorganized job controller exports to a separate directory.
