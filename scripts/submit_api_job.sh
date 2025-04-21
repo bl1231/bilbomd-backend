@@ -1,5 +1,9 @@
 #!/bin/bash
-
+#
+# remember to export the BILBOMD_API_TOKEN variable before running this script
+#
+# export BILBOMD_API_TOKEN="your_api_token_here"
+#
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
 
@@ -17,4 +21,4 @@ curl -X POST "$API_URL" \
   -F "rg_min=22" \
   -F "rg_max=41" \
   -F "dat_file=@${DAT_FILE}" \
-  -F "inp_file=@${INP_FILE}"
+  -F "inp_file=@${INP_FILE}" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
