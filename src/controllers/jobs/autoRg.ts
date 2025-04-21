@@ -7,7 +7,6 @@ import path from 'path'
 import { Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
 import { spawn } from 'child_process'
-import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { AutoRgResults } from '../../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
@@ -28,19 +27,13 @@ const getAutoRg = async (req: Request, res: Response) => {
       }
     })
     const upload = multer({ storage: storage })
-    upload.single('expdata')(req, res, async (err) => {
+    upload.single('dat_file')(req, res, async (err) => {
       if (err) {
         logger.error(err)
         return res.status(500).json({ message: 'Failed to upload expdata file' })
       }
 
       try {
-        const { email } = req.body
-        const foundUser = await User.findOne({ email }).exec()
-        if (!foundUser) {
-          return res.status(401).json({ message: 'No user found with that email' })
-        }
-
         const autorgResults: AutoRgResults = await spawnAutoRgCalculator(
           jobDir,
           'expdata.dat'
