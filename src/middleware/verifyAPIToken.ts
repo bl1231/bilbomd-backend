@@ -39,6 +39,7 @@ export const verifyAPIToken = async (req: Request, res: Response, next: NextFunc
     }
 
     req.apiUser = user
+    console.log(`API token verified for user: ${user.email}`)
     next()
   } catch (err) {
     console.error('API token verification failed:', err)

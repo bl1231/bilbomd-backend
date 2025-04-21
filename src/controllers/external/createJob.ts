@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { createNewJob } from '../jobs/index.js'
 
 export const submitApiJob = async (req: Request, res: Response) => {
+  // console.log('req.body', req.body)
   try {
     const { bilbomd_mode } = req.body
     const user = req.apiUser
@@ -16,6 +17,8 @@ export const submitApiJob = async (req: Request, res: Response) => {
 
     const jobType = bilbomd_mode.toLowerCase()
     console.log(`External job submission received: ${jobType} from ${user.email}`)
+
+    // Need to run autorg to get rg, rg_min , and rg_max values
 
     if (jobType === 'pdb' || jobType === 'crd_psf' || jobType === 'auto') {
       await createNewJob(req, res)

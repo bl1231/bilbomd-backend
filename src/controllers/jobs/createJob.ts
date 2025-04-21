@@ -14,6 +14,8 @@ const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 const createNewJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, UUID)
+  // console.log('req.apiUser: ', req.apiUser)
+  const email = req.apiUser?.email
 
   try {
     // Create the job directory
@@ -32,20 +34,19 @@ const createNewJob = async (req: Request, res: Response) => {
       { name: 'psf_file', maxCount: 1 },
       { name: 'pdb_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
-      { name: 'constinp', maxCount: 1 },
       { name: 'inp_file', maxCount: 1 },
-      { name: 'expdata', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
       { name: 'pae_file', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
-        logger.error(err)
+        logger.error('multer error:', err)
         res.status(500).json({ message: 'Failed to upload one or more files' })
         return
       }
 
       try {
-        const { email, bilbomd_mode } = req.body
+        const { bilbomd_mode } = req.body
+
         if (!bilbomd_mode) {
           res.status(400).json({ message: 'No job type provided' })
           return

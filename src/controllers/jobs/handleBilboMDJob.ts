@@ -56,8 +56,8 @@ const handleBilboMDJob = async (
         `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
       )
     } else {
-      constInpFile = files['constinp'][0].originalname.toLowerCase()
-      dataFile = files['expdata'][0].originalname.toLowerCase()
+      constInpFile = files['inp_file']?.[0]?.originalname.toLowerCase()
+      dataFile = files['dat_file']?.[0]?.originalname.toLowerCase()
 
       const jobDir = path.join(uploadFolder, UUID)
       const constInpFilePath = path.join(jobDir, constInpFile)

@@ -320,11 +320,6 @@
                     "format": "binary",
                     "description": "CRD file for the job."
                   },
-                  "constinp": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Constraint input file."
-                  },
                   "const_file": {
                     "type": "string",
                     "format": "binary",
@@ -334,11 +329,6 @@
                     "type": "string",
                     "format": "binary",
                     "description": "Input file for the job."
-                  },
-                  "expdata": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Experimental data file."
                   },
                   "dat_file": {
                     "type": "string",

@@ -5,5 +5,5 @@ define fixed4 sele ( segid DNAB) end
 
 cons fix sele fixed1 .or. fixed2 .or. fixed3 .or. fixed4 end
 
-
 return
+

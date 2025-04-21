@@ -110,7 +110,7 @@ const handleBilboMDSANSJob = async (
         ? files['inp_file'][0].originalname.toLowerCase()
         : ''
 
-    // Rename the original constinp file to create a backup
+    // Rename the original inp_file to create a backup
     const constInpFilePath = path.join(jobDir, constInpFile)
     const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
 

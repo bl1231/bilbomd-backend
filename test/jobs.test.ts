@@ -90,7 +90,7 @@ beforeAll(async () => {
   await User.deleteMany()
   await Job.deleteMany()
   // Create test user for setup (ignoring the warning)
-   
+
   testUser1 = await User.create({
     username: 'testuser1',
     email: 'testuser1@example.com',
@@ -188,8 +188,8 @@ describe('POST /v1/jobs', () => {
       .set('Authorization', `Bearer ${token}`)
       .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
       .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('constinp', `${__dirname}/data/my_const.inp`)
-      .attach('expdata', `${__dirname}/data/pro_dna_saxs.dat`)
+      .attach('inp_file', `${__dirname}/data/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
       .field('title', 'Test Job')
       .field('email', 'non-existant@example.com')
     expect(res.statusCode).toBe(401)
@@ -203,8 +203,8 @@ describe('POST /v1/jobs', () => {
       .set('Authorization', `Bearer ${token}`)
       .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
       .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('constinp', `${__dirname}/data/my_const.inp`)
-      .attach('expdata', `${__dirname}/data/pro_dna_saxs.dat`)
+      .attach('inp_file', `${__dirname}/data/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
       .field('title', 'Test Job')
       .field('email', 'testuser1@example.com')
       .field('rg_min', 30)
@@ -221,8 +221,8 @@ describe('POST /v1/jobs', () => {
       .set('Authorization', `Bearer ${token}`)
       .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
       .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('constinp', `${__dirname}/data/my_const.inp`)
-      .attach('expdata', `${__dirname}/data/pro_dna_saxs.dat`)
+      .attach('inp_file', `${__dirname}/data/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
       .field('title', 'Test Job')
       .field('email', 'testuser1@example.com')
       .field('rg_min', 30)
@@ -241,8 +241,8 @@ describe('POST /v1/jobs', () => {
       .field('title', 'BilboMD Test Job')
       .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
       .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('constinp', `${__dirname}/data/my_const.inp`)
-      .attach('expdata', `${__dirname}/data/pro_dna_saxs.dat`)
+      .attach('inp_file', `${__dirname}/data/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
       .field('email', 'testuser1@example.com')
       .field('rg_min', 30)
       .field('rg_max', 40)
