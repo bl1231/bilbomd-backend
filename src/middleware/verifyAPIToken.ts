@@ -1,3 +1,4 @@
+import { logger } from '../middleware/loggers.js'
 import { Request, Response, NextFunction } from 'express'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import crypto from 'crypto'
@@ -39,10 +40,10 @@ export const verifyAPIToken = async (req: Request, res: Response, next: NextFunc
     }
 
     req.apiUser = user
-    console.log(`API token verified for user: ${user.email}`)
+    logger.info(`API token verified for user: ${user.email}`)
     next()
   } catch (err) {
-    console.error('API token verification failed:', err)
+    logger.error('API token verification failed:', err)
     res.status(500).json({ message: 'Internal server error during token verification' })
   }
 }
