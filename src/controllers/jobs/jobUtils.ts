@@ -26,7 +26,7 @@ const writeJobParams = async (jobID: string): Promise<void> => {
 
     // Write JSON string to a file
     await fs.writeFile(paramsFilePath, jobJson)
-    console.log(`Saved params.json to ${paramsFilePath}`)
+    logger.info(`Saved params.json to ${paramsFilePath}`)
   } catch (error) {
     logger.error(`Unable to save params.json: ${error}`)
   }
