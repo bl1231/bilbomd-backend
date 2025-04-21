@@ -1,33 +1,26 @@
+import { logger } from '../../middleware/loggers.js'
 import { Request, Response } from 'express'
 import { createNewJob } from '../jobs/index.js'
 
 export const submitApiJob = async (req: Request, res: Response) => {
-  // console.log('req.body', req.body)
   try {
-    const { bilbomd_mode } = req.body
     const user = req.apiUser
 
     if (!user) {
-      res.status(403).json({ message: 'Missing user context' })
+      res.status(403).json({ message: 'Missing API user context' })
       return
     }
-    if (!bilbomd_mode) {
-      res.status(400).json({ message: 'Missing job type' })
-    }
 
-    const jobType = bilbomd_mode.toLowerCase()
-    console.log(`External job submission received: ${jobType} from ${user.email}`)
+    // Optional: Attach email to req so createNewJob logic stays unified
+    req.email = user.email
 
-    // Need to run autorg to get rg, rg_min , and rg_max values
+    // Optional: Add API-specific metadata or logging
+    logger.info(`API job submission from ${user.email}`)
+    logger.info(`API job submission from ${req.email}`)
 
-    if (jobType === 'pdb' || jobType === 'crd_psf' || jobType === 'auto') {
-      await createNewJob(req, res)
-    } else {
-      console.warn(`Invalid job type from API: ${jobType}`)
-      res.status(400).json({ message: `Invalid API job type: ${jobType}` })
-    }
+    await createNewJob(req, res)
   } catch (err) {
-    console.error('submitApiJob error:', err)
+    logger.error('submitApiJob error:', err)
     res.status(500).json({ message: 'Failed to submit API job' })
   }
 }
