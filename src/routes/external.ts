@@ -3,10 +3,12 @@ import { submitApiJob } from '../controllers/external/createJob.js'
 import { getApiJobStatus } from '../controllers/external/jobStatus.js'
 import { getExternalJobResults } from '../controllers/external/getResults.js'
 import { verifyAPIToken } from '../middleware/verifyAPIToken.js'
+import { logApiRequest } from '../middleware/logApiRequests.js'
 
 const router = express.Router()
 
 router.use(verifyAPIToken)
+router.use(logApiRequest)
 
 router.post('/', submitApiJob)
 router.get('/:id/status', getApiJobStatus)
