@@ -14,8 +14,6 @@ const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 const createNewJob = async (req: Request, res: Response) => {
   const UUID = uuid()
   const jobDir = path.join(uploadFolder, UUID)
-  // console.log('req.apiUser: ', req.apiUser)
-  const email = req.apiUser?.email
 
   try {
     // Create the job directory
@@ -51,7 +49,10 @@ const createNewJob = async (req: Request, res: Response) => {
           res.status(400).json({ message: 'No job type provided' })
           return
         }
-
+        const email = req.email
+        logger.info(
+          `Job submission from: ${req.apiUser ? 'API token' : 'JWT session'}: ${email}`
+        )
         const foundUser = await User.findOne({ email }).exec()
         if (!foundUser) {
           res.status(401).json({ message: 'No user found with that email' })
