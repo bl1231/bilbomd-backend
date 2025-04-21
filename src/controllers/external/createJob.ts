@@ -15,7 +15,6 @@ export const submitApiJob = async (req: Request, res: Response) => {
     req.email = user.email
 
     // Optional: Add API-specific metadata or logging
-    logger.info(`API job submission from ${user.email}`)
     logger.info(`API job submission from ${req.email}`)
 
     await createNewJob(req, res)

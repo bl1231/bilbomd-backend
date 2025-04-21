@@ -4,6 +4,13 @@
 #
 # export BILBOMD_API_TOKEN="your_api_token_here"
 #
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+set -a
+source "$SCRIPT_DIR/.env"
+set +a
+
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
 JOB_ID="$1"
