@@ -29,6 +29,7 @@ export const getApiJobStatus = async (req: Request, res: Response) => {
       progress: job.progress ?? null,
       title: job.title,
       mode: job.__t,
+      uuid: job.uuid,
       submittedAt: job.time_submitted,
       completedAt: job.time_completed ?? null
     })

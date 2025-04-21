@@ -13,6 +13,7 @@ INP_FILE="./test/data/my_const.inp"
 
 curl -X POST "$API_URL" \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
+  -H "Accept: application/json" \
   -F "bilbomd_mode=pdb" \
   -F "title=API Test Job" \
   -F "pdb_file=@${PDB_FILE}" \
