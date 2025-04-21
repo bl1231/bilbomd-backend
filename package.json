@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@bl1231/bilbomd-mongodb-schema": "^1.6.4",
-    "@bull-board/api": "^6.9.1",
+    "@bull-board/api": "^6.9.2",
     "@bull-board/express": "^6.9.1",
     "axios": "^1.8.4",
     "bullmq": "^5.49.0",
