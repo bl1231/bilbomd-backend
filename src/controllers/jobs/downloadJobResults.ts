@@ -1,7 +1,7 @@
 import { logger } from '../../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
-import { Job, MultiJob } from '@bl1231/bilbomd-mongodb-schema'
+import { Job, MultiJob, JobStatus } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
@@ -21,6 +21,19 @@ const downloadJobResults = async (req: Request, res: Response) => {
 
     if (!job && !multiJob) {
       res.status(404).json({ message: `No job matches ID ${id}.` })
+      return
+    }
+
+    const jobDoc = job || multiJob
+    if (!jobDoc) {
+      res.status(400).json({ message: 'Job document is null or undefined.' })
+      return
+    }
+
+    if (jobDoc.status !== JobStatus.Completed) {
+      res.status(400).json({
+        message: `Job is not complete (status: ${jobDoc.status}). You may only download results for a job that has completed successfully.`
+      })
       return
     }
 
