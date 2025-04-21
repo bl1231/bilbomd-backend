@@ -24,7 +24,7 @@
     "@bull-board/api": "^6.9.1",
     "@bull-board/express": "^6.9.1",
     "axios": "^1.8.4",
-    "bullmq": "^5.49.0",
+    "bullmq": "^5.49.2",
     "cookie-parser": "~1.4.7",
     "cors": "^2.8.5",
     "cron": "^4.3.0",
