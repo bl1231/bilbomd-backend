@@ -1,8 +1,8 @@
-import { logger } from '../../middleware/loggers.js'
+import { logger } from '../../../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
-import { BilboMDSteps } from '../../types/bilbomd.js'
+import { BilboMDSteps } from '../../../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 

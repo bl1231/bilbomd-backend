@@ -2,17 +2,12 @@ import { logger } from '../../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
 import { queueJob } from '../../queues/bilbomd.js'
-import {
-  Job,
-  IUser,
-  BilboMdPDBJob,
-  IBilboMDPDBJob,
-  BilboMdCRDJob,
-  IBilboMDCRDJob,
-  IBilboMDSteps
-} from '@bl1231/bilbomd-mongodb-schema'
+import { IUser, JobStatus, StepStatus } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
-import { writeJobParams, sanitizeConstInpFile } from './jobUtils.js'
+import { writeJobParams, sanitizeConstInpFile } from './utils/jobUtils.js'
+import { resolveResubmissionFiles } from './utils/resolveResubmissionFiles.js'
+import { maybeAutoCalculateRg } from './utils/maybeAutoCalculateRg.js'
+import { buildBilboMdJob } from './utils/buildBilboMdJob.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -23,38 +18,34 @@ const handleBilboMDJob = async (
   UUID: string
 ) => {
   try {
-    const isResubmission = req.body.resubmit === 'true'
+    const isResubmission = req.body.resubmit === 'false'
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 
-    const { bilbomd_mode: bilbomdMode, title, num_conf, rg, rg_min, rg_max } = req.body
+    const { bilbomd_mode: bilbomdMode, title, num_conf } = req.body
+    let { rg, rg_min, rg_max } = req.body
+
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
     logger.info(`bilbomdMode: ${bilbomdMode}`)
     logger.info(`title: ${title}`)
 
     let constInpFile = ''
     let dataFile = ''
+    let extraFiles: Record<string, string> = {}
 
     if (isResubmission && originalJobId) {
-      const originalJob = (await Job.findById(originalJobId)) as
-        | IBilboMDPDBJob
-        | IBilboMDCRDJob
-      if (!originalJob) {
-        res.status(404).json({ message: 'Original job not found' })
+      try {
+        const result = await resolveResubmissionFiles(originalJobId, UUID)
+        constInpFile = result.constInpFile
+        dataFile = result.dataFile
+        extraFiles = result.extraFiles
+      } catch (err) {
+        logger.error(err)
+        res.status(404).json({
+          message: err instanceof Error ? err.message : 'An unknown error occurred'
+        })
         return
       }
-
-      const originalDir = path.join(uploadFolder, originalJob.uuid)
-      const newDir = path.join(uploadFolder, UUID)
-
-      constInpFile = originalJob.const_inp_file
-      dataFile = originalJob.data_file
-
-      await fs.copy(path.join(originalDir, constInpFile), path.join(newDir, constInpFile))
-      await fs.copy(path.join(originalDir, dataFile), path.join(newDir, dataFile))
-      logger.info(
-        `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
-      )
     } else {
       constInpFile = files['inp_file']?.[0]?.originalname.toLowerCase()
       dataFile = files['dat_file']?.[0]?.originalname.toLowerCase()
@@ -64,98 +55,70 @@ const handleBilboMDJob = async (
       const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
       await fs.copyFile(constInpFilePath, constInpOrigFilePath)
       await sanitizeConstInpFile(constInpFilePath)
+
+      extraFiles = {
+        psf_file: files['psf_file']?.[0]?.originalname.toLowerCase() || '',
+        crd_file: files['crd_file']?.[0]?.originalname.toLowerCase() || '',
+        pdb_file: files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
+      }
     }
 
     // Initialize common job data
     const commonJobData = {
-      __t: '',
       title,
       uuid: UUID,
-      status: 'Submitted',
+      status: JobStatus.Submitted,
       data_file: dataFile,
-      const_inp_file: constInpFile,
       time_submitted: new Date(),
       user,
       progress: 0,
       cleanup_in_progress: false,
       steps: {
-        minimize: {},
-        initfoxs: {},
-        heat: {},
-        md: {},
-        dcd2pdb: {},
-        pdb_remediate: {},
-        foxs: {},
-        multifoxs: {},
-        results: {},
-        email: {}
-      } as IBilboMDSteps
+        minimize: { status: StepStatus.Waiting, message: '' },
+        initfoxs: { status: StepStatus.Waiting, message: '' },
+        heat: { status: StepStatus.Waiting, message: '' },
+        md: { status: StepStatus.Waiting, message: '' },
+        dcd2pdb: { status: StepStatus.Waiting, message: '' },
+        pdb_remediate: { status: StepStatus.Waiting, message: '' },
+        foxs: { status: StepStatus.Waiting, message: '' },
+        multifoxs: { status: StepStatus.Waiting, message: '' },
+        results: { status: StepStatus.Waiting, message: '' },
+        email: { status: StepStatus.Waiting, message: '' }
+      }
     }
 
-    let newJob: IBilboMDPDBJob | IBilboMDCRDJob | undefined
+    const jobDir = path.join(uploadFolder, UUID)
+
+    // Calculate rg values if not provided
+    const resolvedRgValues = await maybeAutoCalculateRg(
+      { rg, rg_min, rg_max },
+      !!req.apiUser,
+      jobDir,
+      dataFile
+    )
+
+    rg = resolvedRgValues.rg
+    rg_min = resolvedRgValues.rg_min
+    rg_max = resolvedRgValues.rg_max
+
     logger.info(`Creating job for bilbomd_mode: ${bilbomdMode}`)
-    if (bilbomdMode === 'crd_psf') {
-      let psfFile = ''
-      let crdFile = ''
-
-      if (isResubmission && originalJobId) {
-        const originalJob = (await Job.findById(originalJobId)) as IBilboMDCRDJob
-        if (!originalJob) {
-          res.status(404).json({ message: 'Original CRD job not found' })
-          return
-        }
-        psfFile = originalJob.psf_file
-        crdFile = originalJob.crd_file
-
-        const originalDir = path.join(uploadFolder, originalJob.uuid)
-        const newDir = path.join(uploadFolder, UUID)
-        await fs.copy(path.join(originalDir, psfFile), path.join(newDir, psfFile))
-        await fs.copy(path.join(originalDir, crdFile), path.join(newDir, crdFile))
-      } else {
-        psfFile = files['psf_file']?.[0]?.originalname.toLowerCase() || ''
-        crdFile = files['crd_file']?.[0]?.originalname.toLowerCase() || ''
-      }
-
-      newJob = new BilboMdCRDJob({
-        ...commonJobData,
-        __t: 'BilboMdCRD',
-        psf_file: psfFile,
-        crd_file: crdFile,
-        conformational_sampling: num_conf,
-        rg,
-        rg_min,
-        rg_max
-      })
-    } else if (bilbomdMode === 'pdb') {
-      let pdbFile = ''
-
-      if (isResubmission && originalJobId) {
-        const originalJob = (await Job.findById(originalJobId)) as IBilboMDPDBJob
-        if (!originalJob) {
-          res.status(404).json({ message: 'Original PDB job not found' })
-          return
-        }
-        pdbFile = originalJob.pdb_file
-
-        const originalDir = path.join(uploadFolder, originalJob.uuid)
-        const newDir = path.join(uploadFolder, UUID)
-        await fs.copy(path.join(originalDir, pdbFile), path.join(newDir, pdbFile))
-      } else {
-        pdbFile = files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
-      }
-
-      newJob = new BilboMdPDBJob({
-        ...commonJobData,
-        __t: 'BilboMdPDB',
-        pdb_file: pdbFile,
-        conformational_sampling: num_conf,
-        rg,
-        rg_min,
-        rg_max,
-        steps: { ...commonJobData.steps, pdb2crd: {} },
-        ...(isResubmission && originalJobId ? { resubmitted_from: originalJobId } : {})
-      })
+    logger.info(`const_inp_file being passed: "${constInpFile}"`)
+    if (!constInpFile) {
+      throw new Error('constInpFile is undefined or empty')
     }
+    const newJob = buildBilboMdJob(bilbomdMode, commonJobData, {
+      pdb_file: extraFiles.pdb_file as string | undefined,
+      psf_file: extraFiles.psf_file as string | undefined,
+      crd_file: extraFiles.crd_file as string | undefined,
+      const_inp_file: constInpFile,
+      conformational_sampling: num_conf,
+      rg,
+      rg_min,
+      rg_max,
+      ...(isResubmission && originalJobId ? { resubmitted_from: originalJobId } : {})
+    })
+
+    // logger.info(`New job created: ${newJob}`)
 
     // Handle unsupported modes
     if (!newJob) {
@@ -187,8 +150,15 @@ const handleBilboMDJob = async (
       uuid: newJob.uuid
     })
   } catch (error) {
-    logger.error(error)
-    res.status(500).json({ message: 'Failed to create handleBilboMDJob job' })
+    const msg =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Unknown error occurred'
+
+    logger.error('handleBilboMDJob error:', error)
+    res.status(500).json({ message: msg })
   }
 }
 

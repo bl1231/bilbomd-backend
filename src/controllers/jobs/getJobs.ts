@@ -14,7 +14,7 @@ import {
 import { Request, Response } from 'express'
 import { BilboMDSteps } from '../../types/bilbomd.js'
 import { BilboMDJob, BilboMDBullMQ } from '../../types/bilbomd.js'
-import { calculateNumEnsembles, calculateNumEnsembles2 } from './jobUtils.js'
+import { calculateNumEnsembles, calculateNumEnsembles2 } from './utils/jobUtils.js'
 import { getScoperStatus } from './scoperStatus.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')

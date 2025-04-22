@@ -10,8 +10,8 @@ import {
 import { IUser, BilboMdAutoJob, IBilboMDAutoJob } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { AutoRgResults } from '../../types/bilbomd.js'
-import { writeJobParams } from './jobUtils.js'
-import { spawnAutoRgCalculator } from './autoRg.js'
+import { writeJobParams } from './utils/jobUtils.js'
+import { spawnAutoRgCalculator } from './utils/autoRg.js'
 import fs from 'fs-extra'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')

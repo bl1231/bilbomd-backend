@@ -1,4 +1,4 @@
-import { logger } from '../../middleware/loggers.js'
+import { logger } from '../../../middleware/loggers.js'
 import { v4 as uuid } from 'uuid'
 import multer from 'multer'
 import fs from 'fs-extra'
@@ -7,7 +7,7 @@ import path from 'path'
 import { Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
 import { spawn } from 'child_process'
-import { AutoRgResults } from '../../types/bilbomd.js'
+import { AutoRgResults } from '../../../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
