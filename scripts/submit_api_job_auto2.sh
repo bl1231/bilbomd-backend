@@ -13,20 +13,20 @@ set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-echo "API token: ${BILBOMD_API_TOKEN}"
+# echo "API token: ${BILBOMD_API_TOKEN}"
 
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
 
-PDB_FILE="../test/data/pro_dna_complex.pdb"
-DAT_FILE="../test/data/pro_dna_saxs.dat"
-INP_FILE="../test/data/my_const.inp"
+PDB_FILE="../test/data/auto2/af-p13188-f1-model_v4.pdb"
+DAT_FILE="../test/data/auto2/gln4_01e_trim.dat"
+PAE_FILE="../test/data/auto2/af-p13188-f1-pae_v4.json"
 
 curl -X POST "$API_URL" \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
-  -F "bilbomd_mode=pdb" \
-  -F "title=API Test Job" \
+  -F "bilbomd_mode=auto" \
+  -F "title=API Test Job Auto2" \
   -F "pdb_file=@${PDB_FILE}" \
   -F "dat_file=@${DAT_FILE}" \
-  -F "inp_file=@${INP_FILE}" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
+  -F "pae_file=@${PAE_FILE}" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
