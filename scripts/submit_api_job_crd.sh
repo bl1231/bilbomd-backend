@@ -18,10 +18,10 @@ set +a
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
 
-CRD_FILE="../test/data/crd/pro_dna_complex.crd"
-PSF_FILE="../test/data/crd/pro_dna_complex.psf"
-DAT_FILE="../test/data/crd/pro_dna_saxs.dat"
-INP_FILE="../test/data/crd/my_const.inp"
+CRD_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna_complex.crd"
+PSF_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna_complex.psf"
+DAT_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna_saxs.dat"
+INP_FILE="$SCRIPT_DIR/../test/data/crd/my_const.inp"
 
 curl -X POST "$API_URL" \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \

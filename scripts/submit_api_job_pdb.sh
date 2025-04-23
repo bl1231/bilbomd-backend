@@ -18,9 +18,9 @@ set +a
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
 
-PDB_FILE="../test/data/pdb/pro_dna_complex.pdb"
-DAT_FILE="../test/data/pdb/pro_dna_saxs.dat"
-INP_FILE="../test/data/pdb/my_const.inp"
+PDB_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna_complex.pdb"
+DAT_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna_saxs.dat"
+INP_FILE="$SCRIPT_DIR/../test/data/pdb/my_const.inp"
 
 curl -X POST "$API_URL" \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \

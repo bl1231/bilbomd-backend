@@ -18,9 +18,9 @@ set +a
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
 
-PDB_FILE="../test/data/auto1/af-q9z2a5-f1-model_v4.pdb"
-DAT_FILE="../test/data/auto1/mmate1-1_13.dat"
-PAE_FILE="../test/data/auto1/af-q9z2a5.json"
+PDB_FILE="$SCRIPT_DIR/../test/data/auto1/af-q9z2a5-f1-model_v4.pdb"
+DAT_FILE="$SCRIPT_DIR/../test/data/auto1/mmate1-1_13.dat"
+PAE_FILE="$SCRIPT_DIR/../test/data/auto1/af-q9z2a5.json"
 
 curl -X POST "$API_URL" \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
