@@ -144,8 +144,15 @@ const handleBilboMDAutoJob = async (
       uuid: newJob.uuid
     })
   } catch (error) {
-    logger.error(error)
-    res.status(500).json({ message: 'Failed to create handleBilboMDAutoJob job' })
+    const msg =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Unknown error occurred'
+
+    logger.error('handleBilboMDJob error:', error)
+    res.status(500).json({ message: msg })
   }
 }
 
