@@ -26,15 +26,51 @@ const handleBilboMDAlphaFoldJob = async (
   UUID: string
 ) => {
   const jobDir = path.join(uploadFolder, UUID)
-  const { bilbomd_mode: bilbomdMode, entities } = req.body
+  const { bilbomd_mode: bilbomdMode } = req.body
   const files = req.files as { [fieldname: string]: Express.Multer.File[] }
   logger.info(`bilbomdMode: ${bilbomdMode}`)
   logger.info(`title: ${req.body.title}`)
 
-  const parsedEntities = entities.map((entity: IAlphaFoldEntity) => ({
-    ...entity,
-    copies: parseInt(entity.copies as unknown as string, 10) // Convert copies to an integer
-  }))
+  let parsedEntities: IAlphaFoldEntity[] = []
+
+  try {
+    if (req.body.entities_json) {
+      parsedEntities = JSON.parse(req.body.entities_json)
+      logger.info(`Parsed ${parsedEntities.length} entities from entities_json`)
+    } else if (Array.isArray(req.body.entities)) {
+      parsedEntities = req.body.entities.map((entity: IAlphaFoldEntity) => ({
+        ...entity,
+        copies: parseInt(entity.copies as unknown as string, 10)
+      }))
+      logger.info(`Parsed ${parsedEntities.length} entities from form fields`)
+    } else {
+      // Fallback in case entities are not parsed into array form
+      const raw = req.body as Record<string, string>
+      const entityIndices = new Set<number>()
+      for (const key of Object.keys(raw)) {
+        const match = key.match(/^entities\[(\d+)]/)
+        if (match) entityIndices.add(Number(match[1]))
+      }
+
+      for (const index of [...entityIndices].sort()) {
+        parsedEntities.push({
+          name: raw[`entities[${index}][name]`],
+          sequence: raw[`entities[${index}][sequence]`],
+          type: raw[`entities[${index}][type]`],
+          copies: parseInt(raw[`entities[${index}][copies]`] || '1', 10)
+        })
+      }
+
+      logger.info(
+        `Reconstructed ${parsedEntities.length} entities from multipart form data`
+      )
+    }
+  } catch (parseErr) {
+    logger.error('Failed to parse entities_json or reconstruct entities', parseErr)
+    return res
+      .status(400)
+      .json({ message: 'Invalid entities_json or malformed form data' })
+  }
 
   // Check if the number of entities exceeds the maximum allowed
   if (parsedEntities.length > 20) {

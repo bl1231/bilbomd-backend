@@ -16,7 +16,7 @@ set +a
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
 DAT_FILE="$SCRIPT_DIR/../test/data/af-mono/A_S_USP16-FL_1.dat"
-SEQ_FILE="$SCRIPT_DIR/../test/data/af-mono/USP16-FL.fasta"
+SEQ_FILE="$SCRIPT_DIR/../test/data/af-mono/entities.json"
 
 curl -X POST "$API_URL" \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
@@ -24,4 +24,4 @@ curl -X POST "$API_URL" \
   -F "bilbomd_mode=alphafold" \
   -F "title=API Test Job AF Monomer" \
   -F "dat_file=@${DAT_FILE}" \
-  -F "pae_file=@${SEQ_FILE}" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
+  -F "entities_json=$(< "$SEQ_FILE")" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
