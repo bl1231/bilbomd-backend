@@ -8,7 +8,7 @@ import { Request, Response } from 'express'
 import { handleBilboMDJob } from './handleBilboMDJob.js'
 import { handleBilboMDAutoJob } from './handleBilboMDAutoJob.js'
 import { handleBilboMDScoperJob } from './handleBilboMDScoperJob.js'
-
+import { handleBilboMDAlphaFoldJob } from './handleBilboMDAlphaFoldJob.js'
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
 const createNewJob = async (req: Request, res: Response) => {
@@ -16,7 +16,6 @@ const createNewJob = async (req: Request, res: Response) => {
   const jobDir = path.join(uploadFolder, UUID)
 
   try {
-    // Create the job directory
     await fs.mkdir(jobDir, { recursive: true })
     logger.info(`Created directory: ${jobDir}`)
 
@@ -75,6 +74,9 @@ const createNewJob = async (req: Request, res: Response) => {
         } else if (bilbomd_mode === 'scoper') {
           logger.info('Handling BilboMDScoperJob')
           await handleBilboMDScoperJob(req, res, foundUser, UUID)
+        } else if (bilbomd_mode === 'alphafold') {
+          logger.info('Handling BilboMDAlphaFoldJob')
+          await handleBilboMDAlphaFoldJob(req, res, foundUser, UUID)
         } else {
           res.status(400).json({ message: 'Invalid job type' })
           return
@@ -85,8 +87,15 @@ const createNewJob = async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error(error)
-    res.status(500).json({ message: 'Failed to create job directory' })
+    const msg =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Unknown error occurred'
+
+    logger.error('handleBilboMDJob error:', error)
+    res.status(500).json({ message: msg })
   }
 }
 
