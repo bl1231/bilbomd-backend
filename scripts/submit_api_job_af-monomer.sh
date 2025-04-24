@@ -15,7 +15,10 @@ set +a
 
 API_URL="http://localhost:3501/api/v1/external/jobs"
 
+# DAT_FILE="$SCRIPT_DIR/../test/data/af-mono/A_S_USP16-FL_1-FAIL.dat"
 DAT_FILE="$SCRIPT_DIR/../test/data/af-mono/A_S_USP16-FL_1.dat"
+# DAT_FILE="$SCRIPT_DIR/../test/data/af-mono/A S USP16 FL 1.dat"
+# DAT_FILE="$SCRIPT_DIR/../test/data/af-mono/A_S_USP16-FL_1-copy-superlong-filename.dat"
 SEQ_FILE="$SCRIPT_DIR/../test/data/af-mono/entities.json"
 
 curl -X POST "$API_URL" \
@@ -25,3 +28,4 @@ curl -X POST "$API_URL" \
   -F "title=API Test Job AF Monomer" \
   -F "dat_file=@${DAT_FILE}" \
   -F "entities_json=$(< "$SEQ_FILE")" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
+
