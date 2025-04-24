@@ -97,7 +97,7 @@ const handleBilboMDAutoJob = async (
 
     // Save the job to the database
     await newJob.save()
-    logger.info(`${req.body.bilbomd_mode} Job saved to MongoDB: ${newJob.id}`)
+    logger.info(`BilboMD-${req.body.bilbomd_mode} Job saved to MongoDB: ${newJob.id}`)
 
     // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
