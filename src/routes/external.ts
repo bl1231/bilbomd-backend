@@ -122,7 +122,7 @@ router.post('/', submitApiJob)
 
 /**
  * @swagger
- * /external/{id}/status:
+ * /external/jobs/{id}/status:
  *   get:
  *     summary: Get job status
  *     tags: [External]
@@ -167,7 +167,7 @@ router.get('/:id/status', getApiJobStatus)
 
 /**
  * @swagger
- * /external/{id}/results:
+ * /external/jobs/{id}/results:
  *   get:
  *     summary: Download job results as a tarball archive
  *     tags: [External]
