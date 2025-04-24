@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import mongoose from 'mongoose'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
 import { logger } from '../../middleware/loggers.js'
 
@@ -6,6 +7,11 @@ export const getApiJobStatus = async (req: Request, res: Response) => {
   try {
     const user = req.apiUser
     const { id } = req.params
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid job ID format' })
+      return
+    }
 
     if (!user) {
       res.status(403).json({ message: 'Unauthorized access' })

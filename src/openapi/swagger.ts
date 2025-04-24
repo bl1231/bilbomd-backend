@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import fs from 'fs'
 import m2s from 'mongoose-to-swagger'
 import swaggerSpecJson from './swaggerOptions.js'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { BilboMdJob } from '@bl1231/bilbomd-mongodb-schema'
+import fs from 'fs'
+import path from 'path'
 
-// Assuming the types for these modules might not be available,
-// and your models and swaggerOptions are correctly typed or accepted as any.
 interface SwaggerSpec {
   openapi?: string
   info?: {
@@ -21,6 +20,9 @@ interface SwaggerSpec {
     securitySchemes?: {
       [key: string]: any // Adjust according to your needs
     }
+    responses?: {
+      [key: string]: any
+    }
   }
   security?: Array<{
     [key: string]: any // Adjust this part as necessary
@@ -33,12 +35,34 @@ const swaggerSpec: SwaggerSpec = swaggerSpecJson
 const userSwaggerDefinition = m2s(User)
 const bilboMdJobSwaggerDefinition = m2s(BilboMdJob)
 
-// Merge the User schema definition into your existing Swagger spec
-// Add the User schema definition to your Swagger document
+// Add the generated definitions to the Swagger spec
 swaggerSpec.components = swaggerSpec.components || {}
 swaggerSpec.components.schemas = swaggerSpec.components.schemas || {}
+
+// Merge the User and Job schema definition into your existing Swagger spec
 swaggerSpec.components.schemas.User = userSwaggerDefinition
 swaggerSpec.components.schemas.Jobs = bilboMdJobSwaggerDefinition
+
+swaggerSpec.components.schemas.JobStatusResponse = {
+  type: 'object',
+  properties: {
+    status: { type: 'string', example: 'Completed' },
+    progress: { type: 'integer', example: 100 },
+    title: { type: 'string', example: 'API Test Job PDB' },
+    mode: { type: 'string', example: 'BilboMdPDB' },
+    uuid: { type: 'string', example: '6a8d578c-99df-4845-8cbc-f362e9860eeb' },
+    submittedAt: {
+      type: 'string',
+      format: 'date-time',
+      example: '2025-04-24T21:00:37.583Z'
+    },
+    completedAt: {
+      type: 'string',
+      format: 'date-time',
+      example: '2025-04-24T21:14:45.789Z'
+    }
+  }
+}
 
 swaggerSpec.components.securitySchemes = {
   bearerAuth: {
@@ -53,7 +77,59 @@ swaggerSpec.components.securitySchemes = {
   }
 }
 
-// console.log(JSON.stringify(swaggerSpec, null, 2))
+swaggerSpec.components.responses = {
+  UnauthorizedError: {
+    description: 'BilboMD API Token is missing or invalid',
+    content: {
+      'application/json': {
+        examples: {
+          InvalidToken: {
+            summary: 'Invalid API token',
+            value: { message: 'Invalid API token' }
+          },
+          MissingHeader: {
+            summary: 'Missing or invalid Authorization header',
+            value: { message: 'Missing or invalid Authorization header' }
+          }
+        }
+      }
+    }
+  },
+  ValidationError: {
+    description: 'Request failed validation',
+    content: {
+      'application/json': {
+        example: {
+          message: 'Validation failed',
+          errors: [
+            { path: 'dat_file', message: 'No valid SAXS data found' },
+            { path: 'pae_file', message: 'A PAE *.json file is required' },
+            { path: 'pae_file', message: 'Only accepts a *.json file.' },
+            { path: 'pae_file', message: 'Max file size is 120MB' },
+            {
+              path: 'pae_file',
+              message: 'Filename must be no longer than 30 characters.'
+            }
+          ]
+        }
+      }
+    }
+  },
+  ForbiddenAlphaFold: {
+    description: 'AlphaFold jobs are disabled due to configuration',
+    content: {
+      'application/json': {
+        example: {
+          message: 'AlphaFold jobs unavailable on this deployment.'
+        }
+      }
+    }
+  }
+}
 
-// Write the updated Swagger JSON to a file
-fs.writeFileSync('src/openapi/v1/swagger_v1.json', JSON.stringify(swaggerSpec, null, 2))
+swaggerSpec.security = [{ bearerAuth: [] }]
+
+export default swaggerSpec
+
+const outputPath = path.resolve('src/openapi/v1/swagger_v1.json')
+fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))

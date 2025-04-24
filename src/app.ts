@@ -26,6 +26,8 @@ import bullmqRoutes from './routes/bullmq.js'
 import configsRoutes from './routes/configs.js'
 import statsRoutes from './routes/stats.js'
 import externalRoutes from './routes/external.js'
+import swaggerUi from 'swagger-ui-express'
+import swaggerSpecJson from './openapi/swagger.js'
 
 // Instantiate the app
 const app: Express = express()
@@ -97,6 +99,14 @@ v1Router.use(
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
+
+//
+app.use(
+  '/api-docs',
+  cors(corsOptionsPublic),
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpecJson)
+)
 
 // Health check route
 // Define the possible MongoDB connection states
