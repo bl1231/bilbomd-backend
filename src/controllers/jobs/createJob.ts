@@ -5,10 +5,13 @@ import path from 'path'
 import { v4 as uuid } from 'uuid'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
-import { handleBilboMDJob } from './handleBilboMDJob.js'
+// import { handleBilboMDJob } from './handleBilboMDJob.js'
+import { handleBilboMDClassicPDB } from './handleBilboMDClassicPDB.js'
+import { handleBilboMDClassicCRD } from './handleBilboMDClassicCRD.js'
 import { handleBilboMDAutoJob } from './handleBilboMDAutoJob.js'
 import { handleBilboMDScoperJob } from './handleBilboMDScoperJob.js'
 import { handleBilboMDAlphaFoldJob } from './handleBilboMDAlphaFoldJob.js'
+
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
 const createNewJob = async (req: Request, res: Response) => {
@@ -48,11 +51,15 @@ const createNewJob = async (req: Request, res: Response) => {
           res.status(400).json({ message: 'No job type provided' })
           return
         }
+
         const email = req.email
+
         logger.info(
           `Job submission from: ${req.apiUser ? 'API token' : 'JWT session'}: ${email}`
         )
+
         const foundUser = await User.findOne({ email }).exec()
+
         if (!foundUser) {
           res.status(401).json({ message: 'No user found with that email' })
           return
@@ -65,17 +72,20 @@ const createNewJob = async (req: Request, res: Response) => {
         })
 
         // Route to the appropriate handler
-        logger.info(`Handling BilboMDJob: ${bilbomd_mode}`)
-        if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
-          await handleBilboMDJob(req, res, foundUser, UUID)
+        logger.info(`Starting BilboMDJobClassicPDB: ${bilbomd_mode}`)
+        if (bilbomd_mode === 'pdb') {
+          await handleBilboMDClassicPDB(req, res, foundUser, UUID)
+        } else if (bilbomd_mode === 'crd_psf') {
+          logger.info('Starting BilboMDJobClassicCRD')
+          await handleBilboMDClassicCRD(req, res, foundUser, UUID)
         } else if (bilbomd_mode === 'auto') {
-          logger.info('Handling BilboMDAutoJob')
+          logger.info('Starting BilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, foundUser, UUID)
         } else if (bilbomd_mode === 'scoper') {
-          logger.info('Handling BilboMDScoperJob')
+          logger.info('Starting BilboMDScoperJob')
           await handleBilboMDScoperJob(req, res, foundUser, UUID)
         } else if (bilbomd_mode === 'alphafold') {
-          logger.info('Handling BilboMDAlphaFoldJob')
+          logger.info('Starting BilboMDAlphaFoldJob')
           await handleBilboMDAlphaFoldJob(req, res, foundUser, UUID)
         } else {
           res.status(400).json({ message: 'Invalid job type' })
