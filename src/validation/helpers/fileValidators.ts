@@ -1,6 +1,12 @@
 import type { Express } from 'express'
 import { mixed } from 'yup'
-import { isSaxsData } from './validationFunctions.js'
+import {
+  isSaxsData,
+  isCRD,
+  isPsfData,
+  isValidConstInpFile,
+  containsChainId
+} from './validationFunctions.js'
 import { logger } from '../../middleware/loggers.js'
 
 export const requiredFile = (message: string) =>
@@ -67,3 +73,47 @@ export const saxsCheck = () =>
       }
     }
   )
+
+export const psfCheck = () =>
+  mixed().test('psf-data-check', 'File may not be a valid PSF file', async (file) => {
+    if (file instanceof File) return isPsfData(file)
+    return true
+  })
+
+export const crdCheck = () =>
+  mixed().test('crd-check', 'File may not be a valid CRD file', async (file) => {
+    if (file instanceof File) return isCRD(file)
+    return true
+  })
+
+export const chainIdCheck = () =>
+  mixed().test('pdb-chainid-check', 'Missing Chain ID in column 22', async (file) => {
+    if (file instanceof File) return containsChainId(file)
+    return true
+  })
+
+export const constInpCheck = () =>
+  mixed().test('const-inp-file-check', '', async function (file, ctx) {
+    const mode = ctx?.options?.context?.bilbomd_mode
+    if (file instanceof File) {
+      const result = await isValidConstInpFile(file, mode)
+      if (result === true) return true
+      return this.createError({ message: result })
+    }
+    return true
+  })
+
+export const jsonFileCheck = () =>
+  mixed().test('is-json', 'Please select a PAE file in JSON format', async (file) => {
+    if (file instanceof File && file.type === 'application/json') {
+      const content = await file.text()
+      try {
+        JSON.parse(content)
+        return true
+      } catch (error) {
+        console.log('Invalid JSON content:', error)
+        return false
+      }
+    }
+    return typeof file === 'string' // allow reuse of existing string
+  })
