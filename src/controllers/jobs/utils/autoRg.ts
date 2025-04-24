@@ -134,32 +134,31 @@ const spawnAutoRgCalculator = async (
     })
 
     autoRg.on('error', (error) => {
-      logger.error(`spawnAutoRgCalculator error: ${error}`)
-      reject(error)
+      const wrapped = error instanceof Error ? error : new Error(String(error))
+      logger.error(`spawnAutoRgCalculator error: ${wrapped.stack || wrapped.message}`)
+      reject(wrapped)
     })
 
     autoRg.on('exit', async (code) => {
-      // Close streams explicitly once the process exits
       logStream.end()
       errorStream.end()
 
       if (code === 0) {
         try {
-          const analysisResults = JSON.parse(
-            await fs.promises.readFile(tempOutputFile, 'utf-8')
-          )
+          const fileContent = await fs.promises.readFile(tempOutputFile, 'utf-8')
+          const analysisResults = JSON.parse(fileContent)
           logger.info(`spawnAutoRgCalculator success with exit code: ${code}`)
           resolve(analysisResults)
         } catch (parseError) {
-          logger.error(`Error parsing analysis results: ${parseError}`)
-          reject(parseError)
-        } finally {
-          // Clean up the temporary file
-          // await fs.promises.unlink(tempOutputFile)
+          const msg =
+            parseError instanceof Error ? parseError.message : String(parseError)
+          logger.error(`Error parsing autoRg output file: ${msg}`)
+          reject(new Error(`Failed to parse autoRg output: ${msg}`))
         }
       } else {
-        logger.error(`spawnAutoRgCalculator error with exit code: ${code}`)
-        reject(new Error(`spawnAutoRgCalculator error with exit code: ${code}`))
+        const message = `AutoRg exited with code ${code}. datFileName=${datFileName} tempOutput=${tempOutputFile}`
+        logger.error(`spawnAutoRgCalculator failure: ${message}`)
+        reject(new Error(message))
       }
     })
   })
