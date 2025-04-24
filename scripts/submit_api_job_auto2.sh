@@ -13,9 +13,8 @@ set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-# echo "API token: ${BILBOMD_API_TOKEN}"
-
-API_URL="http://localhost:3501/api/v1/external/jobs"
+# API_URL="http://localhost:3501/api/v1/external/jobs"
+API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 
 PDB_FILE="$SCRIPT_DIR/../test/data/auto2/af-p13188-f1-model_v4.pdb"
@@ -24,7 +23,7 @@ PAE_FILE="$SCRIPT_DIR/../test/data/auto2/af-p13188-f1-pae_v4.json"
 
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
-  -X POST "$API_URL" \
+  -X POST "$API_URL"/ \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
   -F "bilbomd_mode=auto" \

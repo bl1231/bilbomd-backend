@@ -13,20 +13,25 @@ set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-# echo "API token: ${BILBOMD_API_TOKEN}"
-
-API_URL="http://localhost:3501/api/v1/external/jobs"
+# API_URL="http://localhost:3501/api/v1/external/jobs"
+API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 
 PDB_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna_complex.pdb"
 DAT_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna_saxs.dat"
 INP_FILE="$SCRIPT_DIR/../test/data/pdb/my_const.inp"
 
-curl -X POST "$API_URL" \
+RESPONSE_FILE=$(mktemp)
+HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
+  -X POST "$API_URL"/ \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
   -F "bilbomd_mode=pdb" \
   -F "title=API Test Job PDB" \
   -F "pdb_file=@${PDB_FILE}" \
   -F "dat_file=@${DAT_FILE}" \
-  -F "inp_file=@${INP_FILE}" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
+  -F "inp_file=@${INP_FILE}" )
+
+echo "HTTP Status: $HTTP_STATUS"
+jq . < "$RESPONSE_FILE" || cat "$RESPONSE_FILE"
+rm "$RESPONSE_FILE"
