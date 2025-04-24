@@ -9,10 +9,12 @@ import {
 } from '../../queues/pdb2crd.js'
 import { IUser, BilboMdAutoJob, IBilboMDAutoJob } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
+import { ValidationError } from 'yup'
 import { AutoRgResults } from '../../types/bilbomd.js'
 import { writeJobParams } from './utils/jobUtils.js'
 import { spawnAutoRgCalculator } from './utils/autoRg.js'
 import fs from 'fs-extra'
+import { autoJobSchema } from '../../validation/index.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -27,9 +29,14 @@ const handleBilboMDAutoJob = async (
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 
+    const { bilbomd_mode: bilbomdMode } = req.body
+
     let pdbFileName = ''
     let paeFileName = ''
     let datFileName = ''
+    let pdbFile
+    let paeFile
+    let datFile
 
     const jobDir = path.join(uploadFolder, UUID)
 
@@ -53,9 +60,12 @@ const handleBilboMDAutoJob = async (
       )
     } else {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-      pdbFileName = files['pdb_file']?.[0]?.originalname.toLowerCase() || 'missing.pdb'
-      paeFileName = files['pae_file']?.[0]?.originalname.toLowerCase() || 'missing.json'
-      datFileName = files['dat_file']?.[0]?.originalname.toLowerCase() || 'missing.dat'
+      pdbFile = files['pdb_file']?.[0]
+      paeFile = files['pae_file']?.[0]
+      datFile = files['dat_file']?.[0]
+      pdbFileName = files['pdb_file']?.[0]?.originalname.toLowerCase()
+      paeFileName = files['pae_file']?.[0]?.originalname.toLowerCase()
+      datFileName = files['dat_file']?.[0]?.originalname.toLowerCase()
     }
 
     logger.info(`PDB File: ${pdbFileName}`)
@@ -63,7 +73,36 @@ const handleBilboMDAutoJob = async (
 
     const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
 
-    const now = new Date()
+    // Collect data for validation
+    const jobPayload = {
+      title: req.body.title,
+      bilbomd_mode: bilbomdMode,
+      email: req.body.email,
+      pdb_file: pdbFile,
+      pae_file: paeFile,
+      dat_file: datFile,
+      rg: autorgResults.rg,
+      rg_min: autorgResults.rg_min,
+      rg_max: autorgResults.rg_max
+    }
+
+    // Validate the job payload
+    try {
+      await autoJobSchema.validate(jobPayload, { abortEarly: false })
+    } catch (validationErr) {
+      if (validationErr instanceof ValidationError) {
+        logger.warn('Classic PDB job payload validation failed', validationErr)
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: validationErr.inner?.map((err) => ({
+            path: err.path,
+            message: err.message
+          }))
+        })
+      } else {
+        throw validationErr
+      }
+    }
 
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
@@ -76,7 +115,7 @@ const handleBilboMDAutoJob = async (
       rg_max: autorgResults.rg_max,
       conformational_sampling: 3,
       status: 'Submitted',
-      time_submitted: now,
+      time_submitted: new Date(),
       user: user,
       steps: {
         pdb2crd: {},
