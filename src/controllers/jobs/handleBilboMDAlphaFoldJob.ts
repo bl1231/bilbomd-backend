@@ -5,11 +5,14 @@ import {
   IBilboMDAlphaFoldJob,
   IAlphaFoldEntity
 } from '@bl1231/bilbomd-mongodb-schema'
+import { alphafoldJobSchema } from '../../validation/index.js'
+import { ValidationError } from 'yup'
 import { IUser } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { writeJobParams, spawnAutoRgCalculator } from './index.js'
 import { queueJob } from '../../queues/bilbomd.js'
 import { createFastaFile } from './utils/createFastaFile.js'
+import { parseAlphaFoldEntities } from './utils/parseAlphaFoldEntities.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -34,37 +37,8 @@ const handleBilboMDAlphaFoldJob = async (
   let parsedEntities: IAlphaFoldEntity[] = []
 
   try {
-    if (req.body.entities_json) {
-      parsedEntities = JSON.parse(req.body.entities_json)
-      logger.info(`Parsed ${parsedEntities.length} entities from entities_json`)
-    } else if (Array.isArray(req.body.entities)) {
-      parsedEntities = req.body.entities.map((entity: IAlphaFoldEntity) => ({
-        ...entity,
-        copies: parseInt(entity.copies as unknown as string, 10)
-      }))
-      logger.info(`Parsed ${parsedEntities.length} entities from form fields`)
-    } else {
-      // Fallback in case entities are not parsed into array form
-      const raw = req.body as Record<string, string>
-      const entityIndices = new Set<number>()
-      for (const key of Object.keys(raw)) {
-        const match = key.match(/^entities\[(\d+)]/)
-        if (match) entityIndices.add(Number(match[1]))
-      }
-
-      for (const index of [...entityIndices].sort()) {
-        parsedEntities.push({
-          name: raw[`entities[${index}][name]`],
-          sequence: raw[`entities[${index}][sequence]`],
-          type: raw[`entities[${index}][type]`],
-          copies: parseInt(raw[`entities[${index}][copies]`] || '1', 10)
-        })
-      }
-
-      logger.info(
-        `Reconstructed ${parsedEntities.length} entities from multipart form data`
-      )
-    }
+    parsedEntities = parseAlphaFoldEntities(req.body)
+    logger.info(`Parsed ${parsedEntities.length} AlphaFold entities`)
   } catch (parseErr) {
     logger.error('Failed to parse entities_json or reconstruct entities', parseErr)
     return res
@@ -72,10 +46,33 @@ const handleBilboMDAlphaFoldJob = async (
       .json({ message: 'Invalid entities_json or malformed form data' })
   }
 
-  // Check if the number of entities exceeds the maximum allowed
-  if (parsedEntities.length > 20) {
-    res.status(400).json({ message: 'You can only submit up to 20 entities.' })
-    return
+  // Collect data for validation
+  const datFile = files['dat_file']?.[0]
+  logger.info(`datFile = ${datFile?.originalname}, path = ${datFile?.path}`)
+  const jobPayload = {
+    title: req.body.title,
+    bilbomd_mode: req.body.bilbomd_mode,
+    email: req.body.email,
+    dat_file: datFile,
+    entities: parsedEntities
+  }
+
+  // Validate
+  try {
+    await alphafoldJobSchema.validate(jobPayload, { abortEarly: false })
+  } catch (validationErr) {
+    if (validationErr instanceof ValidationError) {
+      logger.warn('AlphaFold job payload validation failed', validationErr)
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: validationErr.inner?.map((err) => ({
+          path: err.path,
+          message: err.message
+        }))
+      })
+    } else {
+      throw validationErr
+    }
   }
 
   // Create the FASTA file
@@ -88,6 +85,7 @@ const handleBilboMDAlphaFoldJob = async (
         : 'missing.dat'
 
     const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
+
     const now = new Date()
 
     const newJob: IBilboMDAlphaFoldJob = new BilboMdAlphaFoldJob({
