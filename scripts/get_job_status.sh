@@ -21,6 +21,12 @@ if [ -z "$JOB_ID" ]; then
   exit 1
 fi
 
-curl -s -X GET "${API_URL}/${JOB_ID}/status" \
+RESPONSE_FILE=$(mktemp)
+HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
+  -X GET "${API_URL}/${JOB_ID}/status" \
   -H "Authorization: Bearer ${BILBOMD_API_TOKEN}" \
-  -H "Accept: application/json" | jq . || echo "Warning: 'jq' not installed. Raw response follows:"
+  -H "Accept: application/json")
+
+echo "HTTP Status: $HTTP_STATUS"
+jq . < "$RESPONSE_FILE" || cat "$RESPONSE_FILE"
+rm "$RESPONSE_FILE"
