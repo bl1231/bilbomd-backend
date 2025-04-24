@@ -28,6 +28,12 @@ const handleBilboMDAlphaFoldJob = async (
   user: IUser,
   UUID: string
 ) => {
+  if (process.env.USE_NERSC?.toLowerCase() !== 'true') {
+    logger.warn('AlphaFold job rejected: NERSC not enabled')
+    return res.status(403).json({
+      message: 'AlphaFold jobs unavailable on this deployment.'
+    })
+  }
   const jobDir = path.join(uploadFolder, UUID)
   const { bilbomd_mode: bilbomdMode } = req.body
   const files = req.files as { [fieldname: string]: Express.Multer.File[] }
