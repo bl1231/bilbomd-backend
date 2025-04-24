@@ -10,6 +10,11 @@ const router = express.Router()
 router.use(verifyAPIToken)
 router.use(logApiRequest)
 
+// Health check or root endpoint for /external
+router.get('/', (req, res) => {
+  res.json({ message: 'External API route is working.' })
+})
+
 /**
  * @swagger
  * /external/jobs:
