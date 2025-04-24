@@ -2,12 +2,18 @@ import { logger } from '../../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
 import { queueJob } from '../../queues/bilbomd.js'
-import { IUser, JobStatus, StepStatus } from '@bl1231/bilbomd-mongodb-schema'
+import {
+  IBilboMDCRDJob,
+  IUser,
+  JobStatus,
+  StepStatus,
+  BilboMdCRDJob
+} from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
+import { ValidationError } from 'yup'
 import { writeJobParams, sanitizeConstInpFile } from './utils/jobUtils.js'
-import { resolveResubmissionFiles } from './utils/resolveResubmissionFiles.js'
 import { maybeAutoCalculateRg } from './utils/maybeAutoCalculateRg.js'
-import { buildBilboMdJob } from './utils/buildBilboMdJob.js'
+import { crdJobSchema } from '../../validation/index.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -22,53 +28,112 @@ const handleBilboMDClassicCRD = async (
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 
-    const { bilbomd_mode: bilbomdMode, title, num_conf } = req.body
+    const { bilbomd_mode: bilbomdMode } = req.body
     let { rg, rg_min, rg_max } = req.body
 
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-    logger.info(`bilbomdMode: ${bilbomdMode}`)
-    logger.info(`title: ${title}`)
+    let inpFileName = ''
+    let datFileName = ''
+    let crdFileName = ''
+    let psfFileName = ''
+    let crdFile
+    let psfFile
+    let datFile
+    let inpFile
 
-    let constInpFile = ''
-    let dataFile = ''
-    let extraFiles: Record<string, string> = {}
+    const jobDir = path.join(uploadFolder, UUID)
 
     if (isResubmission && originalJobId) {
-      try {
-        const result = await resolveResubmissionFiles(originalJobId, UUID)
-        constInpFile = result.constInpFile
-        dataFile = result.dataFile
-        extraFiles = result.extraFiles
-      } catch (err) {
-        logger.error(err)
-        res.status(404).json({
-          message: err instanceof Error ? err.message : 'An unknown error occurred'
-        })
+      const originalJob = await BilboMdCRDJob.findById(originalJobId)
+      if (!originalJob) {
+        res.status(404).json({ message: 'Original job not found' })
         return
       }
-    } else {
-      constInpFile = files['inp_file']?.[0]?.originalname.toLowerCase()
-      dataFile = files['dat_file']?.[0]?.originalname.toLowerCase()
+      const originalDir = path.join(uploadFolder, originalJob.uuid)
+      inpFileName = originalJob.const_inp_file
+      datFileName = originalJob.dat_file
+      crdFileName = originalJob.crd_file
+      psfFileName = originalJob.psf_file
 
-      const jobDir = path.join(uploadFolder, UUID)
-      const constInpFilePath = path.join(jobDir, constInpFile)
-      const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
+      await fs.copy(path.join(originalDir, inpFileName), path.join(jobDir, inpFileName))
+      await fs.copy(path.join(originalDir, datFileName), path.join(jobDir, datFileName))
+      await fs.copy(path.join(originalDir, crdFileName), path.join(jobDir, crdFileName))
+      await fs.copy(path.join(originalDir, psfFileName), path.join(jobDir, psfFileName))
+      logger.info(
+        `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
+      )
+    } else {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+      crdFile = files['crd_file']?.[0]
+      psfFile = files['psf_file']?.[0]
+      inpFile = files['inp_file']?.[0]
+      datFile = files['dat_file']?.[0]
+      crdFileName = files['crd_file']?.[0]?.originalname.toLowerCase()
+      psfFileName = files['psf_file']?.[0]?.originalname.toLowerCase()
+      inpFileName = files['inp_file']?.[0]?.originalname.toLowerCase()
+      datFileName = files['dat_file']?.[0]?.originalname.toLowerCase()
+
+      const constInpFilePath = path.join(jobDir, inpFileName)
+      const constInpOrigFilePath = path.join(jobDir, `${inpFileName}.orig`)
       await fs.copyFile(constInpFilePath, constInpOrigFilePath)
       await sanitizeConstInpFile(constInpFilePath)
+    }
+    // Calculate rg values if not provided
+    const resolvedRgValues = await maybeAutoCalculateRg(
+      { rg, rg_min, rg_max },
+      !!req.apiUser,
+      jobDir,
+      datFileName
+    )
 
-      extraFiles = {
-        psf_file: files['psf_file']?.[0]?.originalname.toLowerCase() || '',
-        crd_file: files['crd_file']?.[0]?.originalname.toLowerCase() || '',
-        pdb_file: files['pdb_file']?.[0]?.originalname.toLowerCase() || ''
+    rg = resolvedRgValues.rg
+    rg_min = resolvedRgValues.rg_min
+    rg_max = resolvedRgValues.rg_max
+
+    // Collect data for validation
+    const jobPayload = {
+      title: req.body.title,
+      bilbomd_mode: bilbomdMode,
+      email: req.body.email,
+      dat_file: datFile,
+      const_inp_file: inpFile,
+      crd_file: crdFile,
+      psf_file: psfFile,
+      rg,
+      rg_min,
+      rg_max
+    }
+
+    // Validate
+    try {
+      await crdJobSchema.validate(jobPayload, { abortEarly: false })
+    } catch (validationErr) {
+      if (validationErr instanceof ValidationError) {
+        logger.warn('Classic CRD/PSF job payload validation failed', validationErr)
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: validationErr.inner?.map((err) => ({
+            path: err.path,
+            message: err.message
+          }))
+        })
+      } else {
+        throw validationErr
       }
     }
 
-    // Initialize common job data
-    const commonJobData = {
-      title,
+    // Initialize BilboMdCRDJob Job Data
+    const newJob: IBilboMDCRDJob = new BilboMdCRDJob({
+      title: req.body.title,
       uuid: UUID,
       status: JobStatus.Submitted,
-      data_file: dataFile,
+      data_file: datFileName,
+      crd_file: crdFileName,
+      psf_file: psfFileName,
+      const_inp_file: inpFileName,
+      conformational_sampling: req.body.num_conf,
+      rg,
+      rg_min,
+      rg_max,
       time_submitted: new Date(),
       user,
       progress: 0,
@@ -84,52 +149,15 @@ const handleBilboMDClassicCRD = async (
         multifoxs: { status: StepStatus.Waiting, message: '' },
         results: { status: StepStatus.Waiting, message: '' },
         email: { status: StepStatus.Waiting, message: '' }
-      }
-    }
-
-    const jobDir = path.join(uploadFolder, UUID)
-
-    // Calculate rg values if not provided
-    const resolvedRgValues = await maybeAutoCalculateRg(
-      { rg, rg_min, rg_max },
-      !!req.apiUser,
-      jobDir,
-      dataFile
-    )
-
-    rg = resolvedRgValues.rg
-    rg_min = resolvedRgValues.rg_min
-    rg_max = resolvedRgValues.rg_max
-
-    logger.info(`Creating job for bilbomd_mode: ${bilbomdMode}`)
-    logger.info(`const_inp_file being passed: "${constInpFile}"`)
-    if (!constInpFile) {
-      throw new Error('constInpFile is undefined or empty')
-    }
-    const newJob = buildBilboMdJob(bilbomdMode, commonJobData, {
-      pdb_file: extraFiles.pdb_file as string | undefined,
-      psf_file: extraFiles.psf_file as string | undefined,
-      crd_file: extraFiles.crd_file as string | undefined,
-      const_inp_file: constInpFile,
-      conformational_sampling: num_conf,
-      rg,
-      rg_min,
-      rg_max,
+      },
       ...(isResubmission && originalJobId ? { resubmitted_from: originalJobId } : {})
     })
 
-    // logger.info(`New job created: ${newJob}`)
-
-    // Handle unsupported modes
-    if (!newJob) {
-      logger.error(`Unsupported bilbomd_mode: ${bilbomdMode}`)
-      res.status(400).json({ message: 'Invalid bilbomd_mode specified' })
-      return
-    }
-
-    // Save the job and write job parameters
+    // Save the job to the database
     await newJob.save()
     logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
+
+    // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
 
     // Queue the job

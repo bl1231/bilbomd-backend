@@ -1,5 +1,6 @@
 import type { Express } from 'express'
 import { mixed } from 'yup'
+import fs from 'fs/promises'
 import {
   isSaxsData,
   isCRD,
@@ -76,44 +77,45 @@ export const saxsCheck = () =>
 
 export const psfCheck = () =>
   mixed().test('psf-data-check', 'File may not be a valid PSF file', async (file) => {
-    if (file instanceof File) return isPsfData(file)
-    return true
+    const psfFile = file as Express.Multer.File | undefined
+    if (!psfFile?.path) return true
+    return isPsfData(psfFile)
   })
 
 export const crdCheck = () =>
   mixed().test('crd-check', 'File may not be a valid CRD file', async (file) => {
-    if (file instanceof File) return isCRD(file)
-    return true
+    const crdFile = file as Express.Multer.File | undefined
+    if (!crdFile?.path) return true
+    return isCRD(crdFile)
   })
 
 export const chainIdCheck = () =>
   mixed().test('pdb-chainid-check', 'Missing Chain ID in column 22', async (file) => {
-    if (file instanceof File) return containsChainId(file)
-    return true
+    const pdbFile = file as Express.Multer.File | undefined
+    if (!pdbFile?.path) return true
+    return containsChainId(pdbFile)
   })
 
 export const constInpCheck = () =>
   mixed().test('const-inp-file-check', '', async function (file, ctx) {
     const mode = ctx?.options?.context?.bilbomd_mode
-    if (file instanceof File) {
-      const result = await isValidConstInpFile(file, mode)
-      if (result === true) return true
-      return this.createError({ message: result })
-    }
-    return true
+    const constInpFile = file as Express.Multer.File | undefined
+    if (!constInpFile?.path) return true
+    const result = await isValidConstInpFile(constInpFile, mode)
+    if (result === true) return true
+    return this.createError({ message: result })
   })
 
 export const jsonFileCheck = () =>
   mixed().test('is-json', 'Please select a PAE file in JSON format', async (file) => {
-    if (file instanceof File && file.type === 'application/json') {
-      const content = await file.text()
-      try {
-        JSON.parse(content)
-        return true
-      } catch (error) {
-        console.log('Invalid JSON content:', error)
-        return false
-      }
+    const jsonFile = file as Express.Multer.File | undefined
+    if (!jsonFile?.path) return true
+    try {
+      const content = await fs.readFile(jsonFile.path, 'utf8')
+      JSON.parse(content)
+      return true
+    } catch (error) {
+      logger.error('Invalid JSON content:', error)
+      return false
     }
-    return typeof file === 'string' // allow reuse of existing string
   })

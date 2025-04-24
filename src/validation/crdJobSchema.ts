@@ -7,12 +7,13 @@ import {
   noSpacesTest,
   saxsCheck,
   constInpCheck,
-  chainIdCheck
+  crdCheck,
+  psfCheck
 } from './helpers/fileValidators.js'
 
-export const pdbJobSchema = yup.object({
+export const crdJobSchema = yup.object({
   title: yup.string().required('Job title is required').max(100, 'Title too long'),
-  bilbomd_mode: yup.string().oneOf(['pdb'], 'Invalid mode').required(),
+  bilbomd_mode: yup.string().oneOf(['crd_psf'], 'Invalid mode').required(),
   email: yup.string().email('Invalid email address').optional(),
   dat_file: requiredFile('Experimental SAXS data is required')
     .concat(fileSizeTest(2_000_000))
@@ -26,12 +27,18 @@ export const pdbJobSchema = yup.object({
     .concat(fileExtTest('inp'))
     .concat(noSpacesTest())
     .concat(fileNameLengthTest()),
-  pdb_file: requiredFile('PDB file is required')
-    .concat(chainIdCheck())
-    .concat(fileExtTest('pdb'))
-    .concat(fileSizeTest(10_000_000))
+  crd_file: requiredFile('A CRD file is required')
+    .concat(fileSizeTest(20_000_000))
+    .concat(fileExtTest('crd'))
     .concat(noSpacesTest())
-    .concat(fileNameLengthTest()),
+    .concat(fileNameLengthTest())
+    .concat(crdCheck()),
+  psf_file: requiredFile('A PSF file is required')
+    .concat(fileSizeTest(30_000_000))
+    .concat(fileExtTest('psf'))
+    .concat(noSpacesTest())
+    .concat(fileNameLengthTest())
+    .concat(psfCheck()),
   rg: yup.number().integer().positive().min(10).max(100).required('Rg value is required'),
   rg_min: yup
     .number()

@@ -31,9 +31,12 @@ const handleBilboMDClassicPDB = async (
     const { bilbomd_mode: bilbomdMode } = req.body
     let { rg, rg_min, rg_max } = req.body
 
-    let constInpFile = ''
+    let inpFileName = ''
     let datFileName = ''
     let pdbFileName = ''
+    let pdbFile
+    let datFile
+    let inpFile
 
     const jobDir = path.join(uploadFolder, UUID)
 
@@ -44,10 +47,11 @@ const handleBilboMDClassicPDB = async (
         return
       }
       const originalDir = path.join(uploadFolder, originalJob.uuid)
-      constInpFile = originalJob.constInpFile
-      datFileName = originalJob.dataFile
-      pdbFileName = originalJob.extraFiles
-      await fs.copy(path.join(originalDir, constInpFile), path.join(jobDir, constInpFile))
+      inpFileName = originalJob.const_inp_file
+      datFileName = originalJob.data_file
+      pdbFileName = originalJob.pdb_file
+
+      await fs.copy(path.join(originalDir, inpFileName), path.join(jobDir, inpFileName))
       await fs.copy(path.join(originalDir, datFileName), path.join(jobDir, datFileName))
       await fs.copy(path.join(originalDir, pdbFileName), path.join(jobDir, pdbFileName))
       logger.info(
@@ -55,12 +59,15 @@ const handleBilboMDClassicPDB = async (
       )
     } else {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-      pdbFileName = files['pdb_file']?.[0]?.originalname.toLowerCase() || 'missing.pdb'
-      constInpFile = files['inp_file']?.[0]?.originalname.toLowerCase()
-      datFileName = files['dat_file']?.[0]?.originalname.toLowerCase()
+      pdbFile = files['pdb_file']?.[0]
+      inpFile = files['inp_file']?.[0]
+      datFile = files['dat_file']?.[0]
+      pdbFileName = pdbFile?.originalname.toLowerCase()
+      inpFileName = inpFile?.originalname.toLowerCase()
+      datFileName = datFile?.originalname.toLowerCase()
 
-      const constInpFilePath = path.join(jobDir, constInpFile)
-      const constInpOrigFilePath = path.join(jobDir, `${constInpFile}.orig`)
+      const constInpFilePath = path.join(jobDir, inpFileName)
+      const constInpOrigFilePath = path.join(jobDir, `${inpFileName}.orig`)
       await fs.copyFile(constInpFilePath, constInpOrigFilePath)
       await sanitizeConstInpFile(constInpFilePath)
     }
@@ -76,25 +83,31 @@ const handleBilboMDClassicPDB = async (
     rg_min = resolvedRgValues.rg_min
     rg_max = resolvedRgValues.rg_max
 
+    // Debugging info
+    logger.info(
+      `pdbFileName: ${pdbFileName}, constInpFile: ${inpFileName}, datFileName: ${datFileName}`
+    )
+
     // Collect data for validation
     const jobPayload = {
       title: req.body.title,
       bilbomd_mode: bilbomdMode,
       email: req.body.email,
-      dat_file: datFileName,
-      const_inp_file: constInpFile,
-      pdb_file: pdbFileName,
+      dat_file: datFile,
+      const_inp_file: inpFile,
+      pdb_file: pdbFile,
       rg,
       rg_min,
       rg_max
     }
+    logger.info(`Job payload for validation: ${JSON.stringify(jobPayload)}`)
 
     // Validate
     try {
       await pdbJobSchema.validate(jobPayload, { abortEarly: false })
     } catch (validationErr) {
       if (validationErr instanceof ValidationError) {
-        logger.warn('AlphaFold job payload validation failed', validationErr)
+        logger.warn('Classic PDB job payload validation failed', validationErr)
         return res.status(400).json({
           message: 'Validation failed',
           errors: validationErr.inner?.map((err) => ({
@@ -114,7 +127,7 @@ const handleBilboMDClassicPDB = async (
       status: JobStatus.Submitted,
       data_file: datFileName,
       pdb_file: pdbFileName,
-      const_inp_file: constInpFile,
+      const_inp_file: inpFileName,
       conformational_sampling: req.body.num_conf,
       rg,
       rg_min,
@@ -124,6 +137,7 @@ const handleBilboMDClassicPDB = async (
       progress: 0,
       cleanup_in_progress: false,
       steps: {
+        pdb2crd: { status: StepStatus.Waiting, message: '' },
         minimize: { status: StepStatus.Waiting, message: '' },
         initfoxs: { status: StepStatus.Waiting, message: '' },
         heat: { status: StepStatus.Waiting, message: '' },
