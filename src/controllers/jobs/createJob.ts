@@ -38,9 +38,11 @@ const createNewJob = async (req: Request, res: Response) => {
       { name: 'pae_file', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
-        logger.error('multer error:', err)
-        res.status(500).json({ message: 'Failed to upload one or more files' })
-        return
+        logger.error(`Multer error during file upload: ${err}`)
+        await fs.remove(jobDir)
+        return res
+          .status(400)
+          .json({ message: 'File upload error', error: err.message || String(err) })
       }
 
       try {
@@ -91,8 +93,12 @@ const createNewJob = async (req: Request, res: Response) => {
           return
         }
       } catch (error) {
-        logger.error(error)
-        res.status(500).json({ message: 'Internal server error' })
+        logger.error(`Job handler error: ${error}`)
+        await fs.remove(jobDir)
+        return res.status(500).json({
+          message: 'Job submission failed',
+          error: error instanceof Error ? error.message : String(error)
+        })
       }
     })
   } catch (error) {
@@ -103,7 +109,7 @@ const createNewJob = async (req: Request, res: Response) => {
         ? error
         : 'Unknown error occurred'
 
-    logger.error('handleBilboMDJob error:', error)
+    logger.error(`handleBilboMDJob error: ${error}`)
     res.status(500).json({ message: msg })
   }
 }
