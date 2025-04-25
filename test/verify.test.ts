@@ -8,7 +8,7 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-let server: any // Adjust the type as needed.
+let server: any // Adjust the type as needed
 
 beforeAll(async () => {
   server = app.listen(5555)
