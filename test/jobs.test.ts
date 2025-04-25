@@ -5,11 +5,10 @@ import path from 'path'
 import fs from 'fs-extra'
 import jwt from 'jsonwebtoken'
 import { v4 as uuid } from 'uuid'
-import { closeQueue } from '../src/queues/jobQueue'
+import { closeQueue } from '../src/queues/bilbomd'
 import app from './appMock'
-import { User, IUser } from '../src/model/User'
-import { Job } from '../src/model/Job'
-// require('dotenv').config()
+import { User, IUser, Job } from '@bl1231/bilbomd-mongodb-schema'
+
 let server: any
 let testUser1: IUser
 

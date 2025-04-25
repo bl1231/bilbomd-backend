@@ -2,8 +2,8 @@ import { beforeAll, afterAll, describe, expect, jest, test } from '@jest/globals
 import request from 'supertest'
 import mongoose from 'mongoose'
 import app from './appMock'
-import { User } from '../src/model/User'
-import { closeQueue } from '../src/queues/jobQueue'
+import { User } from '@bl1231/bilbomd-mongodb-schema'
+import { closeQueue } from '../src/queues/bilbomd'
 import dotenv from 'dotenv'
 
 dotenv.config()
