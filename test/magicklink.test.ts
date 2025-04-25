@@ -3,7 +3,6 @@ import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import mongoose from 'mongoose'
 import app from './appMock'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-// import { closeQueue } from '../src/queues/bilbomd'
 
 require('dotenv').config()
 

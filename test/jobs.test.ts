@@ -1,3 +1,20 @@
+// Mock spawnAutoRgCalculator at the very top to avoid invoking real Python code during tests
+vi.mock('../src/controllers/jobs/utils/autoRg.js', () => ({
+  spawnAutoRgCalculator: vi.fn(() =>
+    Promise.resolve({
+      rg: 30,
+      rg_min: 25,
+      rg_max: 35
+    })
+  )
+}))
+vi.mock('../src/queues/pdb2crd.js', async () => {
+  const actual = await vi.importActual('../src/queues/pdb2crd.js')
+  return {
+    ...actual,
+    waitForJobCompletion: vi.fn().mockResolvedValue(true)
+  }
+})
 import request from 'supertest'
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
 import mongoose from 'mongoose'
@@ -5,11 +22,9 @@ import path from 'path'
 import fs from 'fs-extra'
 import jwt from 'jsonwebtoken'
 import { v4 as uuid } from 'uuid'
-// import { closeQueue } from '../src/queues/bilbomd'
 import app from './appMock'
 import { User, IUser, Job } from '@bl1231/bilbomd-mongodb-schema'
-
-vi.mock('bullmq')
+import { Queue } from 'bullmq'
 
 let server: any
 let testUser1: IUser
@@ -45,21 +60,19 @@ interface JobType {
   username: string
 }
 
-const generateAccessToken = (): string => {
+const generateAccessToken = (email?: string): string => {
+  const userEmail = email ?? 'testuser1@example.com'
   const accessTokenPayload: JwtPayload = {
     UserInfo: {
       username: 'testuser1',
       roles: ['User'],
-      email: 'testuser1@example.com'
+      email: userEmail
     }
   }
 
   const accessToken: string = jwt.sign(accessTokenPayload, accessTokenSecret, {
     expiresIn: '15m'
   })
-  // const accessTokenData: AccessToken = {
-  //   accessToken
-  // }
   return accessToken
 }
 
@@ -87,10 +100,9 @@ const createNewJob = async (user: IUser) => {
 }
 
 beforeAll(async () => {
-  server = app.listen(5555)
+  server = app.listen(0)
   await User.deleteMany()
   await Job.deleteMany()
-  // Create test user for setup (ignoring the warning)
 
   testUser1 = await User.create({
     username: 'testuser1',
@@ -103,9 +115,24 @@ beforeAll(async () => {
 afterAll(async () => {
   await User.deleteMany()
   await Job.deleteMany()
-  // await mongoose.disconnect()
-  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
+})
+
+describe('BullMQ Queue mock', () => {
+  test('should use mocked Queue with expected methods and values', async () => {
+    const queue = new Queue('bilbomd')
+
+    expect(vi.isMockFunction(Queue)).toBe(true)
+    expect(queue.name).toBe('bilbomd-mock')
+
+    const data = { foo: 'bar' }
+    const job = await queue.add('mock-job', data)
+
+    expect(job).toBeDefined()
+    expect(job.id).toBe('mock-job-id')
+    expect(job.name).toBe('mock-job')
+    expect(job.data).toEqual(data)
+  })
 })
 
 describe('GET /v1/jobs', () => {
@@ -183,16 +210,15 @@ describe('POST /v1/jobs', () => {
   })
   test('should return error if user not found', async () => {
     expect.assertions(2)
-    const token = generateAccessToken()
+    const token = generateAccessToken('nope@nope.com')
     const res = await request(server)
       .post('/v1/jobs')
       .set('Authorization', `Bearer ${token}`)
-      .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
-      .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('inp_file', `${__dirname}/data/my_const.inp`)
-      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
+      .attach('pdb_file', `${__dirname}/data/pdb/pro_dna_complex.pdb`)
+      .attach('inp_file', `${__dirname}/data/pdb/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pdb/pro_dna_saxs.dat`)
       .field('title', 'Test Job')
-      .field('email', 'non-existant@example.com')
+      .field('bilbomd_mode', 'pdb')
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('No user found with that email')
   })
@@ -202,12 +228,11 @@ describe('POST /v1/jobs', () => {
     const res = await request(server)
       .post('/v1/jobs')
       .set('Authorization', `Bearer ${token}`)
-      .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
-      .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('inp_file', `${__dirname}/data/my_const.inp`)
-      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
+      .attach('pdb_file', `${__dirname}/data/pdb/pro_dna_complex.pdb`)
+      .attach('inp_file', `${__dirname}/data/pdb/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pdb/pro_dna_saxs.dat`)
       .field('title', 'Test Job')
-      .field('email', 'testuser1@example.com')
+      .field('rg', 35)
       .field('rg_min', 30)
       .field('rg_max', 40)
       .field('num_conf', 1)
@@ -220,16 +245,15 @@ describe('POST /v1/jobs', () => {
     const res = await request(server)
       .post('/v1/jobs')
       .set('Authorization', `Bearer ${token}`)
-      .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
-      .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('inp_file', `${__dirname}/data/my_const.inp`)
-      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
+      .attach('pdb_file', `${__dirname}/data/pdb/pro_dna_complex.pdb`)
+      .attach('inp_file', `${__dirname}/data/pdb/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pdb/pro_dna_saxs.dat`)
       .field('title', 'Test Job')
-      .field('email', 'testuser1@example.com')
+      .field('rg', 35)
       .field('rg_min', 30)
       .field('rg_max', 40)
       .field('num_conf', 1)
-      .field('job_type', 'BilboMDWrongType')
+      .field('bilbomd_mode', 'nope')
     expect(res.statusCode).toBe(400)
     expect(res.body.message).toBe('Invalid job type')
   })
@@ -240,17 +264,18 @@ describe('POST /v1/jobs', () => {
       .post('/v1/jobs')
       .set('Authorization', `Bearer ${token}`)
       .field('title', 'BilboMD Test Job')
-      .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
-      .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('inp_file', `${__dirname}/data/my_const.inp`)
-      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
-      .field('email', 'testuser1@example.com')
+      .attach('pdb_file', `${__dirname}/data/pdb/pro_dna_complex.pdb`)
+      .attach('inp_file', `${__dirname}/data/pdb/my_const.inp`)
+      .attach('dat_file', `${__dirname}/data/pdb/pro_dna_saxs.dat`)
+      .field('rg', 35)
       .field('rg_min', 30)
       .field('rg_max', 40)
       .field('num_conf', 1)
-      .field('job_type', 'BilboMD')
+      .field('bilbomd_mode', 'pdb')
+    // console.log('Queue is mocked:', vi.isMockFunction(Queue))
+    // console.log('res----->', res.body)
     expect(res.statusCode).toBe(200)
-    expect(res.body.message).toBe('New BilboMD Job successfully created')
+    expect(res.body.message).toBe('New pdb Job successfully created')
   })
   test('should return success if new BilboMDAuto job created', async () => {
     expect.assertions(2)
@@ -259,15 +284,15 @@ describe('POST /v1/jobs', () => {
       .post('/v1/jobs')
       .set('Authorization', `Bearer ${token}`)
       .field('title', 'BilboMDAuto Test Job')
-      .attach('psf_file', `${__dirname}/data/pro_dna_complex.psf`)
-      .attach('crd_file', `${__dirname}/data/pro_dna_complex.crd`)
-      .attach('pae_file', `${__dirname}/data/pae.json`)
-      .attach('dat_file', `${__dirname}/data/pro_dna_saxs.dat`)
-      .field('email', 'testuser1@example.com')
-      .field('job_type', 'BilboMDAuto')
-    // console.log('res----->', res)
+      .attach('pdb_file', `${__dirname}/data/auto1/af-q9z2a5-f1-model_v4.pdb`)
+      .attach('pae_file', `${__dirname}/data/auto1/af-q9z2a5.json`)
+      .attach('dat_file', `${__dirname}/data/auto1/mmate1-1_13.dat`)
+      .field('bilbomd_mode', 'auto')
+    console.log('res----->', res.body)
     expect(res.statusCode).toBe(200)
-    expect(res.body.message).toBe('New BilboMDAuto Job successfully created')
+    expect(res.body.message).toBe(
+      'New auto Job BilboMDAuto Test Job successfully created'
+    )
   })
 })
 
@@ -288,14 +313,6 @@ describe('DELETE /v1/jobs/:id', () => {
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('Unauthorized')
   })
-  // test('should return error if Job ID not provided', async () => {
-  //   const token = generateAccessToken()
-  //   const res = await request(server)
-  //     .delete('/v1/jobs/1234')
-  //     .set('Authorization', `Bearer ${token}`)
-  //   expect(res.statusCode).toBe(400)
-  //   expect(res.body.message).toBe('Job ID required')
-  // })
   test('should return error if Job ID not found', async () => {
     const token = generateAccessToken()
     const id = new mongoose.Types.ObjectId().toString()

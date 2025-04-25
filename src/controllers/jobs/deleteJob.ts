@@ -1,9 +1,7 @@
 import { logger } from '../../middleware/loggers.js'
-
+import mongoose from 'mongoose'
 import fs from 'fs-extra'
-
 import path from 'path'
-
 import { Job, IJob, MultiJob, IMultiJob } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 
@@ -14,6 +12,10 @@ const deleteJob = async (req: Request, res: Response) => {
 
   if (!id) {
     res.status(400).json({ message: 'Job ID required' })
+    return
+  }
+  if (!mongoose.isValidObjectId(id)) {
+    res.status(400).json({ message: 'Invalid Job ID format' })
     return
   }
 
@@ -75,6 +77,7 @@ const removeJobDirectory = async (uuid: string, res: Response) => {
     const exists = await fs.pathExists(jobDir)
     if (!exists) {
       logger.warn(`Directory not found on disk for UUID: ${uuid}`)
+      res.status(404).json({ message: 'Directory not found on disk' })
       return
     }
 

@@ -95,14 +95,12 @@ const createNewJob = async (user: IUser) => {
 }
 
 beforeAll(async () => {
-  server = app.listen(5555)
+  server = app.listen(0)
   await User.deleteMany()
   await Job.deleteMany()
 })
 
 afterAll(async () => {
-  await mongoose.disconnect()
-  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
 })
 

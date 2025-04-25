@@ -15,15 +15,23 @@ const redisOptions: RedisOptions = {
 
 const redis = new Redis(redisOptions)
 
-const pdb2crdQueue = new Queue('pdb2crd', {
-  connection: redis,
-  defaultJobOptions: {
-    attempts: config.bullmqAttempts
+let pdb2crdQueue: Queue | undefined
+
+const getQueue = (): Queue => {
+  if (!pdb2crdQueue) {
+    pdb2crdQueue = new Queue('pdb2crd', {
+      connection: redis,
+      defaultJobOptions: {
+        attempts: config.bullmqAttempts
+      }
+    })
   }
-})
+  return pdb2crdQueue
+}
 
 const closeQueue = async () => {
-  await pdb2crdQueue.close()
+  const queue = getQueue()
+  await queue.close()
   await redis.quit()
 }
 
@@ -59,18 +67,17 @@ const waitForJobCompletion = async (
 
 const queueJob = async (data: BullMQPdb2Crd): Promise<string> => {
   try {
-    logger.info(
-      `${data.type} Job ${data.title} about to be added to ${pdb2crdQueue.name} queue`
-    )
-    const bullJob = await pdb2crdQueue.add(data.title, data)
+    const queue = getQueue()
+    logger.info(`${data.type} Job ${data.title} about to be added to ${queue.name} queue`)
+    const bullJob = await queue.add(data.title, data)
     logger.info(`${data.type} Job added with Job ID: ${bullJob.id}`)
     if (!bullJob.id) {
       throw new Error('Failed to obtain a job ID from BullMQ')
     }
     return bullJob.id
   } catch (error) {
-    logger.error(`Error adding ${data.type} Job to ${pdb2crdQueue.name} queue: ${error}`)
-    throw error // This ensures that the function either returns a string or raises an exception
+    logger.error(`Error adding ${data.type} Job to  queue: ${error}`)
+    throw error
   }
 }
 

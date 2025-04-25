@@ -159,13 +159,17 @@ const handleBilboMDClassicPDB = async (
     // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
 
-    // Queue the job
-    const BullId = await queueJob({
+    // Create BullMQ Job object
+    const jobData = {
       type: bilbomdMode,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
-    })
+    }
+    logger.info(`Job data for BullMQ: ${JSON.stringify(jobData)}`)
+
+    // Queue the job
+    const BullId = await queueJob(jobData)
 
     logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
     logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)

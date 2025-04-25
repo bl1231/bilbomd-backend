@@ -11,7 +11,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 beforeAll(async () => {
-  server = app.listen(5555)
+  server = app.listen(0)
   await User.deleteMany()
   await User.create({
     username: 'testuser1',
@@ -24,8 +24,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await User.deleteOne({ username: 'testuser1' })
   await User.deleteOne({ username: 'testuser2' })
-  await mongoose.disconnect()
-  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
 })
 

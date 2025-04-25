@@ -11,7 +11,7 @@ dotenv.config()
 let server: any // Adjust the type as needed.
 
 beforeAll(async () => {
-  server = app.listen(5555)
+  server = app.listen(0)
   await User.create({
     username: 'testuser3',
     email: 'testuser3@example.com',
@@ -25,8 +25,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await User.deleteOne({ username: 'testuser3' })
-  await mongoose.disconnect()
-  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
 })
 
