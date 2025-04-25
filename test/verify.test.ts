@@ -1,5 +1,5 @@
-import { beforeAll, afterAll, describe, expect, jest, test } from '@jest/globals'
 import request from 'supertest'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import mongoose from 'mongoose'
 import app from './appMock'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
@@ -8,7 +8,7 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-let server: any // Adjust the type as needed
+let server: any // Adjust the type as needed.
 
 beforeAll(async () => {
   server = app.listen(5555)
@@ -31,8 +31,6 @@ afterAll(async () => {
 })
 
 describe('POST /v1/verify', () => {
-  jest.setTimeout(5000)
-
   test('should return error if no verification code provided', async () => {
     const res = await request(server).post('/v1/verify').send({ code: '' })
     expect(res.statusCode).toBe(400)
@@ -55,8 +53,6 @@ describe('POST /v1/verify', () => {
 })
 
 describe('POST /v1/verify/resend', () => {
-  jest.setTimeout(5000)
-
   test('should return error if email key is missing', async () => {
     const res = await request(server).post('/v1/verify/resend').send({ nope: '' })
     expect(res.statusCode).toBe(400)

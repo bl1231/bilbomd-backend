@@ -1,5 +1,5 @@
-import { beforeAll, afterAll, describe, expect, jest, test } from '@jest/globals'
 import request from 'supertest'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import mongoose from 'mongoose'
 import app from './appMock'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
@@ -27,7 +27,7 @@ describe('POST /v1/magicklink', () => {
     await closeQueue()
     await new Promise((resolve) => server.close(resolve))
   })
-  jest.setTimeout(5000)
+  // jest.setTimeout(5000)
   test('should return error if no user or email provided', async () => {
     const res = await request(server).post('/v1/magicklink').send({ email: '' })
     expect(res.statusCode).toBe(400)

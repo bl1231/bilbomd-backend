@@ -1,14 +1,13 @@
-import {
-  beforeAll,
-  beforeEach,
-  afterAll,
-  afterEach,
-  describe,
-  expect,
-  jest,
-  test
-} from '@jest/globals'
 import request from 'supertest'
+import {
+  describe,
+  test,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach
+} from 'vitest'
 import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import { v4 as uuid } from 'uuid'
@@ -111,7 +110,7 @@ afterAll(async () => {
 
 describe('GET /v1/users', () => {
   // Test cases for the GET /v1/users endpoint
-  jest.setTimeout(5000)
+  // jest.setTimeout(5000)
   let testUser1: IUser // Declare a variable to store the test user
   let testUser2: IUser // Declare a variable to store the test user
 
@@ -157,7 +156,7 @@ describe('GET /v1/users', () => {
 
 describe('PATCH /v1/users', () => {
   // Test cases for the PATCH /v1/users endpoint
-  jest.setTimeout(5000)
+  // jest.setTimeout(5000)
   let testUser1: IUser
   let token: string
   beforeEach(async () => {
@@ -231,7 +230,7 @@ describe('PATCH /v1/users', () => {
 
 describe('DELETE /v1/users', () => {
   // Test cases for the DELETE /v1/users endpoint
-  jest.setTimeout(5000)
+  // jest.setTimeout(5000)
   let testUser1: IUser
   let token: string
   beforeEach(async () => {

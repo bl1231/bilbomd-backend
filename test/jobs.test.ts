@@ -1,5 +1,5 @@
-import { beforeAll, afterAll, describe, expect, test } from '@jest/globals'
 import request from 'supertest'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import mongoose from 'mongoose'
 import path from 'path'
 import fs from 'fs-extra'

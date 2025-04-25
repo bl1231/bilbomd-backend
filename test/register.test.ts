@@ -1,11 +1,14 @@
-import { beforeAll, afterAll, describe, expect, jest, test } from '@jest/globals'
 import request from 'supertest'
 import mongoose from 'mongoose'
 import app from './appMock'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { closeQueue } from '../src/queues/bilbomd'
+
 let server: any
-require('dotenv').config()
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 beforeAll(async () => {
   server = app.listen(5555)
@@ -27,13 +30,12 @@ afterAll(async () => {
 })
 
 describe('POST /v1/register', () => {
-  jest.setTimeout(5000)
   test('should return error if no user or email provided', async () => {
     const res = await request(server).post('/v1/register').send({ user: '', email: '' })
     expect(res.statusCode).toBe(400)
-    // console.log(res)
     expect(res.body.message).toBe('Username and email are required.')
   })
+
   test('Should return error when duplicate username provided', async () => {
     const res = await request(server)
       .post('/v1/register')
@@ -41,6 +43,7 @@ describe('POST /v1/register', () => {
     expect(res.statusCode).toBe(409)
     expect(res.body.message).toBe('Duplicate username')
   })
+
   test('Should return error when duplicate email provided', async () => {
     const res = await request(server)
       .post('/v1/register')
@@ -48,6 +51,7 @@ describe('POST /v1/register', () => {
     expect(res.statusCode).toBe(409)
     expect(res.body.message).toBe('Duplicate email')
   })
+
   test('Should create new user', async () => {
     const res = await request(server)
       .post('/v1/register')
@@ -55,6 +59,7 @@ describe('POST /v1/register', () => {
     expect(res.statusCode).toBe(201)
     expect(res.body.success).toBe(`New user testuser2 created!`)
   })
+
   test('Should give error if new user is malformed', async () => {
     const res = await request(server)
       .post('/v1/register')

@@ -15,24 +15,28 @@ const logFormat = printf(({ level, message, label, timestamp }) => {
   return `${timestamp} - ${level}: [${label}] ${message}`
 })
 
-const loggerTransports = [
-  new DailyRotateFile({
-    filename: `${logsFolder}/bilbomd-backend-%DATE%.log`,
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxSize: '10m',
-    maxFiles: '180d'
-  }),
-  new DailyRotateFile({
-    level: 'error',
-    filename: `${logsFolder}/bilbomd-backend-error-%DATE%.log`,
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxSize: '10m',
-    maxFiles: '30d'
-  }),
-  new transports.Console({ format: combine(colorize(), logFormat) })
-]
+const loggerTransports = []
+if (process.env.NODE_ENV !== 'test') {
+  loggerTransports.push(
+    new DailyRotateFile({
+      filename: `${logsFolder}/bilbomd-backend-%DATE%.log`,
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '10m',
+      maxFiles: '180d'
+    }),
+    new DailyRotateFile({
+      level: 'error',
+      filename: `${logsFolder}/bilbomd-backend-error-%DATE%.log`,
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '10m',
+      maxFiles: '30d'
+    })
+  )
+}
+// Always include Console transport
+loggerTransports.push(new transports.Console({ format: combine(colorize(), logFormat) }))
 
 const logger = createLogger({
   level: 'info',

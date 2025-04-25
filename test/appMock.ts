@@ -39,7 +39,7 @@ app.use('/', express.static('public'))
 // app.use('/', require('../src/routes/root'))
 
 // Version 1 routes
-app.use('/v1/register', require('../src/routes/register'))
+app.use('/v1/register', require('../src/routes/register.ts'))
 app.use('/v1/verify', require('../src/routes/verify'))
 app.use('/v1/magicklink', require('../src/routes/magicklink'))
 // app.use('/v1/auth', require('../src/routes/auth'))

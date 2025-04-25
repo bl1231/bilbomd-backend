@@ -14,7 +14,8 @@
     "dev": "concurrently \"npm run watch-ts\" \"nodemon dist/server.js\"",
     "watch-ts": "tsc -w",
     "start": "npm run build && node dist/server.js",
-    "test": "NODE_ENV=test jest --testTimeout=5000 --runInBand --verbose --detectOpenHandles --coverage",
+    "test": "vitest",
+    "test:jest": "NODE_ENV=test jest --testTimeout=5000 --runInBand --verbose --detectOpenHandles --coverage",
     "test:jobs": "NODE_ENV=test jest --testTimeout=5000 --runInBand --detectOpenHandles test/jobs.test.ts",
     "server": "nodemon .",
     "swagger": "npx ts-node src/openapi/swagger.ts"
@@ -74,6 +75,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
     "@typescript-eslint/parser": "^8.30.1",
+    "@vitest/ui": "^3.1.2",
     "concurrently": "^9.1.2",
     "copyfiles": "^2.4.1",
     "eslint": "^9.24.0",
@@ -83,6 +85,7 @@
     "rimraf": "^6.0.1",
     "supertest": "^7.1.0",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.30.1"
+    "typescript-eslint": "^8.30.1",
+    "vitest": "^3.1.2"
   }
 }
