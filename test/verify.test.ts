@@ -3,12 +3,12 @@ import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import mongoose from 'mongoose'
 import app from './appMock'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { closeQueue } from '../src/queues/bilbomd'
+// import { closeQueue } from '../src/queues/bilbomd'
 import dotenv from 'dotenv'
 
 dotenv.config()
 
-let server: any // Adjust the type as needed
+let server: any // Adjust the type as needed.
 
 beforeAll(async () => {
   server = app.listen(5555)
@@ -26,7 +26,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await User.deleteOne({ username: 'testuser3' })
   await mongoose.disconnect()
-  await closeQueue()
+  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
 })
 

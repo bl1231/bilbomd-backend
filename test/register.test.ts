@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 import app from './appMock'
 import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { closeQueue } from '../src/queues/bilbomd'
+// import { closeQueue } from '../src/queues/bilbomd'
 
 let server: any
 import dotenv from 'dotenv'
@@ -25,7 +25,7 @@ afterAll(async () => {
   await User.deleteOne({ username: 'testuser1' })
   await User.deleteOne({ username: 'testuser2' })
   await mongoose.disconnect()
-  await closeQueue()
+  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
 })
 

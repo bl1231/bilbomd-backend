@@ -1,13 +1,15 @@
 import request from 'supertest'
-import { describe, test, expect, beforeAll, afterAll } from 'vitest'
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
 import mongoose from 'mongoose'
 import path from 'path'
 import fs from 'fs-extra'
 import jwt from 'jsonwebtoken'
 import { v4 as uuid } from 'uuid'
-import { closeQueue } from '../src/queues/bilbomd'
+// import { closeQueue } from '../src/queues/bilbomd'
 import app from './appMock'
 import { User, IUser, Job } from '@bl1231/bilbomd-mongodb-schema'
+
+vi.mock('bullmq')
 
 let server: any
 let testUser1: IUser
@@ -101,8 +103,8 @@ beforeAll(async () => {
 afterAll(async () => {
   await User.deleteMany()
   await Job.deleteMany()
-  await mongoose.disconnect()
-  await closeQueue()
+  // await mongoose.disconnect()
+  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
 })
 

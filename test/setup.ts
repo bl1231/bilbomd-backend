@@ -21,6 +21,9 @@ vi.mock('bullmq', () => {
     })),
     QueueScheduler: vi.fn().mockImplementation(() => ({
       close: vi.fn()
+    })),
+    QueueEvents: vi.fn().mockImplementation(() => ({
+      close: vi.fn()
     }))
   }
 })

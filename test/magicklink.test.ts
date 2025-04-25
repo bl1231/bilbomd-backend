@@ -3,7 +3,7 @@ import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import mongoose from 'mongoose'
 import app from './appMock'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { closeQueue } from '../src/queues/bilbomd'
+// import { closeQueue } from '../src/queues/bilbomd'
 
 require('dotenv').config()
 
@@ -12,7 +12,7 @@ describe('POST /v1/magicklink', () => {
   let confirmationCode: string
   beforeAll(async () => {
     server = app.listen(5555, () => {
-      // console.log('test server started')
+      // console.log('test server started.')
     })
     const res = await request(server)
       .post('/v1/register')
@@ -24,7 +24,7 @@ describe('POST /v1/magicklink', () => {
   afterAll(async () => {
     await User.deleteOne({ username: 'testuser1' })
     await mongoose.disconnect()
-    await closeQueue()
+    // await closeQueue()
     await new Promise((resolve) => server.close(resolve))
   })
   // jest.setTimeout(5000)

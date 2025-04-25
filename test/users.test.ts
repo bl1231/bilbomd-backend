@@ -11,7 +11,7 @@ import {
 import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import { v4 as uuid } from 'uuid'
-import { closeQueue } from '../src/queues/bilbomd'
+// import { closeQueue } from '../src/queues/bilbomd'
 import app from './appMock'
 import { User, IUser, Job } from '@bl1231/bilbomd-mongodb-schema'
 
@@ -104,7 +104,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await mongoose.disconnect()
-  await closeQueue()
+  // await closeQueue()
   await new Promise((resolve) => server.close(resolve))
 })
 
@@ -210,7 +210,7 @@ describe('PATCH /v1/users', () => {
   })
   test('should return success if user is updated', async () => {
     const user: MyUser = {
-      id: testUser1._id,
+      id: testUser1._id.toString(),
       username: testUser1.username,
       roles: testUser1.roles,
       active: testUser1.active,
