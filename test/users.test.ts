@@ -11,12 +11,10 @@ import {
 import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import { v4 as uuid } from 'uuid'
-// import { closeQueue } from '../src/queues/bilbomd'
 import app from './appMock'
 import { User, IUser, Job } from '@bl1231/bilbomd-mongodb-schema'
 
 const accessTokenSecret: string = process.env.ACCESS_TOKEN_SECRET ?? ''
-// const refreshTokenSecret: string = process.env.REFRESH_TOKEN_SECRET ?? ''
 
 interface JwtPayload {
   UserInfo: BilboMDJwtPayload
@@ -146,11 +144,20 @@ describe('GET /v1/users', () => {
       .get('/v1/users')
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'application/json')
+    // console.log(res.body)
     expect(res.statusCode).toBe(200)
     expect(res.body).toBeDefined()
     // Check if testuser1 and testuser2 are present in the response body
-    expect(res.body).toContainEqual(expect.objectContaining({ username: 'testuser1' }))
-    expect(res.body).toContainEqual(expect.objectContaining({ username: 'testuser2' }))
+    expect(res.body.data).toContainEqual(
+      expect.objectContaining({ username: 'testuser1' })
+    )
+    expect(res.body.data).toContainEqual(
+      expect.objectContaining({ username: 'testuser2' })
+    )
+    expect(res.statusCode).toBe(200)
+    expect(res.body.success).toBe(true)
+    expect(res.body.data).toBeDefined()
+    expect(Array.isArray(res.body.data)).toBe(true)
   })
 })
 
@@ -187,7 +194,7 @@ describe('PATCH /v1/users', () => {
       .set('Content-Type', 'application/json')
     // console.log(res.body)
     expect(res.statusCode).toBe(400)
-    expect(res.body.message).toBe('All fields are required')
+    expect(res.body.message).toBe('User ID is required')
   })
   test('should return error if user is not found', async () => {
     // const token = generateValidToken()
@@ -205,7 +212,7 @@ describe('PATCH /v1/users', () => {
       .send(user)
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'application/json')
-    expect(res.statusCode).toBe(400)
+    expect(res.statusCode).toBe(404)
     expect(res.body.message).toBe('User not found')
   })
   test('should return success if user is updated', async () => {
@@ -259,7 +266,7 @@ describe('DELETE /v1/users', () => {
       .send({})
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'application/json')
-    expect(res.statusCode).toBe(400)
+    expect(res.statusCode).toBe(404)
     expect(res.body.message).toBe('User ID Required')
   })
   test('should return error if user has a Job', async () => {
