@@ -22,10 +22,20 @@ import path from 'path'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import crypto from 'crypto'
 
-const mockJob = {
-  message: 'New auto Job API Test Job Auto1 successfully created',
-  jobid: '680c23a28e92fd52dea9edb7',
-  uuid: '4257fadb-05b7-43ed-bf48-c677180e9b47'
+const expectSuccessfulJobResponse = (res: request.Response, expectedMessage: string) => {
+  expect(res.status).toBe(200)
+
+  expect(res.body).toHaveProperty('message', expectedMessage)
+  expect(res.body).toHaveProperty('jobid')
+  expect(res.body).toHaveProperty('uuid')
+
+  expect(typeof res.body.jobid).toBe('string')
+  expect(res.body.jobid).toMatch(/^[a-f0-9]{24}$/)
+
+  expect(typeof res.body.uuid).toBe('string')
+  expect(res.body.uuid).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+  )
 }
 
 let server: any
@@ -73,7 +83,7 @@ describe('/api/v1/external/jobs', () => {
     expect(res.statusCode).toBe(200)
     expect(res.body.message).toBe('External API route is working.')
   })
-  test('should submit an auto job successfully', async () => {
+  test('should submit a BilboMD auto job successfully', async () => {
     const apiToken = generateApiToken()
 
     const pdbFilePath = path.resolve(__dirname, '../test/data/auto1/auto1.pdb')
@@ -89,28 +99,12 @@ describe('/api/v1/external/jobs', () => {
       .attach('pdb_file', pdbFilePath)
       .attach('dat_file', datFilePath)
       .attach('pae_file', paeFilePath)
-
-    // console.log('RESPONSE STATUS:', res.status)
-    // console.log('Response:', res.body)
-
-    expect(res.status).toBe(200)
-
-    expect(res.body).toHaveProperty(
-      'message',
+    expectSuccessfulJobResponse(
+      res,
       'New auto Job API Test Job Auto1 successfully created'
     )
-    expect(res.body).toHaveProperty('jobid')
-    expect(res.body).toHaveProperty('uuid')
-
-    expect(typeof res.body.jobid).toBe('string')
-    expect(res.body.jobid).toMatch(/^[a-f0-9]{24}$/)
-
-    expect(typeof res.body.uuid).toBe('string')
-    expect(res.body.uuid).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-    )
   })
-  test('should submit a classic PDB job successfully', async () => {
+  test('should submit a BilboMD classic PDB job successfully', async () => {
     const apiToken = generateApiToken()
 
     const pdbFilePath = path.resolve(__dirname, '../test/data/pdb/pro_dna.pdb')
@@ -126,25 +120,9 @@ describe('/api/v1/external/jobs', () => {
       .attach('pdb_file', pdbFilePath)
       .attach('dat_file', datFilePath)
       .attach('inp_file', inpFilePath)
-
-    // console.log('RESPONSE STATUS:', res.status)
-    // console.log('Response:', res.body)
-
-    expect(res.status).toBe(200)
-
-    expect(res.body).toHaveProperty('message', 'New pdb Job successfully created')
-    expect(res.body).toHaveProperty('jobid')
-    expect(res.body).toHaveProperty('uuid')
-
-    expect(typeof res.body.jobid).toBe('string')
-    expect(res.body.jobid).toMatch(/^[a-f0-9]{24}$/)
-
-    expect(typeof res.body.uuid).toBe('string')
-    expect(res.body.uuid).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-    )
+    expectSuccessfulJobResponse(res, 'New pdb Job successfully created')
   })
-  test('should submit a classic CRD job successfully', async () => {
+  test('should submit a BilboMD classic CRD job successfully', async () => {
     const apiToken = generateApiToken()
 
     const crdFilePath = path.resolve(__dirname, '../test/data/crd/pro_dna.crd')
@@ -162,22 +140,49 @@ describe('/api/v1/external/jobs', () => {
       .attach('psf_file', psfFilePath)
       .attach('dat_file', datFilePath)
       .attach('inp_file', inpFilePath)
+    expectSuccessfulJobResponse(res, 'New crd_psf Job successfully created')
+  })
+  test('should inform us that BilboMD alphafold is unavailable on this deployment', async () => {
+    const apiToken = generateApiToken()
 
-    // console.log('RESPONSE STATUS:', res.status)
-    // console.log('Response:', res.body)
+    const datFilePath = path.resolve(__dirname, '../test/data/af-mono/A_S_USP16-FL_1.dat')
+    const entitiesJsonPath = path.resolve(__dirname, '../test/data/af-mono/entities.json')
 
-    expect(res.status).toBe(200)
+    const res = await request(server)
+      .post('/api/v1/external/jobs')
+      .set('Authorization', `Bearer ${apiToken}`)
+      .set('Accept', 'application/json')
+      .field('bilbomd_mode', 'alphafold')
+      .field('title', 'API Test Job CRD')
+      .attach('dat_file', datFilePath)
+      .attach('entities_json', entitiesJsonPath)
 
-    expect(res.body).toHaveProperty('message', 'New crd_psf Job successfully created')
-    expect(res.body).toHaveProperty('jobid')
-    expect(res.body).toHaveProperty('uuid')
+    console.log('RESPONSE STATUS:', res.status)
+    console.log('Response:', res.body)
 
-    expect(typeof res.body.jobid).toBe('string')
-    expect(res.body.jobid).toMatch(/^[a-f0-9]{24}$/)
+    expect(res.status).toBe(403)
+    expect(res.body.message).toBe('AlphaFold jobs unavailable on this deployment.')
+  })
+  test('should submit a BilboMD alphafold job successfully', async () => {
+    const originalUseNersc = process.env.USE_NERSC
+    process.env.USE_NERSC = 'true'
+    const apiToken = generateApiToken()
 
-    expect(typeof res.body.uuid).toBe('string')
-    expect(res.body.uuid).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    const datFilePath = path.resolve(__dirname, '../test/data/af-mono/A_S_USP16-FL_1.dat')
+    const entitiesJsonPath = path.resolve(__dirname, '../test/data/af-mono/entities.json')
+
+    const res = await request(server)
+      .post('/api/v1/external/jobs')
+      .set('Authorization', `Bearer ${apiToken}`)
+      .set('Accept', 'application/json')
+      .field('bilbomd_mode', 'alphafold')
+      .field('title', 'API Test Job CRD')
+      .attach('dat_file', datFilePath)
+      .attach('entities_json', entitiesJsonPath)
+    expectSuccessfulJobResponse(
+      res,
+      'New alphafold Job API Test Job CRD successfully created'
     )
+    process.env.USE_NERSC = originalUseNersc
   })
 })

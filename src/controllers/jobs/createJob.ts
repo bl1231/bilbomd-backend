@@ -35,7 +35,8 @@ const createNewJob = async (req: Request, res: Response) => {
       { name: 'crd_file', maxCount: 1 },
       { name: 'inp_file', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
-      { name: 'pae_file', maxCount: 1 }
+      { name: 'pae_file', maxCount: 1 },
+      { name: 'entities_json', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
         logger.error(`Multer error during file upload: ${err}`)
