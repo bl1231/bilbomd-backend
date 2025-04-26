@@ -2,8 +2,9 @@ import { logger } from '../../middleware/loggers.js'
 import { Request, Response } from 'express'
 import { createNewJob } from '../jobs/index.js'
 
-export const submitApiJob = async (req: Request, res: Response) => {
+export const createApiJob = async (req: Request, res: Response) => {
   try {
+    console.log('createApiJob called')
     const user = req.apiUser
 
     if (!user) {
@@ -19,7 +20,7 @@ export const submitApiJob = async (req: Request, res: Response) => {
 
     await createNewJob(req, res)
   } catch (err) {
-    logger.error('submitApiJob error:', err)
+    logger.error('createApiJob error:', err)
     res.status(500).json({ message: 'Failed to submit API job' })
   }
 }

@@ -1,17 +1,18 @@
 import dotenv from 'dotenv'
-import { on } from 'events'
 dotenv.config({ path: './test/.env.test' })
 
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import mongoose from 'mongoose'
-import { off } from 'process'
 import { vi } from 'vitest'
+import fs from 'fs-extra'
 
+// Setup MongoDB Memory Server
 export const mongoServer = await MongoMemoryServer.create()
 const uri = mongoServer.getUri()
 
 await mongoose.connect(uri)
 
+// Mock bullmq queues
 const mockQueue = {
   name: 'bilbomd-mock',
   add: vi.fn().mockResolvedValue({
@@ -30,3 +31,10 @@ vi.mock('bullmq', () => {
     QueueEvents: vi.fn(() => ({ close: vi.fn(), on: vi.fn(), off: vi.fn() }))
   }
 })
+
+// 🛠 Clean /tmp/bilbomd-data
+const testDataDir = process.env.DATA_VOL ?? '/tmp/bilbomd-data'
+
+await fs.ensureDir(testDataDir)
+await fs.emptyDir(testDataDir)
+console.log(`[setup] Emptied test data directory: ${testDataDir}`)

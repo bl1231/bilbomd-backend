@@ -1,5 +1,5 @@
 import express from 'express'
-import { submitApiJob } from '../controllers/external/createJob.js'
+import { createApiJob } from '../controllers/external/createApiJob.js'
 import { getApiJobStatus } from '../controllers/external/jobStatus.js'
 import { getExternalJobResults } from '../controllers/external/getResults.js'
 import { verifyAPIToken } from '../middleware/verifyAPIToken.js'
@@ -123,7 +123,7 @@ router.get('/', (req, res) => {
  *       403:
  *         $ref: '#/components/responses/ForbiddenAlphaFold'
  */
-router.post('/', submitApiJob)
+router.post('/', createApiJob)
 
 /**
  * @swagger
