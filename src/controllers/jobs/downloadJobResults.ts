@@ -1,6 +1,7 @@
 import { logger } from '../../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
+import mongoose from 'mongoose'
 import { Job, MultiJob, JobStatus } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 
@@ -13,6 +14,10 @@ const downloadJobResults = async (req: Request, res: Response) => {
     res.status(400).json({ message: 'Job ID required.' })
     return
   }
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ message: 'Invalid job ID format' })
+    return
+  }
 
   try {
     // Find the job in either Job or MultiJob collection
@@ -20,7 +25,7 @@ const downloadJobResults = async (req: Request, res: Response) => {
     const multiJob = await MultiJob.findById(id).exec()
 
     if (!job && !multiJob) {
-      res.status(404).json({ message: `No job matches ID ${id}.` })
+      res.status(404).json({ message: `No job matches that ID` })
       return
     }
 

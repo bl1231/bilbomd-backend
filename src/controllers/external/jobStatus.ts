@@ -20,7 +20,7 @@ export const getApiJobStatus = async (req: Request, res: Response) => {
 
     const job = await Job.findById(id)
     if (!job) {
-      res.status(404).json({ message: 'Job not found' })
+      res.status(404).json({ message: 'No job found with ID' })
       return
     }
 
