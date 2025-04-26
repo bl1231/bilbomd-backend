@@ -23,12 +23,6 @@ jobs:
       packages: write
 
     steps:
-      # - name: Debug GitHub Event
-      #   run: |
-      #     echo "Actor: ${{ github.actor }}"
-      #     echo "Event Name: ${{ github.event_name }}"
-      #     echo "Event Payload: ${{ toJSON(github.event) }}"
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -47,8 +41,10 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Run npm build to test Typescript transpilation
-        run: npm run build
+      - name: Test and build
+        run: |
+          npm run test
+          npm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
