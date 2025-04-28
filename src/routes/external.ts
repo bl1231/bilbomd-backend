@@ -35,70 +35,91 @@ router.get('/', (req, res) => {
  *                   bilbomd_mode:
  *                     type: string
  *                     enum: [pdb]
+ *                     description: Must be set to "pdb" for this job type.
  *                   title:
  *                     type: string
+ *                     description: User-defined title for the job.
  *                   pdb_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the PDB file containing the atomic coordinates.
  *                   crd_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the CHARMM CRD file associated with the structure.
  *                   const_inp_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the const.inp configuration file used by BilboMD.
  *                   dat_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the experimental SAXS .dat file for fitting analysis.
  *               - title: CRD/PSF Job
  *                 required: [title, bilbomd_mode, crd_file, psf_file, const_inp_file, dat_file]
  *                 properties:
  *                   bilbomd_mode:
  *                     type: string
  *                     enum: [crd_psf]
+ *                     description: Must be set to "crd_psf" for this job type.
  *                   title:
  *                     type: string
+ *                     description: User-defined title for the job.
  *                   crd_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the CHARMM CRD file containing structure coordinates.
  *                   psf_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the PSF file containing topology information.
  *                   const_inp_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the const.inp configuration file for BilboMD.
  *                   dat_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the experimental SAXS .dat file for fitting.
  *               - title: Auto Job
  *                 required: [title, bilbomd_mode, pdb_file, pae_file, dat_file]
  *                 properties:
  *                   bilbomd_mode:
  *                     type: string
  *                     enum: [auto]
+ *                     description: Must be set to "auto" for this job type.
  *                   title:
  *                     type: string
+ *                     description: User-defined title for the job.
  *                   pdb_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the PDB file containing the full predicted structure.
  *                   pae_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the PAE (Predicted Aligned Error) matrix file from AlphaFold.
  *                   dat_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the experimental SAXS .dat file for fitting.
  *               - title: AlphaFold Job
  *                 required: [title, bilbomd_mode, dat_file, entities_json]
  *                 properties:
  *                   bilbomd_mode:
  *                     type: string
  *                     enum: [alphafold]
+ *                     description: Must be set to "alphafold" for this job type.
  *                   title:
  *                     type: string
+ *                     description: User-defined title for the job.
  *                   dat_file:
  *                     type: string
  *                     format: binary
+ *                     description: Upload the experimental SAXS .dat file for fitting.
  *                   entities_json:
- *                     type: string
+ *                     $ref: '#/components/schemas/EntitiesJson'
+ *                     description: JSON file containing entity information for the job.
  *     responses:
  *       200:
  *         description: Job submitted successfully

@@ -64,6 +64,31 @@ swaggerSpec.components.schemas.JobStatusResponse = {
   }
 }
 
+swaggerSpec.components.schemas.EntitiesJson = {
+  type: 'object',
+  required: ['entities'],
+  properties: {
+    entities: {
+      type: 'array',
+      description:
+        'List of entities to model, each with type, sequence, and number of copies.',
+      items: {
+        type: 'object',
+        required: ['id', 'type', 'sequence', 'copies'],
+        properties: {
+          id: { type: 'integer', example: 1 },
+          type: { type: 'string', enum: ['Protein', 'DNA', 'RNA'], example: 'Protein' },
+          sequence: {
+            type: 'string',
+            example: 'MSEQNNTEMTFQIQRIYTKDISFEAPNAPHVFQKDWLD...'
+          },
+          copies: { type: 'integer', example: 2 }
+        }
+      }
+    }
+  }
+}
+
 swaggerSpec.components.securitySchemes = {
   bearerAuth: {
     type: 'http',

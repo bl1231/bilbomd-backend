@@ -52,26 +52,32 @@
                         "type": "string",
                         "enum": [
                           "pdb"
-                        ]
+                        ],
+                        "description": "Must be set to \"pdb\" for this job type."
                       },
                       "title": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "User-defined title for the job."
                       },
                       "pdb_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the PDB file containing the atomic coordinates."
                       },
                       "crd_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the CHARMM CRD file associated with the structure."
                       },
                       "const_inp_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the const.inp configuration file used by BilboMD."
                       },
                       "dat_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the experimental SAXS .dat file for fitting analysis."
                       }
                     }
                   },
@@ -90,26 +96,32 @@
                         "type": "string",
                         "enum": [
                           "crd_psf"
-                        ]
+                        ],
+                        "description": "Must be set to \"crd_psf\" for this job type."
                       },
                       "title": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "User-defined title for the job."
                       },
                       "crd_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the CHARMM CRD file containing structure coordinates."
                       },
                       "psf_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the PSF file containing topology information."
                       },
                       "const_inp_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the const.inp configuration file for BilboMD."
                       },
                       "dat_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the experimental SAXS .dat file for fitting."
                       }
                     }
                   },
@@ -127,22 +139,27 @@
                         "type": "string",
                         "enum": [
                           "auto"
-                        ]
+                        ],
+                        "description": "Must be set to \"auto\" for this job type."
                       },
                       "title": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "User-defined title for the job."
                       },
                       "pdb_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the PDB file containing the full predicted structure."
                       },
                       "pae_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the PAE (Predicted Aligned Error) matrix file from AlphaFold."
                       },
                       "dat_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the experimental SAXS .dat file for fitting."
                       }
                     }
                   },
@@ -159,17 +176,21 @@
                         "type": "string",
                         "enum": [
                           "alphafold"
-                        ]
+                        ],
+                        "description": "Must be set to \"alphafold\" for this job type."
                       },
                       "title": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "User-defined title for the job."
                       },
                       "dat_file": {
                         "type": "string",
-                        "format": "binary"
+                        "format": "binary",
+                        "description": "Upload the experimental SAXS .dat file for fitting."
                       },
                       "entities_json": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/EntitiesJson",
+                        "description": "JSON file containing entity information for the job."
                       }
                     }
                   }
@@ -1241,6 +1262,50 @@
             "type": "string",
             "format": "date-time",
             "example": "2025-04-24T21:14:45.789Z"
+          }
+        }
+      },
+      "EntitiesJson": {
+        "type": "object",
+        "required": [
+          "entities"
+        ],
+        "properties": {
+          "entities": {
+            "type": "array",
+            "description": "List of entities to model, each with type, sequence, and number of copies.",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "type",
+                "sequence",
+                "copies"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "example": 1
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Protein",
+                    "DNA",
+                    "RNA"
+                  ],
+                  "example": "Protein"
+                },
+                "sequence": {
+                  "type": "string",
+                  "example": "MSEQNNTEMTFQIQRIYTKDISFEAPNAPHVFQKDWLD..."
+                },
+                "copies": {
+                  "type": "integer",
+                  "example": 2
+                }
+              }
+            }
           }
         }
       }
