@@ -105,8 +105,6 @@ afterAll(async () => {
 })
 
 describe('GET /api/v1/users', () => {
-  // Test cases for the GET /api/v1/users endpoint
-  // jest.setTimeout(5000)
   let testUser1: IUser // Declare a variable to store the test user
   let testUser2: IUser // Declare a variable to store the test user
 

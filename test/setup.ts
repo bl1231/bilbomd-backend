@@ -1,10 +1,20 @@
 import dotenv from 'dotenv'
 dotenv.config({ path: './test/.env.test' })
-
+import { logger } from '../src/middleware/loggers'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import mongoose from 'mongoose'
-import { vi } from 'vitest'
+import { vi, beforeAll } from 'vitest'
 import fs from 'fs-extra'
+
+beforeAll(() => {
+  vi.spyOn(console, 'log').mockImplementation(() => {})
+  vi.spyOn(console, 'info').mockImplementation(() => {})
+  vi.spyOn(console, 'warn').mockImplementation(() => {})
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  vi.spyOn(logger, 'info').mockImplementation((message: string) => {})
+  vi.spyOn(logger, 'warn').mockImplementation((message: string) => {})
+  vi.spyOn(logger, 'error').mockImplementation((message: string) => {})
+})
 
 // Setup MongoDB Memory Server
 export const mongoServer = await MongoMemoryServer.create()
@@ -37,4 +47,4 @@ const testDataDir = process.env.DATA_VOL ?? '/tmp/bilbomd-data'
 
 await fs.ensureDir(testDataDir)
 await fs.emptyDir(testDataDir)
-console.log(`[setup] Emptied test data directory: ${testDataDir}`)
+// console.log(`[setup] Emptied test data directory: ${testDataDir}`)
