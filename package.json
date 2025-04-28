@@ -15,8 +15,7 @@
     "watch-ts": "tsc -w",
     "start": "npm run build && node dist/server.js",
     "test": "vitest",
-    "test:jest": "NODE_ENV=test jest --testTimeout=5000 --runInBand --verbose --detectOpenHandles --coverage",
-    "test:jobs": "NODE_ENV=test jest --testTimeout=5000 --runInBand --detectOpenHandles test/jobs.test.ts",
+    "test:coverage": "vitest run --coverage",
     "server": "nodemon .",
     "swagger": "npx ts-node src/openapi/swagger.ts",
     "prepare": "husky"
@@ -76,6 +75,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
+    "@vitest/coverage-v8": "^3.1.2",
     "concurrently": "^9.1.2",
     "copyfiles": "^2.4.1",
     "eslint": "^9.25.1",
