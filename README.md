@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.19.0 (4/28/2025)
+  - Add external API endpoints to enable job submission. monitoring, and results download.
 - 1.18.1 (4/17/2025)
   - Fix bug with Scoper FoXS analysis processing filenames having multiple `.`s
 - 1.18.0 (4/16/2025)
