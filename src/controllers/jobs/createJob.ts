@@ -5,9 +5,11 @@ import path from 'path'
 import { v4 as uuid } from 'uuid'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
-import { handleBilboMDJob } from './handleBilboMDJob.js'
+import { handleBilboMDClassicPDB } from './handleBilboMDClassicPDB.js'
+import { handleBilboMDClassicCRD } from './handleBilboMDClassicCRD.js'
 import { handleBilboMDAutoJob } from './handleBilboMDAutoJob.js'
 import { handleBilboMDScoperJob } from './handleBilboMDScoperJob.js'
+import { handleBilboMDAlphaFoldJob } from './handleBilboMDAlphaFoldJob.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -16,7 +18,6 @@ const createNewJob = async (req: Request, res: Response) => {
   const jobDir = path.join(uploadFolder, UUID)
 
   try {
-    // Create the job directory
     await fs.mkdir(jobDir, { recursive: true })
     logger.info(`Created directory: ${jobDir}`)
 
@@ -32,26 +33,35 @@ const createNewJob = async (req: Request, res: Response) => {
       { name: 'psf_file', maxCount: 1 },
       { name: 'pdb_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
-      { name: 'constinp', maxCount: 1 },
       { name: 'inp_file', maxCount: 1 },
-      { name: 'expdata', maxCount: 1 },
       { name: 'dat_file', maxCount: 1 },
-      { name: 'pae_file', maxCount: 1 }
+      { name: 'pae_file', maxCount: 1 },
+      { name: 'entities_json', maxCount: 1 }
     ])(req, res, async (err) => {
       if (err) {
-        logger.error(err)
-        res.status(500).json({ message: 'Failed to upload one or more files' })
-        return
+        logger.error(`Multer error during file upload: ${err}`)
+        await fs.remove(jobDir)
+        return res
+          .status(400)
+          .json({ message: 'File upload error', error: err.message || String(err) })
       }
 
       try {
-        const { email, bilbomd_mode } = req.body
+        const { bilbomd_mode } = req.body
+
         if (!bilbomd_mode) {
           res.status(400).json({ message: 'No job type provided' })
           return
         }
 
+        const email = req.email
+
+        logger.info(
+          `Job submission from: ${req.apiUser ? 'API token' : 'JWT session'}: ${email}`
+        )
+
         const foundUser = await User.findOne({ email }).exec()
+
         if (!foundUser) {
           res.status(401).json({ message: 'No user found with that email' })
           return
@@ -64,27 +74,44 @@ const createNewJob = async (req: Request, res: Response) => {
         })
 
         // Route to the appropriate handler
-        logger.info(`Handling BilboMDJob: ${bilbomd_mode}`)
-        if (bilbomd_mode === 'pdb' || bilbomd_mode === 'crd_psf') {
-          await handleBilboMDJob(req, res, foundUser, UUID)
+        logger.info(`Starting BilboMDJobClassicPDB: ${bilbomd_mode}`)
+        if (bilbomd_mode === 'pdb') {
+          await handleBilboMDClassicPDB(req, res, foundUser, UUID)
+        } else if (bilbomd_mode === 'crd_psf') {
+          logger.info('Starting BilboMDJobClassicCRD')
+          await handleBilboMDClassicCRD(req, res, foundUser, UUID)
         } else if (bilbomd_mode === 'auto') {
-          logger.info('Handling BilboMDAutoJob')
+          logger.info('Starting BilboMDAutoJob')
           await handleBilboMDAutoJob(req, res, foundUser, UUID)
         } else if (bilbomd_mode === 'scoper') {
-          logger.info('Handling BilboMDScoperJob')
+          logger.info('Starting BilboMDScoperJob')
           await handleBilboMDScoperJob(req, res, foundUser, UUID)
+        } else if (bilbomd_mode === 'alphafold') {
+          logger.info('Starting BilboMDAlphaFoldJob')
+          await handleBilboMDAlphaFoldJob(req, res, foundUser, UUID)
         } else {
           res.status(400).json({ message: 'Invalid job type' })
           return
         }
       } catch (error) {
-        logger.error(error)
-        res.status(500).json({ message: 'Internal server error' })
+        logger.error(`Job handler error: ${error}`)
+        await fs.remove(jobDir)
+        return res.status(500).json({
+          message: 'Job submission failed',
+          error: error instanceof Error ? error.message : String(error)
+        })
       }
     })
   } catch (error) {
-    logger.error(error)
-    res.status(500).json({ message: 'Failed to create job directory' })
+    const msg =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Unknown error occurred'
+
+    logger.error(`handleBilboMDJob error: ${error}`)
+    res.status(500).json({ message: msg })
   }
 }
 

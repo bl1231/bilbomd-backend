@@ -15,37 +15,46 @@ const redisOptions: RedisOptions = {
 }
 const redis = new Redis(redisOptions)
 
-const bilbomdQueue = new Queue('bilbomd', {
-  connection: redis,
-  defaultJobOptions: {
-    attempts: config.bullmqAttempts
+let bilbomdQueue: Queue | undefined
+
+const getQueue = (): Queue => {
+  if (!bilbomdQueue) {
+    bilbomdQueue = new Queue('bilbomd', {
+      connection: redis,
+      defaultJobOptions: {
+        attempts: config.bullmqAttempts
+      }
+    })
   }
-})
+  return bilbomdQueue
+}
 
 const closeQueue = async () => {
-  await bilbomdQueue.close()
+  const queue = getQueue()
+  await queue.close()
   await redis.quit() // Disconnect from Redis
 }
 
 const queueJob = async (data: BullMQData) => {
   try {
-    logger.info(
-      `${data.type} Job ${data.title} about to be added to ${bilbomdQueue.name} queue`
-    )
+    const queue = getQueue()
 
-    const bullJob = await bilbomdQueue.add(data.title, data)
+    logger.info(`${data.type} Job ${data.title} about to be added to ${queue.name} queue`)
 
-    // logger.info(`${data.type} Job added with Job ID: ${bullJob.id}`)
+    const bullJob = await queue.add(data.title, data)
+
+    logger.info(`${data.type} Job added with Job ID: ${bullJob.id}`)
 
     return bullJob.id
   } catch (error) {
-    logger.error(`Error adding ${data.type} Job to ${bilbomdQueue.name} queue: ${error}`)
-    throw error // Rethrow the error to handle it at a higher level if needed
+    logger.error(`Error adding ${data.type} Job to queue: ${error}`)
+    throw error
   }
 }
 
 const getAllBullMQJobs = async (): Promise<BullMQJob[]> => {
-  const allJobs = await bilbomdQueue.getJobs(
+  const queue = getQueue()
+  const allJobs = await queue.getJobs(
     ['completed', 'failed', 'waiting', 'active', 'delayed'],
     0,
     -1,
@@ -55,28 +64,22 @@ const getAllBullMQJobs = async (): Promise<BullMQJob[]> => {
 }
 
 const getWaitingJobs = async (): Promise<BullMQJob[]> => {
-  const waitingJobs = await bilbomdQueue.getJobs(['waiting'], 0, -1, true)
-  // logger.info(`waiting jobs ${JSON.stringify(waitingJobs)}`)
-
-  // waitingJobs.forEach((job) => {
-  //   console.log('WAITING: ', job.name, job.data.uuid)
-  // })
+  const queue = getQueue()
+  const waitingJobs = await queue.getJobs(['waiting'], 0, -1, true)
   return waitingJobs
 }
 
 const getWaitingPosition = async (bullmq: BullMQJob): Promise<number> => {
   const waitingJobs = await getWaitingJobs()
-  // logger.info(`number of waiting jobs is: ${waitingJobs.length}`)
-  // logger.info(`checking job UUID: ${bullmq.data.uuid}`)
   let position = 0
 
   for (let i = 0; i < waitingJobs.length; i++) {
     if (waitingJobs[i].data.uuid === bullmq.data.uuid) {
       position = i + 1
-      // console.log('waiting: ', waitingJobs[i].name, position)
       break
     } else {
-      // console.log('not waiting: ', waitingJobs[i].name)
+      // logger.info(`Job ${waitingJobs[i].data.uuid} is not the same as ${bullmq.data.uuid}`)
+      // logger.info(`Position: ${position}`)
     }
   }
 
@@ -138,9 +141,10 @@ const bilboSteps: BilboMDSteps = {
 
 const updateBilboMDSteps = async (bullmq: BullMQJob): Promise<BilboMDSteps> => {
   let logData: { count: number; logs: string[] }
+  const queue = getQueue()
 
   if (bullmq.id) {
-    logData = await bilbomdQueue.getJobLogs(bullmq.id, 0, -1, true)
+    logData = await queue.getJobLogs(bullmq.id, 0, -1, true)
   } else {
     logData = { count: 0, logs: [''] }
   }
@@ -152,9 +156,10 @@ const updateBilboMDSteps = async (bullmq: BullMQJob): Promise<BilboMDSteps> => {
 
 const updateBilboMDInfo = async (bullmq: BullMQJob): Promise<string> => {
   let logData: { count: number; logs: string[] }
+  const queue = getQueue()
 
   if (bullmq.id) {
-    logData = await bilbomdQueue.getJobLogs(bullmq.id, 0, -1, true)
+    logData = await queue.getJobLogs(bullmq.id, 0, -1, true)
   } else {
     logData = { count: 0, logs: [''] }
   }
@@ -231,17 +236,20 @@ const updateStepStatus = async (
 }
 
 const getActiveCount = async () => {
-  const num = await bilbomdQueue.getActiveCount()
+  const queue = getQueue()
+  const num = await queue.getActiveCount()
   return num
 }
 
 const getWaitingCount = async () => {
-  const num = await bilbomdQueue.getWaitingCount()
+  const queue = getQueue()
+  const num = await queue.getWaitingCount()
   return num
 }
 
 const getWorkers = async () => {
-  const workers = await bilbomdQueue.getWorkers()
+  const queue = getQueue()
+  const workers = await queue.getWorkers()
   return workers
 }
 

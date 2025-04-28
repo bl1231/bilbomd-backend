@@ -1,4 +1,4 @@
-import { logger } from '../../middleware/loggers.js'
+import { logger } from '../../../middleware/loggers.js'
 import { v4 as uuid } from 'uuid'
 import multer from 'multer'
 import fs from 'fs-extra'
@@ -7,8 +7,7 @@ import path from 'path'
 import { Request, Response } from 'express'
 import { ChildProcess } from 'child_process'
 import { spawn } from 'child_process'
-import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { AutoRgResults } from '../../types/bilbomd.js'
+import { AutoRgResults } from '../../../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -28,19 +27,13 @@ const getAutoRg = async (req: Request, res: Response) => {
       }
     })
     const upload = multer({ storage: storage })
-    upload.single('expdata')(req, res, async (err) => {
+    upload.single('dat_file')(req, res, async (err) => {
       if (err) {
         logger.error(err)
         return res.status(500).json({ message: 'Failed to upload expdata file' })
       }
 
       try {
-        const { email } = req.body
-        const foundUser = await User.findOne({ email }).exec()
-        if (!foundUser) {
-          return res.status(401).json({ message: 'No user found with that email' })
-        }
-
         const autorgResults: AutoRgResults = await spawnAutoRgCalculator(
           jobDir,
           'expdata.dat'
@@ -141,32 +134,31 @@ const spawnAutoRgCalculator = async (
     })
 
     autoRg.on('error', (error) => {
-      logger.error(`spawnAutoRgCalculator error: ${error}`)
-      reject(error)
+      const wrapped = error instanceof Error ? error : new Error(String(error))
+      logger.error(`spawnAutoRgCalculator error: ${wrapped.stack || wrapped.message}`)
+      reject(wrapped)
     })
 
     autoRg.on('exit', async (code) => {
-      // Close streams explicitly once the process exits
       logStream.end()
       errorStream.end()
 
       if (code === 0) {
         try {
-          const analysisResults = JSON.parse(
-            await fs.promises.readFile(tempOutputFile, 'utf-8')
-          )
+          const fileContent = await fs.promises.readFile(tempOutputFile, 'utf-8')
+          const analysisResults = JSON.parse(fileContent)
           logger.info(`spawnAutoRgCalculator success with exit code: ${code}`)
           resolve(analysisResults)
         } catch (parseError) {
-          logger.error(`Error parsing analysis results: ${parseError}`)
-          reject(parseError)
-        } finally {
-          // Clean up the temporary file
-          // await fs.promises.unlink(tempOutputFile)
+          const msg =
+            parseError instanceof Error ? parseError.message : String(parseError)
+          logger.error(`Error parsing autoRg output file: ${msg}`)
+          reject(new Error(`Failed to parse autoRg output: ${msg}`))
         }
       } else {
-        logger.error(`spawnAutoRgCalculator error with exit code: ${code}`)
-        reject(new Error(`spawnAutoRgCalculator error with exit code: ${code}`))
+        const message = `AutoRg exited with code ${code}. datFileName=${datFileName} tempOutput=${tempOutputFile}`
+        logger.error(`spawnAutoRgCalculator failure: ${message}`)
+        reject(new Error(message))
       }
     })
   })

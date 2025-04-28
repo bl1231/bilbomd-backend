@@ -1,8 +1,8 @@
-import { logger } from '../../middleware/loggers.js'
+import { logger } from '../../../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
 import { Job } from '@bl1231/bilbomd-mongodb-schema'
-import { BilboMDSteps } from '../../types/bilbomd.js'
+import { BilboMDSteps } from '../../../types/bilbomd.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
@@ -26,7 +26,7 @@ const writeJobParams = async (jobID: string): Promise<void> => {
 
     // Write JSON string to a file
     await fs.writeFile(paramsFilePath, jobJson)
-    console.log(`Saved params.json to ${paramsFilePath}`)
+    logger.info(`Saved params.json to ${paramsFilePath}`)
   } catch (error) {
     logger.error(`Unable to save params.json: ${error}`)
   }

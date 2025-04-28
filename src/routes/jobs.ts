@@ -1,5 +1,4 @@
 import express from 'express'
-import {} from '../controllers/jobsController.js'
 import {
   getAllJobs,
   getJobById,
@@ -9,7 +8,7 @@ import {
   downloadJobResults,
   getLogForStep
 } from '../controllers/jobs/index.js'
-import { createNewAlphaFoldJob } from '../controllers/alphafoldJobsController.js'
+// import { createNewAlphaFoldJob } from '../controllers/alphafoldJobsController.js'
 import { createNewSANSJob } from '../controllers/sansJobController.js'
 import { createNewMultiJob } from '../controllers/multiMdController.js'
 import { downloadPDB, getFoxsData } from '../controllers/downloadController.js'
@@ -33,7 +32,7 @@ router.route('/:id/check-files').get(checkFiles)
 router.route('/:id/:filename').get(getFile)
 router.route('/bilbomd-auto').post(createNewJob)
 router.route('/bilbomd-scoper').post(createNewJob)
-router.route('/bilbomd-alphafold').post(createNewAlphaFoldJob)
+router.route('/bilbomd-alphafold').post(createNewJob)
 router.route('/bilbomd-sans').post(createNewSANSJob)
 router.route('/bilbomd-multi').post(createNewMultiJob)
 

@@ -3,6 +3,9 @@ import express, { Express, Request, Response } from 'express'
 import path from 'path'
 import cors from 'cors'
 import { corsOptions } from './config/corsOptions.js'
+import { corsOptionsPublic } from './config/corsOptionsPublic.js'
+// import { loginLimiter } from './middleware/loginLimiter.js'
+import { externalApiLimiter } from './middleware/externalApiLimiter.js'
 import { logger, requestLogger, assignRequestId } from './middleware/loggers.js'
 import cookieParser from 'cookie-parser'
 import { router as adminRoutes } from './routes/admin.js'
@@ -10,7 +13,6 @@ import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn.js'
 import { CronJob } from 'cron'
 import { deleteOldJobs } from './middleware/jobCleaner.js'
-// import rootRoutes from './routes/root.js'
 import sfapiRoutes from './routes/sfapi.js'
 import registerRoutes from './routes/register.js'
 import verifyRoutes from './routes/verify.js'
@@ -23,6 +25,9 @@ import autorgRoutes from './routes/autorg.js'
 import bullmqRoutes from './routes/bullmq.js'
 import configsRoutes from './routes/configs.js'
 import statsRoutes from './routes/stats.js'
+import externalRoutes from './routes/external.js'
+import swaggerUi from 'swagger-ui-express'
+import swaggerSpecJson from './openapi/swagger.js'
 
 // Instantiate the app
 const app: Express = express()
@@ -43,6 +48,9 @@ connectDB()
 // custom middleware logger
 app.use(assignRequestId)
 app.use(requestLogger)
+
+// Rate limiting middleware
+// app.use(loginLimiter)
 
 // Cross Origin Resource Sharing
 // prevents unwanted clients from accessing our backend API.
@@ -82,9 +90,23 @@ v1Router.use('/autorg', autorgRoutes)
 v1Router.use('/bullmq', bullmqRoutes)
 v1Router.use('/configs', configsRoutes)
 v1Router.use('/stats', statsRoutes)
+v1Router.use(
+  '/external/jobs',
+  cors(corsOptionsPublic),
+  externalApiLimiter,
+  externalRoutes
+)
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
+
+//
+app.use(
+  '/api-docs',
+  cors(corsOptionsPublic),
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpecJson)
+)
 
 // Health check route
 // Define the possible MongoDB connection states

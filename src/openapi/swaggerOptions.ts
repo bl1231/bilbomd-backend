@@ -4,28 +4,31 @@ const VERSION = process.env.npm_package_version
 
 const options: swaggerJsdoc.Options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: '3.1.0',
     info: {
-      title: 'BilboMD Backend',
+      title: 'BilboMD External Backend',
       version: VERSION || 'w.t.f',
-      description: 'API documentation for bilbomd-backend'
+      description:
+        'API for external programmatic access to BilboMD job submission and results'
     },
     servers: [
       {
         url: 'https://bilbomd.bl1231.als.lbl.gov/api/v1',
-        description: 'production'
+        description: 'Beamline 12.3.1'
       },
       {
-        url: 'http://localhost:3001/api/v1',
+        url: 'https://bilbomd-nersc.bl1231.als.lbl.gov/api/v1',
+        description: 'NERSC'
+      },
+      {
+        url: 'http://localhost:3501/api/v1',
         description: 'development'
       }
     ]
   },
-  apis: ['src/controllers/*.ts']
+  apis: ['src/routes/external.ts']
 }
 
 const swaggerSpecJson = swaggerJsdoc(options)
-
-// console.log(swaggerSpecJson)
 
 export default swaggerSpecJson
