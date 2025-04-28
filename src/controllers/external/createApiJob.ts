@@ -4,7 +4,6 @@ import { createNewJob } from '../jobs/index.js'
 
 export const createApiJob = async (req: Request, res: Response) => {
   try {
-    console.log('createApiJob called')
     const user = req.apiUser
 
     if (!user) {
