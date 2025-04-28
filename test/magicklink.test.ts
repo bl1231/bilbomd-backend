@@ -10,23 +10,19 @@ describe('POST /api/v1/magicklink', () => {
   let server: any
   let confirmationCode: string
   beforeAll(async () => {
-    server = app.listen(5555, () => {
-      // console.log('test server started.'))
-    })
+    server = app.listen(0, () => {})
     const res = await request(server)
       .post('/api/v1/register')
       .send({ user: 'testuser1', email: 'testuser1@example.com' })
     confirmationCode = res.body.code
-    // console.log('cc1: ', confirmationCode)
   })
 
   afterAll(async () => {
     await User.deleteOne({ username: 'testuser1' })
     await mongoose.disconnect()
-    // await closeQueue()
     await new Promise((resolve) => server.close(resolve))
   })
-  // jest.setTimeout(5000)
+
   test('should return error if no user or email provided', async () => {
     const res = await request(server).post('/api/v1/magicklink').send({ email: '' })
     expect(res.statusCode).toBe(400)
@@ -47,7 +43,6 @@ describe('POST /api/v1/magicklink', () => {
     expect(res.body.message).toBe('Pending')
   })
   test('Should verify confirmation code and request OTP', async () => {
-    // console.log('cc2: ', confirmationCode)
     const res = await request(server)
       .post('/api/v1/verify')
       .send({ code: confirmationCode })

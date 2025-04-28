@@ -1,3 +1,4 @@
+import './mocks/mockRedis.js'
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import registerRoutes from '../src/routes/register.js'
@@ -12,13 +13,6 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// 🛠️ Add a fake "auth" middleware
-// app.use((req: Request, res: Response, next: NextFunction) => {
-//   // Very basic mock: set req.email to a test value
-//   req.email = 'testuser@example.com'
-//   next()
-// })
-// Fake auth middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
   req.apiUser = {
     email: 'testuser@example.com'
