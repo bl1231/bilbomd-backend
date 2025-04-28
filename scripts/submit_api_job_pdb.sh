@@ -17,9 +17,9 @@ set +a
 API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 
-PDB_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna_complex.pdb"
-DAT_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna_saxs.dat"
-INP_FILE="$SCRIPT_DIR/../test/data/pdb/my_const.inp"
+PDB_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna.pdb"
+DAT_FILE="$SCRIPT_DIR/../test/data/pdb/saxs-data.dat"
+INP_FILE="$SCRIPT_DIR/../test/data/pdb/const.inp"
 
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \

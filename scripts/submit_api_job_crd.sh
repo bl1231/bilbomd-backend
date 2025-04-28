@@ -17,10 +17,10 @@ set +a
 API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 
-CRD_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna_complex.crd"
-PSF_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna_complex.psf"
-DAT_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna_saxs.dat"
-INP_FILE="$SCRIPT_DIR/../test/data/crd/my_const.inp"
+CRD_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna.crd"
+PSF_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna.psf"
+DAT_FILE="$SCRIPT_DIR/../test/data/crd/saxs-data.dat"
+INP_FILE="$SCRIPT_DIR/../test/data/crd/const.inp"
 
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \

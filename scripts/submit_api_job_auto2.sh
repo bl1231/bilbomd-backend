@@ -17,9 +17,9 @@ set +a
 API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 
-PDB_FILE="$SCRIPT_DIR/../test/data/auto2/af-p13188-f1-model_v4.pdb"
-DAT_FILE="$SCRIPT_DIR/../test/data/auto2/gln4_01e_trim.dat"
-PAE_FILE="$SCRIPT_DIR/../test/data/auto2/af-p13188-f1-pae_v4.json"
+PDB_FILE="$SCRIPT_DIR/../test/data/auto2/auto2.pdb"
+DAT_FILE="$SCRIPT_DIR/../test/data/auto2/saxs-data.dat"
+PAE_FILE="$SCRIPT_DIR/../test/data/auto2/auto2-pae.json"
 
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
