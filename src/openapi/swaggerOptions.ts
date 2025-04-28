@@ -4,7 +4,7 @@ const VERSION = process.env.npm_package_version
 
 const options: swaggerJsdoc.Options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: '3.1.0',
     info: {
       title: 'BilboMD External Backend',
       version: VERSION || 'w.t.f',
