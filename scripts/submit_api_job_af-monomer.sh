@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/.env"
 set +a
 
 # API_URL="http://localhost:3501/api/v1/external/jobs"
-API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
+# API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 
 DAT_FILE="$SCRIPT_DIR/../test/data/af-mono/A_S_USP16-FL_1.dat"

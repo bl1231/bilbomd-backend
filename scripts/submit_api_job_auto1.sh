@@ -14,7 +14,7 @@ source "$SCRIPT_DIR/.env"
 set +a
 
 # API_URL="http://localhost:3501/api/v1/external/jobs"
-API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
+# API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 
 PDB_FILE="$SCRIPT_DIR/../test/data/auto1/auto1.pdb"
