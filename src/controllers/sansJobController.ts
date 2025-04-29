@@ -50,7 +50,8 @@ const createNewSANSJob = async (req: Request, res: Response) => {
       }
 
       try {
-        const { email, bilbomd_mode } = req.body
+        const { bilbomd_mode } = req.body
+        const email = req.email
 
         const foundUser = await User.findOne({ email }).exec()
 

@@ -23,14 +23,6 @@ const createNewConstFile = async (req: Request, res: Response) => {
         cb(null, jobDir)
       },
       filename: function (req, file, cb) {
-        // let newFilename
-        // if (file.fieldname === 'pdb_file') {
-        //   newFilename = 'pdb_file.pdb'
-        // } else if (file.fieldname === 'pae_file') {
-        //   newFilename = 'pae_file.json'
-        // } else {
-        //   newFilename = file.fieldname
-        // }
         cb(null, file.originalname.toLowerCase())
       }
     })
@@ -48,10 +40,12 @@ const createNewConstFile = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Failed to upload one or more files' })
       }
       try {
-        const { email, pae_power, plddt_cutoff } = req.body
+        const { pae_power, plddt_cutoff } = req.body
+        const email = req.email
         const user = await User.findOne({ email }).exec()
         if (!user) {
           res.status(401).json({ message: 'No user found with that email' })
+          return
         }
         const files = req.files as { [fieldname: string]: Express.Multer.File[] }
         const pdbFileName =
