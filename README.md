@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.19.1 (4/29/2025)
+  - Refactor new job route handles to not require email in `req.body`
 - 1.19.0 (4/28/2025)
   - Add external API endpoints to enable job submission. monitoring, and results download.
 - 1.18.1 (4/17/2025)
