@@ -7,13 +7,13 @@ import { vi, beforeAll } from 'vitest'
 import fs from 'fs-extra'
 
 beforeAll(() => {
-  vi.spyOn(console, 'log').mockImplementation(() => {})
-  vi.spyOn(console, 'info').mockImplementation(() => {})
-  vi.spyOn(console, 'warn').mockImplementation(() => {})
-  vi.spyOn(console, 'error').mockImplementation(() => {})
-  vi.spyOn(logger, 'info').mockImplementation((message: string) => {})
-  vi.spyOn(logger, 'warn').mockImplementation((message: string) => {})
-  vi.spyOn(logger, 'error').mockImplementation((message: string) => {})
+  // vi.spyOn(console, 'log').mockImplementation(() => {})
+  // vi.spyOn(console, 'info').mockImplementation(() => {})
+  // vi.spyOn(console, 'warn').mockImplementation(() => {})
+  // vi.spyOn(console, 'error').mockImplementation(() => {})
+  // vi.spyOn(logger, 'info').mockImplementation((message: string) => {})
+  // vi.spyOn(logger, 'warn').mockImplementation((message: string) => {})
+  // vi.spyOn(logger, 'error').mockImplementation((message: string) => {})
 })
 
 // Setup MongoDB Memory Server

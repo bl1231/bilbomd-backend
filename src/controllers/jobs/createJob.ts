@@ -96,7 +96,7 @@ const createNewJob = async (req: Request, res: Response) => {
       } catch (error) {
         logger.error(`Job handler error: ${error}`)
         await fs.remove(jobDir)
-        return res.status(500).json({
+        res.status(500).json({
           message: 'Job submission failed',
           error: error instanceof Error ? error.message : String(error)
         })
