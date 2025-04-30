@@ -99,10 +99,7 @@ describe('/api/v1/external/jobs', () => {
       .attach('pdb_file', pdbFilePath)
       .attach('dat_file', datFilePath)
       .attach('pae_file', paeFilePath)
-    expectSuccessfulJobResponse(
-      res,
-      'New auto Job API Test Job Auto1 successfully created'
-    )
+    expectSuccessfulJobResponse(res, 'New auto Job successfully created')
   })
   test('should submit a BilboMD classic PDB job successfully', async () => {
     const apiToken = generateApiToken()

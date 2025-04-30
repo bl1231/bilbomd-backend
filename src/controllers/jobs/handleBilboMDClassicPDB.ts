@@ -17,6 +17,8 @@ import { pdbJobSchema } from '../../validation/index.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
+const getFileStats = (filePath: string) => fs.statSync(filePath)
+
 const handleBilboMDClassicPDB = async (
   req: Request,
   res: Response,
@@ -24,7 +26,8 @@ const handleBilboMDClassicPDB = async (
   UUID: string
 ) => {
   try {
-    const isResubmission = req.body.resubmit === 'false'
+    // logger.info(`req.body: ${JSON.stringify(req.body)}`)
+    const isResubmission = req.body.resubmit === true || req.body.resubmit === 'true'
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 
@@ -47,6 +50,7 @@ const handleBilboMDClassicPDB = async (
         return
       }
       const originalDir = path.join(uploadFolder, originalJob.uuid)
+
       inpFileName = originalJob.const_inp_file
       datFileName = originalJob.data_file
       pdbFileName = originalJob.pdb_file
@@ -57,6 +61,24 @@ const handleBilboMDClassicPDB = async (
       logger.info(
         `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
       )
+      // Need to construct this synthetic Multer File object to appease validation functions.
+      datFile = {
+        originalname: datFileName,
+        path: path.join(jobDir, datFileName),
+        size: getFileStats(path.join(jobDir, datFileName)).size
+      } as Express.Multer.File
+
+      inpFile = {
+        originalname: inpFileName,
+        path: path.join(jobDir, inpFileName),
+        size: getFileStats(path.join(jobDir, inpFileName)).size
+      } as Express.Multer.File
+
+      pdbFile = {
+        originalname: pdbFileName,
+        path: path.join(jobDir, pdbFileName),
+        size: getFileStats(path.join(jobDir, pdbFileName)).size
+      } as Express.Multer.File
     } else {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] }
       pdbFile = files['pdb_file']?.[0]
@@ -100,7 +122,7 @@ const handleBilboMDClassicPDB = async (
       rg_min,
       rg_max
     }
-    logger.info(`Job payload for validation: ${JSON.stringify(jobPayload)}`)
+    // logger.info(`Job payload for validation: ${JSON.stringify(jobPayload)}`)
 
     // Validate
     try {
@@ -166,7 +188,6 @@ const handleBilboMDClassicPDB = async (
       uuid: newJob.uuid,
       jobid: newJob.id
     }
-    logger.info(`Job data for BullMQ: ${JSON.stringify(jobData)}`)
 
     // Queue the job
     const BullId = await queueJob(jobData)

@@ -7,7 +7,13 @@ import {
   waitForJobCompletion,
   pdb2crdQueueEvents
 } from '../../queues/pdb2crd.js'
-import { IUser, BilboMdAutoJob, IBilboMDAutoJob } from '@bl1231/bilbomd-mongodb-schema'
+import {
+  IUser,
+  BilboMdAutoJob,
+  IBilboMDAutoJob,
+  JobStatus,
+  StepStatus
+} from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { ValidationError } from 'yup'
 import { AutoRgResults } from '../../types/bilbomd.js'
@@ -18,6 +24,8 @@ import { autoJobSchema } from '../../validation/index.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
 
+const getFileStats = (filePath: string) => fs.statSync(filePath)
+
 const handleBilboMDAutoJob = async (
   req: Request,
   res: Response,
@@ -25,7 +33,7 @@ const handleBilboMDAutoJob = async (
   UUID: string
 ) => {
   try {
-    const isResubmission = req.body.resubmit === 'true'
+    const isResubmission = req.body.resubmit === true || req.body.resubmit === 'true'
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 
@@ -48,6 +56,7 @@ const handleBilboMDAutoJob = async (
       }
 
       const originalDir = path.join(uploadFolder, originalJob.uuid)
+
       pdbFileName = originalJob.pdb_file
       paeFileName = originalJob.pae_file
       datFileName = originalJob.data_file
@@ -58,6 +67,22 @@ const handleBilboMDAutoJob = async (
       logger.info(
         `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
       )
+      // Need to construct this synthetic Multer File object to appease validation functions.
+      pdbFile = {
+        originalname: pdbFileName,
+        path: path.join(jobDir, pdbFileName),
+        size: getFileStats(path.join(jobDir, pdbFileName)).size
+      } as Express.Multer.File
+      paeFile = {
+        originalname: paeFileName,
+        path: path.join(jobDir, paeFileName),
+        size: getFileStats(path.join(jobDir, paeFileName)).size
+      } as Express.Multer.File
+      datFile = {
+        originalname: datFileName,
+        path: path.join(jobDir, datFileName),
+        size: getFileStats(path.join(jobDir, datFileName)).size
+      } as Express.Multer.File
     } else {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] }
       pdbFile = files['pdb_file']?.[0]
@@ -86,12 +111,12 @@ const handleBilboMDAutoJob = async (
       rg_max: autorgResults.rg_max
     }
 
-    // Validate the job payload
+    // Validate
     try {
       await autoJobSchema.validate(jobPayload, { abortEarly: false })
     } catch (validationErr) {
       if (validationErr instanceof ValidationError) {
-        logger.warn('Classic PDB job payload validation failed', validationErr)
+        logger.warn('Auto job payload validation failed', validationErr)
         return res.status(400).json({
           message: 'Validation failed',
           errors: validationErr.inner?.map((err) => ({
@@ -104,9 +129,11 @@ const handleBilboMDAutoJob = async (
       }
     }
 
+    // Initialize BilboMdAuto Job Data
     const newJob: IBilboMDAutoJob = new BilboMdAutoJob({
       title: req.body.title,
       uuid: UUID,
+      status: JobStatus.Submitted,
       pdb_file: pdbFileName,
       pae_file: paeFileName,
       data_file: datFileName,
@@ -114,29 +141,28 @@ const handleBilboMDAutoJob = async (
       rg_min: autorgResults.rg_min,
       rg_max: autorgResults.rg_max,
       conformational_sampling: 3,
-      status: 'Submitted',
       time_submitted: new Date(),
       user: user,
       steps: {
-        pdb2crd: {},
-        pae: {},
-        autorg: {},
-        minimize: {},
-        initfoxs: {},
-        heat: {},
-        md: {},
-        dcd2pdb: {},
-        foxs: {},
-        multifoxs: {},
-        results: {},
-        email: {}
+        pdb2crd: { status: StepStatus.Waiting, message: '' },
+        pae: { status: StepStatus.Waiting, message: '' },
+        autorg: { status: StepStatus.Waiting, message: '' },
+        minimize: { status: StepStatus.Waiting, message: '' },
+        initfoxs: { status: StepStatus.Waiting, message: '' },
+        heat: { status: StepStatus.Waiting, message: '' },
+        md: { status: StepStatus.Waiting, message: '' },
+        dcd2pdb: { status: StepStatus.Waiting, message: '' },
+        foxs: { status: StepStatus.Waiting, message: '' },
+        multifoxs: { status: StepStatus.Waiting, message: '' },
+        results: { status: StepStatus.Waiting, message: '' },
+        email: { status: StepStatus.Waiting, message: '' }
       },
       ...(isResubmission && originalJobId ? { resubmitted_from: originalJobId } : {})
     })
 
     // Save the job to the database
     await newJob.save()
-    logger.info(`BilboMD-${req.body.bilbomd_mode} Job saved to MongoDB: ${newJob.id}`)
+    logger.info(`BilboMD-${bilbomdMode} Job saved to MongoDB: ${newJob.id}`)
 
     // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
@@ -166,19 +192,22 @@ const handleBilboMDAutoJob = async (
     newJob.crd_file = 'bilbomd_pdb2crd.crd'
     await newJob.save()
 
-    // Queue the job
-    const BullId = await queueJob({
-      type: req.body.bilbomd_mode,
+    // Create BullMQ Job object
+    const jobData = {
+      type: bilbomdMode,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
-    })
+    }
 
-    logger.info(`${req.body.bilbomd_mode} Job assigned UUID: ${newJob.uuid}`)
-    logger.info(`${req.body.bilbomd_mode} Job assigned BullMQ ID: ${BullId}`)
+    // Queue the job
+    const BullId = await queueJob(jobData)
+
+    logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
+    logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)
 
     res.status(200).json({
-      message: `New ${req.body.bilbomd_mode} Job ${newJob.title} successfully created`,
+      message: `New ${bilbomdMode} Job successfully created`,
       jobid: newJob.id,
       uuid: newJob.uuid
     })
@@ -190,7 +219,7 @@ const handleBilboMDAutoJob = async (
         ? error
         : 'Unknown error occurred'
 
-    logger.error('handleBilboMDJob error:', error)
+    logger.error('handleBilboMDAutoJob error:', error)
     res.status(500).json({ message: msg })
   }
 }
