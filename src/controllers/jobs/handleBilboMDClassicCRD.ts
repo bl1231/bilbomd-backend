@@ -11,13 +11,11 @@ import {
 } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { ValidationError } from 'yup'
-import { writeJobParams, sanitizeConstInpFile } from './utils/jobUtils.js'
+import { writeJobParams, sanitizeConstInpFile, getFileStats } from './utils/jobUtils.js'
 import { maybeAutoCalculateRg } from './utils/maybeAutoCalculateRg.js'
 import { crdJobSchema } from '../../validation/index.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
-
-const getFileStats = (filePath: string) => fs.statSync(filePath)
 
 const handleBilboMDClassicCRD = async (
   req: Request,
@@ -26,7 +24,9 @@ const handleBilboMDClassicCRD = async (
   UUID: string
 ) => {
   try {
-    const isResubmission = req.body.resubmit === true || req.body.resubmit === 'true'
+    const isResubmission = Boolean(
+      req.body.resubmit === true || req.body.resubmit === 'true'
+    )
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 

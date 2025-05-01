@@ -17,14 +17,12 @@ import {
 import { Request, Response } from 'express'
 import { ValidationError } from 'yup'
 import { AutoRgResults } from '../../types/bilbomd.js'
-import { writeJobParams } from './utils/jobUtils.js'
+import { writeJobParams, getFileStats } from './utils/jobUtils.js'
 import { spawnAutoRgCalculator } from './utils/autoRg.js'
 import fs from 'fs-extra'
 import { autoJobSchema } from '../../validation/index.js'
 
 const uploadFolder: string = path.join(process.env.DATA_VOL ?? '')
-
-const getFileStats = (filePath: string) => fs.statSync(filePath)
 
 const handleBilboMDAutoJob = async (
   req: Request,
@@ -33,7 +31,9 @@ const handleBilboMDAutoJob = async (
   UUID: string
 ) => {
   try {
-    const isResubmission = req.body.resubmit === true || req.body.resubmit === 'true'
+    const isResubmission = Boolean(
+      req.body.resubmit === true || req.body.resubmit === 'true'
+    )
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 

@@ -155,10 +155,13 @@ const calculateNumEnsembles2 = async (
   }
 }
 
+const getFileStats = (filePath: string) => fs.statSync(filePath)
+
 export {
   writeJobParams,
   wrapLine,
   sanitizeConstInpFile,
   calculateNumEnsembles,
-  calculateNumEnsembles2
+  calculateNumEnsembles2,
+  getFileStats
 }
