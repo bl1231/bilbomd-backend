@@ -11,7 +11,7 @@ import {
 } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { ValidationError } from 'yup'
-import { writeJobParams, sanitizeConstInpFile } from './utils/jobUtils.js'
+import { writeJobParams, sanitizeConstInpFile, getFileStats } from './utils/jobUtils.js'
 import { maybeAutoCalculateRg } from './utils/maybeAutoCalculateRg.js'
 import { crdJobSchema } from '../../validation/index.js'
 
@@ -24,7 +24,9 @@ const handleBilboMDClassicCRD = async (
   UUID: string
 ) => {
   try {
-    const isResubmission = req.body.resubmit === 'false'
+    const isResubmission = Boolean(
+      req.body.resubmit === true || req.body.resubmit === 'true'
+    )
     const originalJobId = req.body.original_job_id || null
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 
@@ -48,9 +50,10 @@ const handleBilboMDClassicCRD = async (
         res.status(404).json({ message: 'Original job not found' })
         return
       }
+      // logger.info(`orig job: ${JSON.stringify(originalJob)}`)
       const originalDir = path.join(uploadFolder, originalJob.uuid)
       inpFileName = originalJob.const_inp_file
-      datFileName = originalJob.dat_file
+      datFileName = originalJob.data_file
       crdFileName = originalJob.crd_file
       psfFileName = originalJob.psf_file
 
@@ -61,6 +64,27 @@ const handleBilboMDClassicCRD = async (
       logger.info(
         `Resubmission: Copied files from original job ${originalJobId} to new job ${UUID}`
       )
+      // Need to construct this synthetic Multer File object to appease validation functions.
+      crdFile = {
+        originalname: crdFileName,
+        path: path.join(jobDir, crdFileName),
+        size: getFileStats(path.join(jobDir, crdFileName)).size
+      } as Express.Multer.File
+      psfFile = {
+        originalname: psfFileName,
+        path: path.join(jobDir, psfFileName),
+        size: getFileStats(path.join(jobDir, psfFileName)).size
+      } as Express.Multer.File
+      datFile = {
+        originalname: datFileName,
+        path: path.join(jobDir, datFileName),
+        size: getFileStats(path.join(jobDir, datFileName)).size
+      } as Express.Multer.File
+      inpFile = {
+        originalname: inpFileName,
+        path: path.join(jobDir, inpFileName),
+        size: getFileStats(path.join(jobDir, inpFileName)).size
+      } as Express.Multer.File
     } else {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] }
       crdFile = files['crd_file']?.[0]
@@ -160,13 +184,16 @@ const handleBilboMDClassicCRD = async (
     // Write Job params for use by NERSC job script.
     await writeJobParams(newJob.id)
 
-    // Queue the job
-    const BullId = await queueJob({
+    // Create BullMQ Job object
+    const jobData = {
       type: bilbomdMode,
       title: newJob.title,
       uuid: newJob.uuid,
       jobid: newJob.id
-    })
+    }
+
+    // Queue the job
+    const BullId = await queueJob(jobData)
 
     logger.info(`${bilbomdMode} Job assigned UUID: ${newJob.uuid}`)
     logger.info(`${bilbomdMode} Job assigned BullMQ ID: ${BullId}`)

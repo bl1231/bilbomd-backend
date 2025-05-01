@@ -20,22 +20,22 @@ const checkFiles = async (req: Request, res: Response) => {
       return
     }
 
-    const fieldsToCheck = [
-      'psf_file',
-      'crd_file',
-      'pdb_file',
-      'const_inp_file',
-      'data_file',
-      'pae_file',
-      'fasta_file'
-    ]
+    const fieldsToCheck: Record<string, string> = {
+      psf_file: 'psf_file',
+      crd_file: 'crd_file',
+      pdb_file: 'pdb_file',
+      const_inp_file: 'inp_file',
+      data_file: 'dat_file',
+      pae_file: 'pae_file',
+      fasta_file: 'fasta_file'
+    }
     const fileStatus: Record<string, boolean> = {}
 
-    for (const field of fieldsToCheck) {
-      const relPath = (job as unknown as Partial<Record<string, string>>)[field]
+    for (const [jobField, frontendField] of Object.entries(fieldsToCheck)) {
+      const relPath = (job as unknown as Partial<Record<string, string>>)[jobField]
       if (typeof relPath === 'string' && relPath.length > 0) {
         const absPath = path.join(uploadFolder, job.uuid, relPath)
-        fileStatus[field] = await fs.pathExists(absPath)
+        fileStatus[frontendField] = await fs.pathExists(absPath)
       }
     }
 

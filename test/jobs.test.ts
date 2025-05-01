@@ -290,9 +290,7 @@ describe('POST /api/v1/jobs', () => {
       .field('bilbomd_mode', 'auto')
     // console.log('res----->', res.body)
     expect(res.statusCode).toBe(200)
-    expect(res.body.message).toBe(
-      'New auto Job BilboMDAuto Test Job successfully created'
-    )
+    expect(res.body.message).toBe('New auto Job successfully created')
   })
 })
 

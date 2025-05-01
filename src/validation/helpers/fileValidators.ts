@@ -54,7 +54,7 @@ export const saxsCheck = () =>
     'saxs-data-check',
     'File does not appear to be SAXS data',
     async function (value) {
-      const file = value as Express.Multer.File | undefined
+      const file = value as Express.Multer.File
       logger.info(`saxsCheck(): file = ${file?.originalname}, path = ${file?.path}`)
 
       if (!file?.path) {
