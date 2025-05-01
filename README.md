@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.19.2 (4/30/2025)
+  - Fix the broken resubmit functionality
 - 1.19.1 (4/29/2025)
   - Refactor new job route handles to not require email in `req.body`
 - 1.19.0 (4/28/2025)
