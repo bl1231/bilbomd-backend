@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.19.3 (5/2/2025)
+  - Fix bug in BilboMD Classic job handler when user switches job mode from PDB to CRD/PSF
+    and visa versa.
 - 1.19.2 (4/30/2025)
   - Fix the broken resubmit functionality
 - 1.19.1 (4/29/2025)
