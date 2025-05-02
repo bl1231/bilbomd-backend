@@ -7,7 +7,8 @@ import {
   IUser,
   JobStatus,
   StepStatus,
-  BilboMdCRDJob
+  BilboMdCRDJob,
+  BilboMdPDBJob
 } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { ValidationError } from 'yup'
@@ -45,7 +46,11 @@ const handleBilboMDClassicCRD = async (
     const jobDir = path.join(uploadFolder, UUID)
 
     if (isResubmission && originalJobId) {
-      const originalJob = await BilboMdCRDJob.findById(originalJobId)
+      let originalJob = await BilboMdCRDJob.findById(originalJobId)
+      if (!originalJob) {
+        originalJob = await BilboMdPDBJob.findById(originalJobId)
+      }
+
       if (!originalJob) {
         res.status(404).json({ message: 'Original job not found' })
         return
