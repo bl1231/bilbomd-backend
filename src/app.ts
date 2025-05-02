@@ -26,6 +26,7 @@ import bullmqRoutes from './routes/bullmq.js'
 import configsRoutes from './routes/configs.js'
 import statsRoutes from './routes/stats.js'
 import externalRoutes from './routes/external.js'
+import adminApiRoutes from './routes/admin-api.js'
 import swaggerUi from 'swagger-ui-express'
 import swaggerSpecJson from './openapi/swagger.js'
 
@@ -78,7 +79,7 @@ app.use('/sfapi', sfapiRoutes)
 // Group version 1 routes under /api/v1
 const v1Router = express.Router()
 
-// Register v1 routes
+// Register our v1 routes
 v1Router.use('/register', registerRoutes)
 v1Router.use('/verify', verifyRoutes)
 v1Router.use('/magicklink', magicklinkRoutes)
@@ -96,6 +97,7 @@ v1Router.use(
   externalApiLimiter,
   externalRoutes
 )
+v1Router.use('/admin', adminApiRoutes)
 
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)

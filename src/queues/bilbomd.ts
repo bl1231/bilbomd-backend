@@ -15,7 +15,7 @@ const redisOptions: RedisOptions = {
 }
 const redis = new Redis(redisOptions)
 
-let bilbomdQueue: Queue | undefined
+let bilbomdQueue: Queue
 
 const getQueue = (): Queue => {
   if (!bilbomdQueue) {
@@ -253,9 +253,11 @@ const getWorkers = async () => {
   return workers
 }
 
+const queue = getQueue()
+
 export {
   queueJob,
-  bilbomdQueue,
+  queue as bilbomdQueue,
   closeQueue,
   getWaitingJobs,
   getBullMQJob,

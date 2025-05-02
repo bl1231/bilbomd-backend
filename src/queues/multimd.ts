@@ -39,4 +39,4 @@ const queueJob = async (data: BullMQData) => {
   }
 }
 
-export { queueJob }
+export { queueJob, multimdQueue }
