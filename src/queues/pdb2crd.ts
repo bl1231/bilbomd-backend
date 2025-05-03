@@ -15,7 +15,7 @@ const redisOptions: RedisOptions = {
 
 const redis = new Redis(redisOptions)
 
-let pdb2crdQueue: Queue | undefined
+let pdb2crdQueue: Queue
 
 const getQueue = (): Queue => {
   if (!pdb2crdQueue) {

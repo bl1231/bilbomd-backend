@@ -3,11 +3,13 @@ import { Queue } from 'bullmq'
 import { bilbomdQueue } from '../../queues/bilbomd.js'
 import { scoperQueue } from '../../queues/scoper.js'
 import { multimdQueue } from '../../queues/multimd.js'
+import { pdb2crdQueue } from '../../queues/pdb2crd.js'
 
 const allQueues: Record<string, Queue> = {
   bilbomd: bilbomdQueue,
   scoper: scoperQueue,
-  multimd: multimdQueue
+  multimd: multimdQueue,
+  pdb2crd: pdb2crdQueue
 }
 
 const pauseQueue = async (req: Request, res: Response): Promise<void> => {

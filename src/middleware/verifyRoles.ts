@@ -15,7 +15,7 @@ const verifyRoles = (...allowedRoles: string[]): RequestHandler => {
       res.sendStatus(401) // Unauthorized
       return
     }
-    console.log(rolesArray)
+    // console.log(rolesArray)
     next()
   }
 }
