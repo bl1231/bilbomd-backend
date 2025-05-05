@@ -14,7 +14,7 @@ const allQueues: { [name: string]: Queue } = {
   pdb2crd: pdb2crdQueue
 }
 
-const getQueues = async (req: Request, res: Response) => {
+const getQueues = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await Promise.all(
       Object.entries(allQueues).map(async ([name, queue]) => {
