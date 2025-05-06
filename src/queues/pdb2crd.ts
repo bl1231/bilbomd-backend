@@ -81,4 +81,12 @@ const queueJob = async (data: BullMQPdb2Crd): Promise<string> => {
   }
 }
 
-export { queueJob, pdb2crdQueue, closeQueue, pdb2crdQueueEvents, waitForJobCompletion }
+const queue = getQueue()
+
+export {
+  queueJob,
+  queue as pdb2crdQueue,
+  closeQueue,
+  pdb2crdQueueEvents,
+  waitForJobCompletion
+}
