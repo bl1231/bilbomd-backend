@@ -1,16 +1,6 @@
 import { Request, Response } from 'express'
-import { Job, Queue } from 'bullmq'
-import { bilbomdQueue } from '../../queues/bilbomd.js'
-import { scoperQueue } from '../../queues/scoper.js'
-import { multimdQueue } from '../../queues/multimd.js'
-import { pdb2crdQueue } from '../../queues/pdb2crd.js'
-
-const allQueues: Record<string, Queue> = {
-  bilbomd: bilbomdQueue,
-  scoper: scoperQueue,
-  multimd: multimdQueue,
-  pdb2crd: pdb2crdQueue
-}
+import { Job } from 'bullmq'
+import { allQueues } from './allQueues.js'
 
 const retryQueueJob = async (req: Request, res: Response): Promise<void> => {
   const { queueName, jobId } = req.params

@@ -1,16 +1,5 @@
 import { Request, Response } from 'express'
-import { bilbomdQueue } from '../../queues/bilbomd.js'
-import { scoperQueue } from '../../queues/scoper.js'
-import { multimdQueue } from '../../queues/multimd.js'
-import { pdb2crdQueue } from '../../queues/pdb2crd.js'
-import { Queue } from 'bullmq'
-
-const allQueues: Record<string, Queue> = {
-  bilbomd: bilbomdQueue,
-  scoper: scoperQueue,
-  multimd: multimdQueue,
-  pdb2crd: pdb2crdQueue
-}
+import { allQueues } from './allQueues.js'
 
 const deleteQueueJob = async (req: Request, res: Response): Promise<void> => {
   const { queueName, jobId } = req.params
