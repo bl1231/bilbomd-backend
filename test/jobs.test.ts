@@ -1,4 +1,4 @@
-// Mock spawnAutoRgCalculator at the very top to avoid invoking real Python code during tests
+// Mock spawnAutoRgCalculator at the very top to avoid invoking real Python code during tests.
 vi.mock('../src/controllers/jobs/utils/autoRg.js', () => ({
   spawnAutoRgCalculator: vi.fn(() =>
     Promise.resolve({
@@ -311,38 +311,36 @@ describe('DELETE /api/v1/jobs/:id', () => {
     expect(res.statusCode).toBe(401)
     expect(res.body.message).toBe('Unauthorized')
   })
-  test('should return error if Job ID not found', async () => {
+
+  test('should return 202 if Job ID not found (still queued)', async () => {
     const token = generateAccessToken()
     const id = new mongoose.Types.ObjectId().toString()
     const res = await request(server)
       .delete(`/api/v1/jobs/${id}`)
       .set('Authorization', `Bearer ${token}`)
-    expect(res.statusCode).toBe(400)
-    expect(res.body.message).toBe('Job not found')
+    expect(res.statusCode).toBe(202)
+    expect(res.body.message).toMatch(/queued/i)
   })
-  test('should return error if directory not on disk', async () => {
+
+  test('should return 202 if directory is missing (worker will handle)', async () => {
     const token = generateAccessToken()
-    // This creates a new Job in the database
     const newJob = await createNewJob(testUser1)
     const res = await request(server)
       .delete(`/api/v1/jobs/${newJob._id}`)
       .set('Authorization', `Bearer ${token}`)
-    expect(res.statusCode).toBe(404)
-    expect(res.body.message).toBe('Directory not found on disk')
+    expect(res.statusCode).toBe(202)
+    expect(res.body.message).toMatch(/queued/i)
   })
-  test('should delete Job and return success', async () => {
+
+  test('should return 202 when Job exists and directory is present', async () => {
     const token = generateAccessToken()
-    // This creates a new Job in the database
     const newJob = await createNewJob(testUser1)
-    // Need to also create the Job on disk
     const jobDir = path.join(dataVolume, newJob.uuid)
     await fs.mkdir(jobDir, { recursive: true })
-    // console.log('newJob: ', newJob)
     const res = await request(server)
       .delete(`/api/v1/jobs/${newJob._id}`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ id: newJob._id })
-    expect(res.statusCode).toBe(200)
-    expect(res.body).toBeDefined()
+    expect(res.statusCode).toBe(202)
+    expect(res.body.message).toMatch(/queued/i)
   })
 })

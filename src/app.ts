@@ -27,6 +27,7 @@ import configsRoutes from './routes/configs.js'
 import statsRoutes from './routes/stats.js'
 import externalRoutes from './routes/external.js'
 import adminApiRoutes from './routes/admin-api.js'
+import './workers/deleteBilboMDJobsWorker.js'
 import swaggerUi from 'swagger-ui-express'
 import swaggerSpecJson from './openapi/swagger.js'
 

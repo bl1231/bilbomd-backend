@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "BilboMD External Backend",
-    "version": "1.19.3",
+    "version": "1.19.4",
     "description": "API for external programmatic access to BilboMD job submission and results"
   },
   "servers": [

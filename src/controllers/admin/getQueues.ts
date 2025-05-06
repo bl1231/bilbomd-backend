@@ -1,18 +1,5 @@
 import { Request, Response } from 'express'
-import {
-  bilbomdQueue,
-  scoperQueue,
-  multimdQueue,
-  pdb2crdQueue
-} from '../../queues/index.js'
-import { Queue } from 'bullmq'
-
-const allQueues: { [name: string]: Queue } = {
-  bilbomd: bilbomdQueue,
-  scoper: scoperQueue,
-  multimd: multimdQueue,
-  pdb2crd: pdb2crdQueue
-}
+import { allQueues } from './allQueues.js'
 
 const getQueues = async (req: Request, res: Response): Promise<void> => {
   try {
