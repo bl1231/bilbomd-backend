@@ -6,20 +6,40 @@ export const getConfigsStuff = async (req: Request, res: Response): Promise<void
   logger.info('--- getConfigsStuff ---')
 
   try {
-    // Fetch worker info
-    const { data: workerInfo } = await axios.get(
+    const workerPromise = axios.get(
       `${process.env.WORKER_SERVICE_URL || 'http://worker'}:${
         process.env.WORKER_SERVICE_PORT || 3000
-      }/config`
-    )
-    // Fetch ui info
-    const { data: uiInfo } = await axios.get(
-      `${process.env.UI_SERVICE_URL || 'http://ui'}:${
-        process.env.UI_SERVICE_PORT || 80
-      }/version-info`
+      }/config`,
+      { timeout: 3000 }
     )
 
-    // Log environment variables for debugging
+    const uiPromise = axios.get(
+      `${process.env.UI_SERVICE_URL || 'http://ui'}:${
+        process.env.UI_SERVICE_PORT || 80
+      }/version-info`,
+      { timeout: 3000 }
+    )
+
+    const [workerResult, uiResult] = await Promise.allSettled([workerPromise, uiPromise])
+
+    const workerInfo =
+      workerResult.status === 'fulfilled'
+        ? workerResult.value.data
+        : { version: 'unavailable', gitHash: 'unavailable' }
+
+    const uiInfo =
+      uiResult.status === 'fulfilled'
+        ? uiResult.value.data
+        : { version: 'unavailable', gitHash: 'unavailable' }
+
+    if (workerResult.status === 'rejected') {
+      logger.warn(`Worker service unavailable: ${workerResult.reason}`)
+    }
+    if (uiResult.status === 'rejected') {
+      logger.warn(`UI service unavailable: ${uiResult.reason}`)
+    }
+
+    // Log environment variables for debugging.
     const envVars = [
       'SFAPI_TOKEN_EXPIRES',
       'USE_NERSC',
