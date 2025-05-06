@@ -21,13 +21,15 @@ PDB_FILE="$SCRIPT_DIR/../test/data/auto1/auto1.pdb"
 DAT_FILE="$SCRIPT_DIR/../test/data/auto1/saxs-data.dat"
 PAE_FILE="$SCRIPT_DIR/../test/data/auto1/auto1-pae.json"
 
+TITLE_DATE=$(date +%m%d)
+
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
   -X POST "$API_URL"/ \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
   -F "bilbomd_mode=auto" \
-  -F "title=API Test Job Auto1" \
+  -F "title=${TITLE_DATE}-api-test-auto1" \
   -F "pdb_file=@${PDB_FILE}" \
   -F "dat_file=@${DAT_FILE}" \
   -F "pae_file=@${PAE_FILE}" )

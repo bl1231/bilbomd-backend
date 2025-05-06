@@ -21,13 +21,15 @@ PDB_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna.pdb"
 DAT_FILE="$SCRIPT_DIR/../test/data/pdb/saxs-data.dat"
 INP_FILE="$SCRIPT_DIR/../test/data/pdb/const.inp"
 
+TITLE_DATE=$(date +%m%d)
+
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
   -X POST "$API_URL"/ \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
   -F "bilbomd_mode=pdb" \
-  -F "title=API Test Job PDB" \
+  -F "title=${TITLE_DATE}-api-test-pdb" \
   -F "pdb_file=@${PDB_FILE}" \
   -F "dat_file=@${DAT_FILE}" \
   -F "inp_file=@${INP_FILE}" )

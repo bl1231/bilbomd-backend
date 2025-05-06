@@ -18,13 +18,15 @@ set +a
 DAT_FILE="$SCRIPT_DIR/../test/data/af-mono/A_S_USP16-FL_1.dat"
 SEQ_FILE="$SCRIPT_DIR/../test/data/af-mono/entities.json"
 
+TITLE_DATE=$(date +%m%d)
+
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
   -X POST "$API_URL"/ \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
   -F "bilbomd_mode=alphafold" \
-  -F "title=API Test Job AF Monomer" \
+  -F "title=${TITLE_DATE}-api-test-af-monomer" \
   -F "dat_file=@${DAT_FILE}" \
   -F "entities_json=$(< "$SEQ_FILE")" )
 

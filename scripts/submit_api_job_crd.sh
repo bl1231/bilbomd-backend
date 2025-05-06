@@ -22,13 +22,15 @@ PSF_FILE="$SCRIPT_DIR/../test/data/crd/pro_dna.psf"
 DAT_FILE="$SCRIPT_DIR/../test/data/crd/saxs-data.dat"
 INP_FILE="$SCRIPT_DIR/../test/data/crd/const.inp"
 
+TITLE_DATE=$(date +%m%d)
+
 RESPONSE_FILE=$(mktemp)
 HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
   -X POST "$API_URL"/ \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
   -F "bilbomd_mode=crd_psf" \
-  -F "title=API Test Job CRD" \
+  -F "title=${TITLE_DATE}-api-test-crd" \
   -F "crd_file=@${CRD_FILE}" \
   -F "psf_file=@${PSF_FILE}" \
   -F "dat_file=@${DAT_FILE}" \
