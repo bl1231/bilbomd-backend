@@ -94,6 +94,10 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.19.4 (5/6/2025)
+  - Refactor the Admin panel
+  - Add better BullMQ Queue monitoring and control
+  - Fix bug in `getConfigsStuff` that would prevent the ui from loading when workers were unresponsive to axis.get
 - 1.19.3 (5/2/2025)
   - Fix bug in BilboMD Classic job handler when user switches job mode from PDB to CRD/PSF
     and visa versa.
