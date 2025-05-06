@@ -33,10 +33,18 @@ export const getConfigsStuff = async (req: Request, res: Response): Promise<void
         : { version: 'unavailable', gitHash: 'unavailable' }
 
     if (workerResult.status === 'rejected') {
-      logger.warn(`Worker service unavailable: ${workerResult.reason}`)
+      logger.warn(
+        `Worker service unavailable: ${workerResult.reason?.message || workerResult.reason}. ` +
+        `Status: ${workerResult.reason?.response?.status || 'unknown'}. ` +
+        `Stack: ${workerResult.reason?.stack || 'not available'}.`
+      )
     }
     if (uiResult.status === 'rejected') {
-      logger.warn(`UI service unavailable: ${uiResult.reason}`)
+      logger.warn(
+        `UI service unavailable: ${uiResult.reason?.message || uiResult.reason}. ` +
+        `Status: ${uiResult.reason?.response?.status || 'unknown'}. ` +
+        `Stack: ${uiResult.reason?.stack || 'not available'}.`
+      )
     }
 
     // Log environment variables for debugging.
