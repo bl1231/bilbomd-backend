@@ -1,4 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc'
+// import { version } from '../../package.json'
 
 const VERSION = process.env.npm_package_version
 
@@ -6,7 +7,7 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.1.0',
     info: {
-      title: 'BilboMD External Backend',
+      title: 'BilboMD API Docs',
       version: VERSION || 'w.t.f',
       description:
         'API for external programmatic access to BilboMD job submission and results'

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "BilboMD External Backend",
+    "title": "BilboMD API Docs",
     "version": "1.19.4",
     "description": "API for external programmatic access to BilboMD job submission and results"
   },
@@ -24,7 +24,7 @@
       "post": {
         "summary": "Submit a new job",
         "tags": [
-          "External"
+          "Jobs"
         ],
         "security": [
           {
@@ -240,7 +240,7 @@
       "get": {
         "summary": "Get job status",
         "tags": [
-          "External"
+          "Jobs"
         ],
         "security": [
           {
@@ -309,7 +309,7 @@
       "get": {
         "summary": "Download job results as a tarball archive",
         "tags": [
-          "External"
+          "Jobs"
         ],
         "security": [
           {

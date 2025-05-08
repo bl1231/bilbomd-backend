@@ -20,7 +20,7 @@ router.get('/', (req, res) => {
  * /external/jobs:
  *   post:
  *     summary: Submit a new job
- *     tags: [External]
+ *     tags: [Jobs]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -151,7 +151,7 @@ router.post('/', createApiJob)
  * /external/jobs/{id}/status:
  *   get:
  *     summary: Get job status
- *     tags: [External]
+ *     tags: [Jobs]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -196,7 +196,7 @@ router.get('/:id/status', getApiJobStatus)
  * /external/jobs/{id}/results:
  *   get:
  *     summary: Download job results as a tarball archive
- *     tags: [External]
+ *     tags: [Jobs]
  *     security:
  *       - bearerAuth: []
  *     parameters:

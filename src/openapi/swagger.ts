@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import m2s from 'mongoose-to-swagger'
 import swaggerSpecJson from './swaggerOptions.js'
-import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { BilboMdJob } from '@bl1231/bilbomd-mongodb-schema'
-import fs from 'fs'
+import { User, BilboMdJob } from '@bl1231/bilbomd-mongodb-schema'
+import fs from 'fs-extra'
 import path from 'path'
 
 interface SwaggerSpec {
@@ -156,5 +155,16 @@ swaggerSpec.security = [{ bearerAuth: [] }]
 
 export default swaggerSpec
 
-const outputPath = path.resolve('src/openapi/v1/swagger_v1.json')
-fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err)
+  process.exit(1)
+})
+
+try {
+  const outputPath = path.resolve('src/openapi/v1/swagger_v1.json')
+  fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
+  console.log(`Swagger file written to ${outputPath}`)
+} catch (err) {
+  console.error('Failed to write Swagger JSON:', err)
+  process.exit(1)
+}

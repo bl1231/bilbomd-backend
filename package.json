@@ -17,7 +17,6 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "server": "nodemon .",
-    "swagger": "npx ts-node src/openapi/swagger.ts",
     "prepare": "husky"
   },
   "dependencies": {

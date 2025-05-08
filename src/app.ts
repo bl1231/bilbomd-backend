@@ -29,7 +29,7 @@ import externalRoutes from './routes/external.js'
 import adminApiRoutes from './routes/admin-api.js'
 import './workers/deleteBilboMDJobsWorker.js'
 import swaggerUi from 'swagger-ui-express'
-import swaggerSpecJson from './openapi/swagger.js'
+import swaggerSpec from './openapi/swagger.js'
 
 // Instantiate the app
 const app: Express = express()
@@ -108,7 +108,7 @@ app.use(
   '/api-docs',
   cors(corsOptionsPublic),
   swaggerUi.serve,
-  swaggerUi.setup(swaggerSpecJson)
+  swaggerUi.setup(swaggerSpec)
 )
 
 // Health check route
