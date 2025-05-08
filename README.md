@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.20.0 (5/8/2025)
+  - Add dedicated BullMQ queue for deleteing BilboMD jobs
+  - Some refactoring of swagger API documentation
 - 1.19.4 (5/6/2025)
   - Refactor the Admin panel
   - Add better BullMQ Queue monitoring and control
