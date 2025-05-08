@@ -103,13 +103,19 @@ v1Router.use('/admin', adminApiRoutes)
 // Apply v1Router under /api/v1
 app.use('/api/v1', v1Router)
 
-//
+// Route to dynamically serve our Swagger API documentation
 app.use(
   '/api-docs',
   cors(corsOptionsPublic),
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec)
 )
+
+// Serve the Swagger docs in JSON format
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json')
+  res.status(200).json(swaggerSpec)
+})
 
 // Health check route
 // Define the possible MongoDB connection states
