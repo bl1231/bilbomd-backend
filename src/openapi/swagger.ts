@@ -2,6 +2,7 @@
 import m2s from 'mongoose-to-swagger'
 import swaggerSpecJson from './swaggerOptions.js'
 import { User, BilboMdJob } from '@bl1231/bilbomd-mongodb-schema'
+import { logger } from '../middleware/loggers.js'
 import fs from 'fs-extra'
 import path from 'path'
 
@@ -155,16 +156,13 @@ swaggerSpec.security = [{ bearerAuth: [] }]
 
 export default swaggerSpec
 
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught exception:', err)
-  process.exit(1)
-})
-
+// My understanding is that this json file is written purely as an archival or
+// historical record of the API. It is not used by the application at runtime.
 try {
   const outputPath = path.resolve('src/openapi/v1/swagger_v1.json')
   fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
-  console.log(`Swagger file written to ${outputPath}`)
+  logger.info(`Swagger file written to ${outputPath}`)
 } catch (err) {
-  console.error('Failed to write Swagger JSON:', err)
+  logger.error('Failed to write Swagger JSON:', err)
   process.exit(1)
 }
