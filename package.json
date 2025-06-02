@@ -20,7 +20,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@bl1231/bilbomd-mongodb-schema": "^1.7.0",
+    "@bl1231/bilbomd-mongodb-schema": "^1.7.1",
     "@bull-board/api": "^6.9.6",
     "@bull-board/express": "^6.9.6",
     "@types/swagger-ui-express": "^4.1.8",

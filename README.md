@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.20.2 (6/2/2025)
+  - Update dependencies
 - 1.20.1 (5/13/2025)
   - Add better `rg_min` calculation for SAXS datasets with "low" Rg values.
 - 1.20.0 (5/8/2025)
