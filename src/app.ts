@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser'
 import { router as adminRoutes } from './routes/admin.js'
 import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn.js'
+import { initOrcidClient } from './controllers/auth/orcidClientConfig.js'
 import { CronJob } from 'cron'
 import { deleteOldJobs } from './middleware/jobCleaner.js'
 import sfapiRoutes from './routes/sfapi.js'
@@ -46,6 +47,9 @@ app.set('trust proxy', 1)
 
 // Connect to MongoDB
 connectDB()
+
+// Initialize the ORCID client configuration
+await initOrcidClient()
 
 // custom middleware logger
 app.use(assignRequestId)

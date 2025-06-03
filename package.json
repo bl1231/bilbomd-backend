@@ -45,6 +45,7 @@
     "multer": "^2.0.0",
     "nodemailer": "^7.0.3",
     "nodemailer-express-handlebars": "^7.0.0",
+    "openid-client": "6.5",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "typescript": "^5.8.3",
