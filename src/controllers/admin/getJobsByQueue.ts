@@ -17,14 +17,19 @@ const getJobsByQueue = async (req: Request, res: Response): Promise<void> => {
       49
     )
 
-    const jobSummaries = jobs.map((job) => ({
-      id: job.id,
-      name: job.name,
-      data: job.data,
-      status: job.finishedOn ? 'completed' : job.failedReason ? 'failed' : job.state,
-      timestamp: job.timestamp,
-      attemptsMade: job.attemptsMade
-    }))
+    const jobSummaries = await Promise.all(
+      jobs.map(async (job) => {
+        const state = await job.getState()
+        return {
+          id: job.id,
+          name: job.name,
+          data: job.data,
+          status: job.finishedOn ? 'completed' : job.failedReason ? 'failed' : state,
+          timestamp: job.timestamp,
+          attemptsMade: job.attemptsMade
+        }
+      })
+    )
 
     res.status(200).json({ queueName, jobs: jobSummaries })
   } catch (error) {
