@@ -1,19 +1,8 @@
-import { Redis, RedisOptions } from 'ioredis'
 import { Job as BullMQJob, Queue } from 'bullmq'
 import { logger } from '../middleware/loggers.js'
 import { BilboMDBullMQ, BullMQData, BilboMDSteps } from '../types/bilbomd.js'
 import { config } from '../config/config.js'
-
-const redisOptions: RedisOptions = {
-  port:
-    process.env.REDIS_PORT && !isNaN(parseInt(process.env.REDIS_PORT, 10))
-      ? parseInt(process.env.REDIS_PORT, 10)
-      : 6379,
-  host: process.env.REDIS_HOST || 'localhost',
-  // password: process.env.REDIS_PASSWORD || '',
-  tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
-}
-const redis = new Redis(redisOptions)
+import { redis } from './redisConn.js'
 
 let bilbomdQueue: Queue
 
@@ -32,7 +21,7 @@ const getQueue = (): Queue => {
 const closeQueue = async () => {
   const queue = getQueue()
   await queue.close()
-  await redis.quit() // Disconnect from Redis
+  await redis.quit()
 }
 
 const queueJob = async (data: BullMQData) => {

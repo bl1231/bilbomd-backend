@@ -9,6 +9,7 @@ import { getJobsByQueue } from '../controllers/admin/getJobsByQueue.js'
 import retryQueueJob from '../controllers/admin/retryQueueJob.js'
 import deleteQueueJob from '../controllers/admin/deleteQueueJob.js'
 import drainQueue from '../controllers/admin/drainQueue.js'
+import failQueueJob from '../controllers/admin/failQueueJob.js'
 router.use(verifyJWT)
 router.use(verifyRoles('Admin', 'Manager'))
 
@@ -19,5 +20,6 @@ router.post('/queues/:queueName/drain', drainQueue)
 router.get('/queues/:queueName/jobs', getJobsByQueue)
 router.post('/queues/:queueName/jobs/:jobId/retry', retryQueueJob)
 router.delete('/queues/:queueName/jobs/:jobId', deleteQueueJob)
+router.post('/queues/:queueName/jobs/:jobId/fail', failQueueJob)
 
 export default router
