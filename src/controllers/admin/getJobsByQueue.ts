@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { allQueues } from './allQueues.js'
+import { redis as redisConn } from '../../queues/redisConn.js'
 
 const getJobsByQueue = async (req: Request, res: Response): Promise<void> => {
   const { queueName } = req.params
@@ -20,13 +21,22 @@ const getJobsByQueue = async (req: Request, res: Response): Promise<void> => {
     const jobSummaries = await Promise.all(
       jobs.map(async (job) => {
         const state = await job.getState()
+
+        let lockExpiresAt: number | null = null
+        const lockKey = `bull:${queueName}:${job.id}:lock`
+        const ttl = await redisConn.pttl(lockKey) // returns milliseconds or -1/-2
+        if (ttl > 0) {
+          lockExpiresAt = Date.now() + ttl
+        }
+
         return {
           id: job.id,
           name: job.name,
           data: job.data,
           status: job.finishedOn ? 'completed' : job.failedReason ? 'failed' : state,
           timestamp: job.timestamp,
-          attemptsMade: job.attemptsMade
+          attemptsMade: job.attemptsMade,
+          lockExpiresAt
         }
       })
     )
