@@ -1,39 +1,37 @@
-import { Redis, RedisOptions } from 'ioredis'
 import { Job as BullMQJob, Queue } from 'bullmq'
 import { logger } from '../middleware/loggers.js'
 import { BilboMDBullMQ, BullMQData, BilboMDScoperSteps } from '../types/bilbomd.js'
 import { config } from '../config/config.js'
+import { redis } from './redisConn.js'
 
-const redisOptions: RedisOptions = {
-  port:
-    process.env.REDIS_PORT && !isNaN(parseInt(process.env.REDIS_PORT, 10))
-      ? parseInt(process.env.REDIS_PORT, 10)
-      : 6379,
-  host: process.env.REDIS_HOST || 'localhost',
-  // password: process.env.REDIS_PASSWORD || '',
-  tls: process.env.REDIS_TLS ? JSON.parse(process.env.REDIS_TLS) : false
-}
-const redis = new Redis(redisOptions)
+let scoperQueue: Queue
 
-const scoperQueue = new Queue('bilbomd-scoper', {
-  connection: redis,
-  defaultJobOptions: {
-    attempts: config.bullmqAttempts
+const getQueue = (): Queue => {
+  if (!scoperQueue) {
+    scoperQueue = new Queue('scoper', {
+      connection: redis,
+      defaultJobOptions: {
+        attempts: config.bullmqAttempts
+      }
+    })
   }
-})
+  return scoperQueue
+}
 
 const closeQueue = async () => {
-  await scoperQueue.close()
-  redis.disconnect()
+  const queue = getQueue()
+  await queue.close()
+  await redis.quit()
 }
 
 const queueScoperJob = async (data: BullMQData) => {
   try {
+    const queue = getQueue()
     logger.info(
       `${data.type} Job ${data.title} about to be added to ${scoperQueue.name} queue`
     )
 
-    const bullJob = await scoperQueue.add(data.title, data)
+    const bullJob = await queue.add(data.title, data)
 
     // logger.info(`${data.type} Job added with Job ID: ${bullJob.id}`)
 
@@ -218,9 +216,11 @@ const getWorkers = async () => {
   return workers
 }
 
+const queue = getQueue()
+
 export {
   queueScoperJob,
-  scoperQueue,
+  queue as scoperQueue,
   closeQueue,
   getWaitingJobs,
   getBullMQScoperJob,

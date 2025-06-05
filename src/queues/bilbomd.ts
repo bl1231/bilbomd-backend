@@ -21,7 +21,7 @@ const getQueue = (): Queue => {
 const closeQueue = async () => {
   const queue = getQueue()
   await queue.close()
-  await redis.quit() // Disconnect from Redis
+  await redis.quit()
 }
 
 const queueJob = async (data: BullMQData) => {
