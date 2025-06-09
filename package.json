@@ -87,6 +87,6 @@
     "supertest": "^7.1.1",
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.33.1",
-    "vitest": "^3.2.2"
+    "vitest": "^3.2.3"
   }
 }
