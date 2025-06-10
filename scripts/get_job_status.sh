@@ -11,8 +11,6 @@ set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-# API_URL="http://localhost:3501/api/v1/external/jobs"
-API_URL="https://bilbomd-nersc-dev.bl1231.als.lbl.gov/api/v1/external/jobs"
 
 JOB_ID="$1"
 

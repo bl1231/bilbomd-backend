@@ -11,8 +11,6 @@ set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-API_URL="http://localhost:3501/api/v1/external/jobs"
-
 JOB_ID="$1"
 
 if [ -z "$JOB_ID" ]; then
