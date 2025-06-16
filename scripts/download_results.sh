@@ -36,7 +36,7 @@ if [ -n "$FILENAME" ]; then
   awk "NR >= $BODY_START" "$RESPONSE" > "$FILENAME"
   echo "✅ File saved as: $FILENAME"
 else
-  echo "⚠️ Could not determine filename from response headers."
+  # echo "⚠️ Could not determine filename from response headers."
   BODY=$(awk "NR >= $BODY_START" "$RESPONSE")
   
   # Try to parse and pretty-print as JSON
