@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { clientConfig, discovered } from './orcidClientConfig'
+import { clientConfig, discovered } from './orcidClientConfig.js'
 import { buildAuthorizationUrl, randomState, randomNonce } from 'openid-client'
 import { logger } from '../../middleware/loggers.js'
 

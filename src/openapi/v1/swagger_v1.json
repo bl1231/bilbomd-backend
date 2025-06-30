@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "BilboMD API Docs",
-    "version": "1.20.1",
+    "version": "1.20.5",
     "description": "API for external programmatic access to BilboMD job submission and results"
   },
   "servers": [
@@ -433,6 +433,20 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "oauth": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "provider"
+              ]
             }
           },
           "refreshToken": {

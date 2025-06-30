@@ -6,8 +6,8 @@ import {
   UserInfoResponse
 } from 'openid-client'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { issueTokensAndSetCookie } from './authTokens'
-import { discovered } from './orcidClientConfig'
+import { issueTokensAndSetCookie } from './authTokens.js'
+import { discovered } from './orcidClientConfig.js'
 import { logger } from '../../middleware/loggers.js'
 
 interface GetCurrentUrl {
