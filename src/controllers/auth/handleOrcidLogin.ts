@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { clientConfig, discovered } from './orcidClientConfig'
 import { buildAuthorizationUrl, randomState, randomNonce } from 'openid-client'
+import { logger } from '../../middleware/loggers.js'
 
 export async function handleOrcidLogin(req: Request, res: Response) {
   const state = randomState()
@@ -27,6 +28,8 @@ export async function handleOrcidLogin(req: Request, res: Response) {
     state,
     nonce
   })
+
+  logger.info(`Redirecting to ORCID login: ${authUrl.toString()}`)
 
   res.redirect(authUrl.toString())
 }

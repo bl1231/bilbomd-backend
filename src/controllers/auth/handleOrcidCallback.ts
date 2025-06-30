@@ -8,6 +8,7 @@ import {
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { issueTokensAndSetCookie } from './authTokens'
 import { discovered } from './orcidClientConfig'
+import { logger } from '../../middleware/loggers.js'
 
 interface GetCurrentUrl {
   (...args: unknown[]): URL
@@ -38,6 +39,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       tokenSet.access_token!,
       'ORCID'
     )
+    logger.info('ORCID user info:', userinfo)
 
     let user = await User.findOne({ 'oauth.provider': 'orcid', 'oauth.id': userinfo.sub })
 
