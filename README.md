@@ -94,6 +94,11 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.20.5 (6/16/2025)
+  - Updates to API test scripts
+- 1.20.3 (6/5/2025)
+  - Refactor Redis connection to keep code DRY
+  - Improve BullMQ state info passed to frontend DataGrid
 - 1.20.2 (6/2/2025)
   - Update dependencies
 - 1.20.1 (5/13/2025)

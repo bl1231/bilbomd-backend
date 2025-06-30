@@ -4,7 +4,7 @@ import { logger } from './loggers.js'
 
 const externalApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP or token to 100 requests per window
+  max: 100, // Limit each IP or token to 100 requests per window
   message: {
     message: 'Too many requests from this IP or token, please try again later.'
   },

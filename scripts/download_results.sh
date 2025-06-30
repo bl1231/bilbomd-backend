@@ -11,8 +11,6 @@ set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-API_URL="http://localhost:3501/api/v1/external/jobs"
-
 JOB_ID="$1"
 
 if [ -z "$JOB_ID" ]; then
@@ -38,8 +36,15 @@ if [ -n "$FILENAME" ]; then
   awk "NR >= $BODY_START" "$RESPONSE" > "$FILENAME"
   echo "✅ File saved as: $FILENAME"
 else
-  echo "⚠️ Could not determine filename from response headers."
-  awk "NR >= $BODY_START" "$RESPONSE"
+  # echo "⚠️ Could not determine filename from response headers."
+  BODY=$(awk "NR >= $BODY_START" "$RESPONSE")
+  
+  # Try to parse and pretty-print as JSON
+  if echo "$BODY" | jq . >/dev/null 2>&1; then
+    echo "$BODY" | jq .
+  else
+    echo "$BODY"
+  fi
 fi
 
 rm -f "$RESPONSE"
