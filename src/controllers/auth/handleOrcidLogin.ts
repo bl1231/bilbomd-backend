@@ -12,12 +12,14 @@ export async function handleOrcidLogin(req: Request, res: Response) {
     secure: true,
     sameSite: 'strict'
   })
+
   res.cookie('orcid_oauth_nonce', nonce, {
     httpOnly: true,
     secure: true,
     sameSite: 'strict'
   })
-  const url = buildAuthorizationUrl(discovered, {
+
+  const authUrl: URL = buildAuthorizationUrl(discovered, {
     client_id: clientConfig.client_id,
     redirect_uri: clientConfig.redirect_uri,
     response_type: clientConfig.response_types[0],
@@ -26,5 +28,5 @@ export async function handleOrcidLogin(req: Request, res: Response) {
     nonce
   })
 
-  res.redirect(url.toString())
+  res.redirect(authUrl.toString())
 }

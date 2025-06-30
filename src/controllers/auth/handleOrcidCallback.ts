@@ -1,8 +1,17 @@
 import { Request, Response } from 'express'
-import { authorizationCodeGrant, fetchUserInfo } from 'openid-client'
+import {
+  authorizationCodeGrant,
+  fetchUserInfo,
+  TokenEndpointResponse,
+  UserInfoResponse
+} from 'openid-client'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { issueTokensAndSetCookie } from './authTokens'
-import { discovered, clientConfig } from './orcidClientConfig'
+import { discovered } from './orcidClientConfig'
+
+interface GetCurrentUrl {
+  (...args: unknown[]): URL
+}
 
 export async function handleOrcidCallback(req: Request, res: Response) {
   const code = typeof req.query.code === 'string' ? req.query.code : undefined
@@ -15,24 +24,19 @@ export async function handleOrcidCallback(req: Request, res: Response) {
   }
 
   try {
-    const tokenSet = await authorizationCodeGrant(
+    let getCurrentUrl!: GetCurrentUrl
+
+    const tokenSet: TokenEndpointResponse = await authorizationCodeGrant(
       discovered,
-      {
-        code,
-        redirect_uri: clientConfig.redirect_uri
-      },
-      {
-        client_id: clientConfig.client_id,
-        client_secret: clientConfig.client_secret
-      }
+      getCurrentUrl(),
+      { expectedState: state }
     )
 
-    const userinfoEndpoint = discovered.server
-
-    const userinfo = await fetchUserInfo(
-      userinfoEndpoint,
+    // Fetch user info from ORCID using the access token
+    const userinfo: UserInfoResponse = await fetchUserInfo(
+      discovered,
       tokenSet.access_token!,
-      tokenSet.claims().sub
+      'ORCID'
     )
 
     let user = await User.findOne({ 'oauth.provider': 'orcid', 'oauth.id': userinfo.sub })
