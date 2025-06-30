@@ -9,8 +9,8 @@ export const clientConfig = {
   client_id: process.env.ORCID_CLIENT_ID!,
   client_secret: process.env.ORCID_CLIENT_SECRET!,
   redirect_uri: process.env.ORCID_REDIRECT_URI!,
-  response_types: ['code'],
-  scope: 'openid email profile'
+  response_types: 'code',
+  scope: 'openid'
 }
 
 export let discovered: Configuration
