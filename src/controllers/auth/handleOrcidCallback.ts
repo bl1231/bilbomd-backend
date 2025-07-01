@@ -22,8 +22,8 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
   try {
     const currentUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
-    logger.info('Handling ORCID callback with code:', code, 'and state:', state)
-    logger.info('Current URL:', currentUrl.toString())
+    logger.info(`Handling ORCID callback with code: ${code}, and state: ${state}`)
+    logger.info(`Current URL: ${currentUrl.toString()}`)
     const tokenSet: TokenEndpointResponse = await authorizationCodeGrant(
       discovered,
       currentUrl,
@@ -32,7 +32,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       }
     )
 
-    logger.info('Received tokenSet:', tokenSet)
+    logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
     const claims = tokenSet.claims
     if (
