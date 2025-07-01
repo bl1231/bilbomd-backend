@@ -11,13 +11,13 @@ export async function handleOrcidLogin(req: Request, res: Response) {
   res.cookie('orcid_oauth_state', state, {
     httpOnly: true,
     secure: true,
-    sameSite: 'strict'
+    sameSite: 'lax'
   })
 
   res.cookie('orcid_oauth_nonce', nonce, {
     httpOnly: true,
     secure: true,
-    sameSite: 'strict'
+    sameSite: 'lax'
   })
 
   const authUrl: URL = buildAuthorizationUrl(discovered, {

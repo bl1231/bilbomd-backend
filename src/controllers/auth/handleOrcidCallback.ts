@@ -38,7 +38,8 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       typeof (claims as { sub?: unknown }).sub !== 'string'
     ) {
       logger.error('Missing or invalid sub in token claims:', claims)
-      return res.status(400).send('Invalid ID token from ORCID')
+      res.status(400).send('Invalid ID token from ORCID')
+      return
     }
 
     const userinfo: UserInfoResponse = await fetchUserInfo(
