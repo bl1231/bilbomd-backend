@@ -67,18 +67,21 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     const accessToken = await issueTokensAndSetCookie(user, res)
     res.redirect(`/welcome?token=${accessToken}`)
   } catch (err: unknown) {
-    if (
-      typeof err === 'object' &&
-      err !== null &&
-      'response' in err &&
-      typeof (err as { response?: { text?: () => Promise<string> } }).response?.text ===
-        'function'
-    ) {
-      const errorText = await (
-        err as { response: { text: () => Promise<string> } }
-      ).response.text()
-      logger.error('ORCID token exchange error body:', errorText)
+    if (typeof err === 'object' && err !== null && 'response' in err) {
+      const response = (err as { response?: { text?: () => Promise<string> } }).response
+
+      if (response && typeof response.text === 'function') {
+        try {
+          const errorText = await response.text()
+          logger.error('ORCID token exchange error body:', errorText)
+        } catch (readErr) {
+          logger.warn('Could not read error response body from ORCID', readErr)
+        }
+      } else {
+        logger.warn('ORCID error response exists but has no .text() method:', response)
+      }
     }
+
     logger.error('ORCID callback error:', err)
     res.status(500).send('Authentication failed')
   }
