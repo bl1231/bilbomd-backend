@@ -7,7 +7,7 @@ export const clientConfig = {
   client_secret: process.env.ORCID_CLIENT_SECRET!,
   redirect_uri: process.env.ORCID_REDIRECT_URI!,
   response_types: ['code'],
-  scope: 'openid /read-limited'
+  scope: 'openid'
 }
 
 export let discovered: Configuration
