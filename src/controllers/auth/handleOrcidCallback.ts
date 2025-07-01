@@ -22,13 +22,15 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
   try {
     const currentUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
+    logger.info('Handling ORCID callback with code:', code, 'and state:', state)
+    logger.info('Current URL:', currentUrl.toString())
     const tokenSet: TokenEndpointResponse = await authorizationCodeGrant(
       discovered,
       currentUrl,
       { expectedState: state }
     )
 
-    logger.debug('Received tokenSet:', tokenSet)
+    logger.info('Received tokenSet:', tokenSet)
 
     const claims = tokenSet.claims
     if (
@@ -47,7 +49,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       tokenSet.access_token!,
       (claims as { sub: string }).sub
     )
-    logger.debug('ORCID user info:', userinfo)
+    logger.info('ORCID user info:', userinfo)
 
     let user = await User.findOne({ 'oauth.provider': 'orcid', 'oauth.id': userinfo.sub })
 
