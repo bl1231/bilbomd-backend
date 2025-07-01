@@ -27,7 +27,9 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     const tokenSet: TokenEndpointResponse = await authorizationCodeGrant(
       discovered,
       currentUrl,
-      { expectedState: state }
+      {
+        expectedState: state
+      }
     )
 
     logger.info('Received tokenSet:', tokenSet)
