@@ -10,10 +10,6 @@ import { issueTokensAndSetCookie } from './authTokens.js'
 import { discovered } from './orcidClientConfig.js'
 import { logger } from '../../middleware/loggers.js'
 
-interface GetCurrentUrl {
-  (...args: unknown[]): URL
-}
-
 export async function handleOrcidCallback(req: Request, res: Response) {
   const code = typeof req.query.code === 'string' ? req.query.code : undefined
   const state = typeof req.query.state === 'string' ? req.query.state : undefined
@@ -25,11 +21,10 @@ export async function handleOrcidCallback(req: Request, res: Response) {
   }
 
   try {
-    let getCurrentUrl!: GetCurrentUrl
-
+    const currentUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
     const tokenSet: TokenEndpointResponse = await authorizationCodeGrant(
       discovered,
-      getCurrentUrl(),
+      currentUrl,
       { expectedState: state }
     )
 
