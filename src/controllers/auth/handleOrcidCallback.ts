@@ -1,9 +1,9 @@
 import { Request, Response } from 'express'
-import { UserInfoResponse, fetchUserInfo } from 'openid-client'
+// import { UserInfoResponse, fetchUserInfo } from 'openid-client'
 import axios from 'axios'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { issueTokensAndSetCookie } from './authTokens.js'
-import { discovered } from './orcidClientConfig.js'
+// import { discovered } from './orcidClientConfig.js'
 import { logger } from '../../middleware/loggers.js'
 
 export async function handleOrcidCallback(req: Request, res: Response) {
@@ -44,20 +44,30 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
     logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
-    const claims = tokenSet
-    if (!claims || typeof claims !== 'object' || typeof claims.orcid !== 'string') {
-      logger.error('Missing or invalid ORCID iD in token response:', claims)
-      res.status(400).send('Invalid token response from ORCID')
-      return
-    }
+    const userinfoRes = await axios.get('https://orcid.org/oauth/userinfo', {
+      headers: {
+        Authorization: `Bearer ${tokenSet.access_token}`,
+        Accept: 'application/json'
+      }
+    })
+    const userinfo = userinfoRes.data
 
-    const userinfo: UserInfoResponse = await fetchUserInfo(
-      discovered,
-      tokenSet.access_token!,
-      claims.orcid
-    )
+    logger.info(`ORCID user info (via axios): ${JSON.stringify(userinfo)}`)
 
-    logger.info(`ORCID user info: ${JSON.stringify(userinfo)}`)
+    // const claims = tokenSet
+    // if (!claims || typeof claims !== 'object' || typeof claims.orcid !== 'string') {
+    //   logger.error('Missing or invalid ORCID iD in token response:', claims)
+    //   res.status(400).send('Invalid token response from ORCID')
+    //   return
+    // }
+
+    // const userinfo: UserInfoResponse = await fetchUserInfo(
+    //   discovered,
+    //   tokenSet.access_token!,
+    //   claims.orcid
+    // )
+
+    // logger.info(`ORCID user info: ${JSON.stringify(userinfo)}`)
 
     let user = await User.findOne({ 'oauth.provider': 'orcid', 'oauth.id': userinfo.sub })
 
