@@ -1,6 +1,5 @@
 import { discovery, Configuration } from 'openid-client'
 
-// const ORCID_ISSUER = new URL('https://orcid.org')
 const ORCID_ISSUER = new URL(process.env.ORCID_ISSUER || 'https://orcid.org')
 
 export const clientConfig = {
