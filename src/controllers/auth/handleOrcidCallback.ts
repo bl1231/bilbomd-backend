@@ -1,10 +1,6 @@
 import { Request, Response } from 'express'
-import {
-  authorizationCodeGrant,
-  TokenEndpointResponse,
-  UserInfoResponse,
-  fetchUserInfo
-} from 'openid-client'
+import { UserInfoResponse, fetchUserInfo } from 'openid-client'
+import axios from 'axios'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { issueTokensAndSetCookie } from './authTokens.js'
 import { discovered } from './orcidClientConfig.js'
@@ -21,35 +17,44 @@ export async function handleOrcidCallback(req: Request, res: Response) {
   }
 
   try {
-    const currentUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
     logger.info(`Handling ORCID callback with code: ${code}, and state: ${state}`)
-    logger.info(`Current URL: ${currentUrl.toString()}`)
-    const tokenSet: TokenEndpointResponse = await authorizationCodeGrant(
-      discovered,
-      currentUrl,
+
+    const redirect_uri = process.env.ORCID_REDIRECT_URI!
+    const tokenRes = await axios.post(
+      'https://orcid.org/oauth/token',
+      new URLSearchParams({
+        client_id: process.env.ORCID_CLIENT_ID!,
+        client_secret: process.env.ORCID_CLIENT_SECRET!,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri
+      }),
       {
-        expectedState: state
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       }
     )
+    const tokenSet = tokenRes.data
+    if (tokenRes.status !== 200) {
+      logger.error('ORCID token exchange error body:', tokenSet)
+      throw new Error(`ORCID token exchange failed with status ${tokenRes.status}`)
+    }
 
     logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
-    const claims = tokenSet.claims
-    if (
-      !claims ||
-      Array.isArray(claims) ||
-      typeof claims !== 'object' ||
-      typeof (claims as { sub?: unknown }).sub !== 'string'
-    ) {
-      logger.error('Missing or invalid sub in token claims:', claims)
-      res.status(400).send('Invalid ID token from ORCID')
+    const claims = tokenSet
+    if (!claims || typeof claims !== 'object' || typeof claims.orcid !== 'string') {
+      logger.error('Missing or invalid ORCID iD in token response:', claims)
+      res.status(400).send('Invalid token response from ORCID')
       return
     }
 
     const userinfo: UserInfoResponse = await fetchUserInfo(
       discovered,
       tokenSet.access_token!,
-      (claims as { sub: string }).sub
+      claims.orcid
     )
     logger.info('ORCID user info:', userinfo)
 
