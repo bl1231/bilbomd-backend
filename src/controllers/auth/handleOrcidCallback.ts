@@ -71,6 +71,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     const accessToken = await issueTokensAndSetCookie(user, res)
     res.redirect(`/welcome?token=${accessToken}`)
   } catch (err: unknown) {
+    logger.error('Error during ORCID token exchange:', err)
     if (typeof err === 'object' && err !== null && 'response' in err) {
       const response = (err as { response?: { text?: () => Promise<string> } }).response
 
