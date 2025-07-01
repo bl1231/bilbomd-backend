@@ -56,7 +56,8 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       tokenSet.access_token!,
       claims.orcid
     )
-    logger.info('ORCID user info:', userinfo)
+
+    logger.info(`ORCID user info: ${JSON.stringify(userinfo)}`)
 
     let user = await User.findOne({ 'oauth.provider': 'orcid', 'oauth.id': userinfo.sub })
 
