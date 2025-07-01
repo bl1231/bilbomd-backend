@@ -1,9 +1,9 @@
 import { Request, Response } from 'express'
 import {
   authorizationCodeGrant,
-  fetchUserInfo,
   TokenEndpointResponse,
-  UserInfoResponse
+  UserInfoResponse,
+  fetchUserInfo
 } from 'openid-client'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { issueTokensAndSetCookie } from './authTokens.js'
@@ -28,13 +28,25 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       { expectedState: state }
     )
 
-    // Fetch user info from ORCID using the access token
+    logger.debug('Received tokenSet:', tokenSet)
+
+    const claims = tokenSet.claims
+    if (
+      !claims ||
+      Array.isArray(claims) ||
+      typeof claims !== 'object' ||
+      typeof (claims as { sub?: unknown }).sub !== 'string'
+    ) {
+      logger.error('Missing or invalid sub in token claims:', claims)
+      return res.status(400).send('Invalid ID token from ORCID')
+    }
+
     const userinfo: UserInfoResponse = await fetchUserInfo(
       discovered,
       tokenSet.access_token!,
-      'ORCID'
+      (claims as { sub: string }).sub
     )
-    logger.info('ORCID user info:', userinfo)
+    logger.debug('ORCID user info:', userinfo)
 
     let user = await User.findOne({ 'oauth.provider': 'orcid', 'oauth.id': userinfo.sub })
 
