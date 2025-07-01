@@ -1,9 +1,7 @@
 import { Request, Response } from 'express'
-// import { UserInfoResponse, fetchUserInfo } from 'openid-client'
 import axios from 'axios'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { issueTokensAndSetCookie } from './authTokens.js'
-// import { discovered } from './orcidClientConfig.js'
 import { logger } from '../../middleware/loggers.js'
 
 export async function handleOrcidCallback(req: Request, res: Response) {
@@ -45,7 +43,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
     const userinfoRes = await axios.get(
-      `https://orcid.org/v2.1/${tokenSet.orcid}/record`,
+      `https://api.orcid.org/v3.0/${tokenSet.orcid}/email`,
       {
         headers: {
           Authorization: `Bearer ${tokenSet.access_token}`,
@@ -55,40 +53,40 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     )
     const userinfo = userinfoRes.data
 
+    // Extract primary verified email
+    const emailList = Array.isArray(userinfo.email) ? userinfo.email : []
+    const primaryEmail = emailList.find(
+      (emailEntry: { primary?: boolean; verified?: boolean; email?: string }) =>
+        emailEntry.primary === true && emailEntry.verified === true
+    )?.email
+
+    if (!primaryEmail) {
+      logger.warn('No verified primary email found in ORCID user info')
+    }
+
     logger.info(`ORCID user info (via axios): ${JSON.stringify(userinfo)}`)
 
-    // const claims = tokenSet
-    // if (!claims || typeof claims !== 'object' || typeof claims.orcid !== 'string') {
-    //   logger.error('Missing or invalid ORCID iD in token response:', claims)
-    //   res.status(400).send('Invalid token response from ORCID')
-    //   return
-    // }
-
-    // const userinfo: UserInfoResponse = await fetchUserInfo(
-    //   discovered,
-    //   tokenSet.access_token!,
-    //   claims.orcid
-    // )
-
-    // logger.info(`ORCID user info: ${JSON.stringify(userinfo)}`)
-
-    let user = await User.findOne({ 'oauth.provider': 'orcid', 'oauth.id': userinfo.sub })
+    let user = await User.findOne({
+      'oauth.provider': 'orcid',
+      'oauth.id': tokenSet.orcid
+    })
 
     if (!user) {
       user = await User.create({
-        email: userinfo.email,
-        username: userinfo.email?.split('@')[0] || 'orciduser',
+        email: primaryEmail,
+        username: primaryEmail?.split('@')[0] || 'orciduser',
         roles: ['User'],
-        oauth: [{ provider: 'orcid', id: userinfo.sub }],
+        oauth: [{ provider: 'orcid', id: tokenSet.orcid }],
         refreshTokens: []
       })
     }
 
+    // Clear ORCID OAuth cookies
     res.clearCookie('orcid_oauth_state')
     res.clearCookie('orcid_oauth_nonce')
 
-    const accessToken = await issueTokensAndSetCookie(user, res)
-    res.redirect(`/welcome?token=${accessToken}`)
+    issueTokensAndSetCookie(user, res)
+    res.redirect('/welcome')
   } catch (err: unknown) {
     logger.error('Error during ORCID token exchange:', err)
     if (typeof err === 'object' && err !== null && 'response' in err) {
