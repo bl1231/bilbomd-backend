@@ -44,12 +44,15 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
     logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
-    const userinfoRes = await axios.get('https://orcid.org/oauth/userinfo', {
-      headers: {
-        Authorization: `Bearer ${tokenSet.access_token}`,
-        Accept: 'application/json'
+    const userinfoRes = await axios.get(
+      `https://orcid.org/v2.1/${tokenSet.orcid}/record`,
+      {
+        headers: {
+          Authorization: `Bearer ${tokenSet.access_token}`,
+          Accept: 'application/orcid+json'
+        }
       }
-    })
+    )
     const userinfo = userinfoRes.data
 
     logger.info(`ORCID user info (via axios): ${JSON.stringify(userinfo)}`)
