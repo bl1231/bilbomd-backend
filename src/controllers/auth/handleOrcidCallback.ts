@@ -66,8 +66,20 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
     const accessToken = await issueTokensAndSetCookie(user, res)
     res.redirect(`/welcome?token=${accessToken}`)
-  } catch (err) {
-    console.error('ORCID callback error:', err)
+  } catch (err: unknown) {
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'response' in err &&
+      typeof (err as { response?: { text?: () => Promise<string> } }).response?.text ===
+        'function'
+    ) {
+      const errorText = await (
+        err as { response: { text: () => Promise<string> } }
+      ).response.text()
+      logger.error('ORCID token exchange error body:', errorText)
+    }
+    logger.error('ORCID callback error:', err)
     res.status(500).send('Authentication failed')
   }
 }
