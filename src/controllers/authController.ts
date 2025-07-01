@@ -41,12 +41,12 @@ const otp = async (req: Request, res: Response) => {
         res.status(401).json({ error: 'OTP has expired' })
       }
 
-      const accessToken = issueTokensAndSetCookie(user, res)
+      const accessToken = await issueTokensAndSetCookie(user, res)
 
       user.otp = null
       await user.save()
 
-      res.json({ accessTokenData: { accessToken } })
+      res.json({ accessToken })
     } else {
       logger.warn('Invalid OTP')
       res.status(401).json({ message: 'Invalid OTP' })
@@ -78,8 +78,8 @@ const refresh = async (req: Request, res: Response) => {
       return
     }
 
-    const accessToken = issueTokensAndSetCookie(foundUser, res)
-    res.json({ accessTokenData: { accessToken } })
+    const accessToken = await issueTokensAndSetCookie(foundUser, res)
+    res.json({ accessToken })
   } catch (error) {
     logger.error(`Error occurred while verifying token: ${error}`)
     res.status(403).json({ message: 'Forbidden' })
