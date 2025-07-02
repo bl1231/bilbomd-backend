@@ -19,7 +19,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
     const redirect_uri = process.env.ORCID_REDIRECT_URI!
     const tokenRes = await axios.post(
-      'https://orcid.org/oauth/token',
+      'https://sandbox.orcid.org/oauth/token',
       new URLSearchParams({
         client_id: process.env.ORCID_CLIENT_ID!,
         client_secret: process.env.ORCID_CLIENT_SECRET!,
@@ -43,7 +43,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
     const userinfoRes = await axios.get(
-      `https://api.orcid.org/v3.0/${tokenSet.orcid}/email`,
+      `https://api.sandbox.orcid.org/v3.0/${tokenSet.orcid}/email`,
       {
         headers: {
           Authorization: `Bearer ${tokenSet.access_token}`,
