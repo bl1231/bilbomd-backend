@@ -66,7 +66,7 @@ export async function handleOrcidFinalize(req: Request, res: Response) {
     delete req.session.orcidProfile
 
     issueTokensAndSetCookie(user, res)
-    return res.status(200).json({ message: 'New Account created. Happy BilboMDing!' })
+    res.status(200).json({ message: 'New Account created. Happy BilboMDing!' })
   } catch (err) {
     logger.error('Error finalizing ORCID login:', err)
     res.status(500).send('Failed to finalize authentication')
