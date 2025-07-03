@@ -100,28 +100,42 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       return res.redirect(`/auth/orcid/error?reason=${emailReason || 'unknown'}`)
     }
 
-    let user = await User.findOne({
-      'oauth.provider': 'orcid',
-      'oauth.id': tokenSet.orcid
-    })
+    // Search for an existing user by the verified ORCID email:
 
-    if (!user) {
-      user = await User.create({
-        email: selectedEmail,
-        username: selectedEmail?.split('@')[0] || 'orciduser',
-        displayName: givenName && familyName ? `${givenName} ${familyName}` : undefined,
-        roles: ['User'],
-        oauth: [{ provider: 'orcid', id: tokenSet.orcid }],
-        refreshTokens: []
-      })
+    const user = await User.findOne({ email: selectedEmail })
+
+    if (
+      user &&
+      user.status === 'Active' &&
+      user.oauth.some(
+        (oauth) => oauth.provider === 'orcid' && oauth.id === tokenSet.orcid
+      )
+    ) {
+      logger.info(
+        `Existing ORCID-linked user ${user.email} authenticated. Skipping confirmation.`
+      )
+
+      res.clearCookie('orcid_oauth_state')
+      res.clearCookie('orcid_oauth_nonce')
+
+      issueTokensAndSetCookie(user, res)
+      return res.redirect('/welcome')
     }
 
-    // Clear ORCID OAuth cookies
+    // Store info in session for confirmation page
+    req.session.orcidProfile = {
+      email: selectedEmail,
+      emailReason,
+      givenName,
+      familyName,
+      orcidId: tokenSet.orcid,
+      accessToken: tokenSet.access_token
+    }
+
     res.clearCookie('orcid_oauth_state')
     res.clearCookie('orcid_oauth_nonce')
 
-    issueTokensAndSetCookie(user, res)
-    res.redirect('/welcome')
+    return res.redirect('/auth/orcid-confirmation')
   } catch (err: unknown) {
     logger.error('Error during ORCID token exchange:', err)
     if (typeof err === 'object' && err !== null && 'response' in err) {
