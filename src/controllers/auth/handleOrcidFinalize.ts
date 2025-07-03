@@ -49,7 +49,7 @@ export async function handleOrcidFinalize(req: Request, res: Response) {
             id: orcidId,
             name: name,
             accessToken: accessToken,
-            refreashToken: refreshToken,
+            refreshToken: refreshToken,
             tokenType: tokenType,
             scope: scope,
             expiresIn: expiresIn
