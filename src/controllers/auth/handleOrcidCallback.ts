@@ -129,7 +129,12 @@ export async function handleOrcidCallback(req: Request, res: Response) {
       givenName,
       familyName,
       orcidId: tokenSet.orcid,
-      accessToken: tokenSet.access_token
+      accessToken: tokenSet.access_token,
+      tokenType: tokenSet.token_type,
+      refreshToken: tokenSet.refresh_token,
+      scope: tokenSet.scope,
+      expiresIn: tokenSet.expires_in,
+      name: tokenSet.name
     }
 
     res.clearCookie('orcid_oauth_state')

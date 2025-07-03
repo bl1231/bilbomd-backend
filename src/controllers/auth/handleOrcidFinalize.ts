@@ -13,10 +13,22 @@ export async function handleOrcidFinalize(req: Request, res: Response) {
       return
     }
 
-    const { email, emailReason, givenName, familyName, orcidId } = profile
-    const { username } = req.body
+    const {
+      email,
+      emailReason,
+      givenName,
+      familyName,
+      orcidId,
+      accessToken,
+      tokenType,
+      refreshToken,
+      scope,
+      expiresIn,
+      name
+    } = profile
+    // const { username } = req.body
 
-    if (!username || typeof username !== 'string') {
+    if (!name || typeof name !== 'string') {
       res.status(400).send('Username is required')
       return
     }
@@ -25,13 +37,24 @@ export async function handleOrcidFinalize(req: Request, res: Response) {
 
     if (!user) {
       user = new User({
-        username,
+        username: name,
         email,
         firstName: givenName,
         lastName: familyName,
         roles: ['User'],
         status: emailReason ? 'Pending' : 'Active',
-        oauth: [{ provider: 'orcid', id: orcidId }]
+        oauth: [
+          {
+            provider: 'orcid',
+            id: orcidId,
+            name: name,
+            accessToken: accessToken,
+            refreashToken: refreshToken,
+            tokenType: tokenType,
+            scope: scope,
+            expiresIn: expiresIn
+          }
+        ]
       })
 
       await user.save()
