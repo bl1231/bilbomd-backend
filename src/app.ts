@@ -8,6 +8,7 @@ import { corsOptionsPublic } from './config/corsOptionsPublic.js'
 import { externalApiLimiter } from './middleware/externalApiLimiter.js'
 import { logger, requestLogger, assignRequestId } from './middleware/loggers.js'
 import cookieParser from 'cookie-parser'
+import session from 'express-session'
 import { router as adminRoutes } from './routes/admin.js'
 import mongoose from 'mongoose'
 import { connectDB } from './config/dbConn.js'
@@ -70,6 +71,20 @@ app.use(express.json({ limit: '150mb' }))
 
 // middleware for COOKIES
 app.use(cookieParser())
+
+// Session management
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'bilbomd-session-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // true if HTTPS
+      maxAge: 1000 * 60 * 15 // 15 minutes
+    }
+  })
+)
 
 // Serve static files
 app.use('/', express.static('public'))
