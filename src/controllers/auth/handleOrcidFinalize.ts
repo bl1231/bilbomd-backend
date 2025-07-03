@@ -66,9 +66,7 @@ export async function handleOrcidFinalize(req: Request, res: Response) {
     delete req.session.orcidProfile
 
     issueTokensAndSetCookie(user, res)
-    // Try redirecting to root so frontend can decide where user should go?
-    // I tried to use /welcome but that sent a new user to teh error page
-    return res.redirect('/')
+    return res.status(200).json({ message: 'New Account created. Happy BilboMDing!' })
   } catch (err) {
     logger.error('Error finalizing ORCID login:', err)
     res.status(500).send('Failed to finalize authentication')
