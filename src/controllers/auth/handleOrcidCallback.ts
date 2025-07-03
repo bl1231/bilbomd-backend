@@ -42,8 +42,11 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
     logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
+    // Public API: https://pub.sandbox.orcid.org/[version]
+    // Member API: https://api.sandbox.orcid.org/[version]
+
     const userinfoRes = await axios.get(
-      `https://api.sandbox.orcid.org/v3.0/${tokenSet.orcid}/email`,
+      `https://pub.sandbox.orcid.org/v3.0/${tokenSet.orcid}/email`,
       {
         headers: {
           Authorization: `Bearer ${tokenSet.access_token}`,
