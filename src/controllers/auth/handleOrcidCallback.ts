@@ -4,6 +4,8 @@ import { User } from '@bl1231/bilbomd-mongodb-schema'
 import { issueTokensAndSetCookie } from './authTokens.js'
 import { logger } from '../../middleware/loggers.js'
 
+type OrcidEmailEntry = { email?: string; verified?: boolean; primary?: boolean }
+
 export async function handleOrcidCallback(req: Request, res: Response) {
   const code = typeof req.query.code === 'string' ? req.query.code : undefined
   const state = typeof req.query.state === 'string' ? req.query.state : undefined
@@ -46,7 +48,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     // Member API: https://api.sandbox.orcid.org/[version]
 
     const userinfoRes = await axios.get(
-      `https://pub.sandbox.orcid.org/v3.0/${tokenSet.orcid}/email`,
+      `https://pub.sandbox.orcid.org/v3.0/${tokenSet.orcid}`,
       {
         headers: {
           Authorization: `Bearer ${tokenSet.access_token}`,
@@ -54,20 +56,49 @@ export async function handleOrcidCallback(req: Request, res: Response) {
         }
       }
     )
+
     const userinfo = userinfoRes.data
+    logger.info(`ORCID user info (via axios): ${JSON.stringify(userinfo)}`)
+
+    const givenName = userinfo.person?.name?.['given-names']?.value
+    const familyName = userinfo.person?.name?.['family-name']?.value
 
     // Extract primary verified email
-    const emailList = Array.isArray(userinfo.email) ? userinfo.email : []
-    const primaryEmail = emailList.find(
-      (emailEntry: { primary?: boolean; verified?: boolean; email?: string }) =>
-        emailEntry.primary === true && emailEntry.verified === true
-    )?.email
+    const emailList = Array.isArray(userinfo.person?.emails?.email)
+      ? userinfo.person.emails.email
+      : []
 
-    if (!primaryEmail) {
-      logger.warn('No verified primary email found in ORCID user info')
+    let selectedEmail: string | undefined
+    let emailReason: string | undefined
+
+    if (emailList.length > 0) {
+      selectedEmail = (emailList as OrcidEmailEntry[]).find(
+        (entry) => entry.primary && entry.verified
+      )?.email
+
+      if (!selectedEmail) {
+        logger.warn('No primary verified email found. Trying any verified email.')
+        selectedEmail = (emailList as OrcidEmailEntry[]).find(
+          (entry) => entry.verified
+        )?.email
+        emailReason = 'no_primary_verified'
+      }
+
+      if (!selectedEmail) {
+        logger.warn(
+          'No verified email found. Using first available email (not recommended).'
+        )
+        selectedEmail = (emailList as OrcidEmailEntry[])[0]?.email
+        emailReason = 'no_verified'
+      }
+    } else {
+      emailReason = 'no_email_list'
     }
 
-    logger.info(`ORCID user info (via axios): ${JSON.stringify(userinfo)}`)
+    if (!selectedEmail) {
+      logger.error('No email address found in ORCID user info')
+      return res.redirect(`/auth/orcid/error?reason=${emailReason || 'unknown'}`)
+    }
 
     let user = await User.findOne({
       'oauth.provider': 'orcid',
@@ -76,8 +107,9 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
     if (!user) {
       user = await User.create({
-        email: primaryEmail,
-        username: primaryEmail?.split('@')[0] || 'orciduser',
+        email: selectedEmail,
+        username: selectedEmail?.split('@')[0] || 'orciduser',
+        displayName: givenName && familyName ? `${givenName} ${familyName}` : undefined,
         roles: ['User'],
         oauth: [{ provider: 'orcid', id: tokenSet.orcid }],
         refreshTokens: []
