@@ -22,6 +22,7 @@ const allowedOrigins: AllowedOrigin[] = [
   'https://192.168.1.104:443',
   'https://bl1231.als.lbl.gov',
   'https://bilbomd.bl1231.als.lbl.gov',
+  'https://bilbomd-dev.bl1231.als.lbl.gov',
   'http://ingress.bilbomd.development.svc.spin.nersc.org',
   'https://bilbomd-nersc-dev.bl1231.als.lbl.gov',
   'http://ingress.bilbomd.production.svc.spin.nersc.org',
