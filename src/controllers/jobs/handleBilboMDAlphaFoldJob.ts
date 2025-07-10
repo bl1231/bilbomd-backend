@@ -94,27 +94,32 @@ const handleBilboMDAlphaFoldJob = async (
     // If the values calcualted by autorg are outside of the limits set in the mongodb
     // schema then the job will not be created in mongodb and things fail in a way that
     // the user has no idea what has gone wrong.
-    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
+    const { rg, rg_min, rg_max }: AutoRgResults = await spawnAutoRgCalculator(
+      jobDir,
+      datFileName
+    )
     // Extract limits from schema
     const rgMinBound = BilboMdAlphaFoldJob.schema.path('rg_min')?.options.min ?? 10
     const rgMaxBound = BilboMdAlphaFoldJob.schema.path('rg_max')?.options.max ?? 100
 
     // Validate AutoRg values before creating job
     if (
-      autorgResults.rg <= 0 ||
-      autorgResults.rg_min < rgMinBound ||
-      autorgResults.rg_max > rgMaxBound ||
-      autorgResults.rg_min > autorgResults.rg ||
-      autorgResults.rg > autorgResults.rg_max
+      rg <= 0 ||
+      rg_min < rgMinBound ||
+      rg_max > rgMaxBound ||
+      rg_min > rg ||
+      rg > rg_max
     ) {
       logger.warn(
-        `Invalid AutoRg values for job ${req.body.title || UUID}: ${JSON.stringify(
-          autorgResults
-        )}`
+        `Invalid AutoRg values for job ${req.body.title || UUID}: ${JSON.stringify({
+          rg,
+          rg_min,
+          rg_max
+        })}`
       )
       res.status(400).json({
         message: 'Rg values from AutoRg calculation are outside allowed bounds',
-        autorgResults,
+        autorgResults: { rg, rg_min, rg_max },
         schemaLimits: {
           rg_min: rgMinBound,
           rg_max: rgMaxBound
@@ -128,15 +133,15 @@ const handleBilboMDAlphaFoldJob = async (
       title: req.body.title,
       uuid: UUID,
       data_file: datFileName,
-      rg: autorgResults.rg,
-      rg_min: autorgResults.rg_min,
-      rg_max: autorgResults.rg_max,
+      rg,
+      rg_min,
+      rg_max,
       fasta_file: 'af-entities.fasta',
       alphafold_entities: parsedEntities,
       conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
-      user: user,
+      user,
       steps: {
         alphafold: {},
         pdb2crd: {},
