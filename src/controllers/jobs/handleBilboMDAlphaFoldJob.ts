@@ -118,7 +118,7 @@ const handleBilboMDAlphaFoldJob = async (
         })}`
       )
       res.status(400).json({
-        message: 'Rg values from AutoRg calculation are outside allowed bounds',
+        message: 'Rg values calculated from your SAXS data are outside allowed bounds',
         autorgResults: { rg, rg_min, rg_max },
         schemaLimits: {
           rg_min: rgMinBound,
