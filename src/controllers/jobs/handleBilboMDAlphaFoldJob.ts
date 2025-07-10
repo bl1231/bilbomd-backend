@@ -91,7 +91,7 @@ const handleBilboMDAlphaFoldJob = async (
         ? files['dat_file'][0].originalname.toLowerCase()
         : 'missing.dat'
 
-    // If the values calcualted by autorg are outside of the limits set in the mongodb
+    // If the values calculated by autorg are outside of the limits set in the mongodb
     // schema then the job will not be created in mongodb and things fail in a way that
     // the user has no idea what has gone wrong.
     const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
