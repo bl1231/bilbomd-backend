@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.20.6 (7/10/2025)
+  - Add a validation check for SAXS data Rg values for BilboMD AF job submission
 - 1.20.5 (6/16/2025)
   - Updates to API test scripts
 - 1.20.3 (6/5/2025)
