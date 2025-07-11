@@ -27,12 +27,13 @@ const handleBilboMDAlphaFoldJob = async (
   res: Response,
   user: IUser,
   UUID: string
-) => {
+): Promise<void> => {
   if (process.env.USE_NERSC?.toLowerCase() !== 'true') {
     logger.warn('AlphaFold job rejected: NERSC not enabled')
-    return res.status(403).json({
+    res.status(403).json({
       message: 'AlphaFold jobs unavailable on this deployment.'
     })
+    return
   }
   const jobDir = path.join(uploadFolder, UUID)
   const { bilbomd_mode: bilbomdMode } = req.body
@@ -47,9 +48,8 @@ const handleBilboMDAlphaFoldJob = async (
     logger.info(`Parsed ${parsedEntities.length} AlphaFold entities`)
   } catch (parseErr) {
     logger.error('Failed to parse entities_json or reconstruct entities', parseErr)
-    return res
-      .status(400)
-      .json({ message: 'Invalid entities_json or malformed form data' })
+    res.status(400).json({ message: 'Invalid entities_json or malformed form data' })
+    return
   }
 
   // Collect data for validation
@@ -69,13 +69,14 @@ const handleBilboMDAlphaFoldJob = async (
   } catch (validationErr) {
     if (validationErr instanceof ValidationError) {
       logger.warn('AlphaFold job payload validation failed', validationErr)
-      return res.status(400).json({
+      res.status(400).json({
         message: 'Validation failed',
         errors: validationErr.inner?.map((err) => ({
           path: err.path,
           message: err.message
         }))
       })
+      return
     } else {
       throw validationErr
     }
@@ -90,23 +91,57 @@ const handleBilboMDAlphaFoldJob = async (
         ? files['dat_file'][0].originalname.toLowerCase()
         : 'missing.dat'
 
-    const autorgResults: AutoRgResults = await spawnAutoRgCalculator(jobDir, datFileName)
+    // If the values calculated by autorg are outside of the limits set in the mongodb
+    // schema then the job will not be created in mongodb and things fail in a way that
+    // the user has no idea what has gone wrong.
+    const { rg, rg_min, rg_max }: AutoRgResults = await spawnAutoRgCalculator(
+      jobDir,
+      datFileName
+    )
+    // Extract limits from schema
+    const rgMinBound = BilboMdAlphaFoldJob.schema.path('rg_min')?.options.min ?? 10
+    const rgMaxBound = BilboMdAlphaFoldJob.schema.path('rg_max')?.options.max ?? 100
 
+    // Validate AutoRg values before creating job
+    if (
+      rg <= 0 ||
+      rg_min < rgMinBound ||
+      rg_max > rgMaxBound ||
+      rg_min > rg ||
+      rg > rg_max
+    ) {
+      logger.warn(
+        `Invalid AutoRg values for job ${req.body.title || UUID}: ${JSON.stringify({
+          rg,
+          rg_min,
+          rg_max
+        })}`
+      )
+      res.status(400).json({
+        message: 'Rg values calculated from your SAXS data are outside allowed bounds',
+        autorgResults: { rg, rg_min, rg_max },
+        schemaLimits: {
+          rg_min: rgMinBound,
+          rg_max: rgMaxBound
+        }
+      })
+      return
+    }
     const now = new Date()
 
     const newJob: IBilboMDAlphaFoldJob = new BilboMdAlphaFoldJob({
       title: req.body.title,
       uuid: UUID,
       data_file: datFileName,
-      rg: autorgResults.rg,
-      rg_min: autorgResults.rg_min,
-      rg_max: autorgResults.rg_max,
+      rg,
+      rg_min,
+      rg_max,
       fasta_file: 'af-entities.fasta',
       alphafold_entities: parsedEntities,
       conformational_sampling: 3,
       status: 'Submitted',
       time_submitted: now,
-      user: user,
+      user,
       steps: {
         alphafold: {},
         pdb2crd: {},
