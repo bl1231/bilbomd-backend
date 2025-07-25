@@ -5,7 +5,7 @@ import path from 'path'
 import { Request, Response } from 'express'
 import { v4 as uuid } from 'uuid'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { queueJob } from '../queues/pdb2crd.js'
+import { pdb2crdQueue, queueJob } from '../queues/pdb2crd.js'
 
 const uploadFolder: string = process.env.DATA_VOL ?? '/bilbomd/uploads'
 
@@ -84,35 +84,16 @@ const createNewConstFile = async (req: Request, res: Response) => {
 
 const getAf2PaeStatus = async (req: Request, res: Response) => {
   const { uuid } = req.query
-  if (!uuid || typeof uuid !== 'string') {
-    return res.status(400).json({ message: 'Job UUID required' })
-  }
-
-  const jobDir = path.join(uploadFolder, uuid)
-  const logFile = path.join(jobDir, 'af2pae.log')
-  const constFile = path.join(jobDir, 'const.inp')
+  if (typeof uuid !== 'string') return res.status(400).json({ message: 'Missing uuid' })
 
   try {
-    // If const.inp exists, assume job is done
-    const exists = await fs.pathExists(constFile)
-    if (exists) {
-      return res.status(200).json({ uuid, status: 'done' })
-    }
+    const bullJob = await pdb2crdQueue.getJob(uuid)
 
-    // If log file exists but const.inp doesn't, it's still processing
-    const logExists = await fs.pathExists(logFile)
-    if (logExists) {
-      return res.status(200).json({ uuid, status: 'processing' })
-    }
-
-    // If jobDir exists but no logs yet, likely queued
-    const dirExists = await fs.pathExists(jobDir)
-    if (dirExists) {
-      return res.status(200).json({ uuid, status: 'queued' })
-    }
-
-    // If jobDir doesn’t exist at all, treat as unknown
-    return res.status(404).json({ message: `No job found for UUID ${uuid}` })
+    const bullStatus = bullJob ? await bullJob.getState() : 'not found'
+    return res.status(200).json({
+      uuid,
+      status: bullStatus
+    })
   } catch (error) {
     logger.error(`Error checking AF2PAE job status: ${error}`)
     return res.status(500).json({ message: 'Error checking job status' })
