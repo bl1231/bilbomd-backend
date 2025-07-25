@@ -2,6 +2,7 @@ import { logger } from '../middleware/loggers.js'
 import multer from 'multer'
 import fs from 'fs-extra'
 import path from 'path'
+import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
 import { Request, Response } from 'express'
 import { v4 as uuid } from 'uuid'
 import { spawn, ChildProcess } from 'node:child_process'
@@ -57,24 +58,35 @@ const createNewConstFile = async (req: Request, res: Response) => {
             ? files['pae_file'][0].originalname.toLowerCase()
             : 'missing.json'
 
-        const BullId = await queueJob({
-          type: 'Pdb2Crd',
-          title: 'convert PDB to CRD',
-          uuid: UUID,
-          pdb_file: pdbFileName,
-          pae_power: pae_power,
-          plddt_cutoff: plddt_cutoff
+        const controller = new AbortController()
+        const timeoutMs = 5 * 60 * 1000 // 5 minutes
+
+        const timeout = setTimeoutPromise(timeoutMs, null, {
+          signal: controller.signal
+        }).catch(() => {
+          throw new Error('PAE job timed out after 5 minutes')
         })
-        logger.info(`Pdb2Crd Job assigned UUID: ${UUID}`)
-        logger.info(`Pdb2Crd Job assigned BullMQ ID: ${BullId}`)
 
-        // Need to wait here until the BullMQ job is finished
-        await waitForJobCompletion(BullId, pdb2crdQueueEvents)
+        await Promise.race([
+          (async () => {
+            const BullId = await queueJob({
+              type: 'Pdb2Crd',
+              title: 'convert PDB to CRD',
+              uuid: UUID,
+              pdb_file: pdbFileName,
+              pae_power: pae_power,
+              plddt_cutoff: plddt_cutoff
+            })
+            logger.info(`Pdb2Crd Job assigned UUID: ${UUID}`)
+            logger.info(`Pdb2Crd Job assigned BullMQ ID: ${BullId}`)
 
-        // I should try using the pae_ratios.py on worker instead of backend
-        // so we can have only a single version of teh script.
+            await waitForJobCompletion(BullId, pdb2crdQueueEvents)
+            await spawnAF2PAEInpFileMaker(jobDir, paeFileName, pae_power, plddt_cutoff)
+          })(),
+          timeout
+        ])
 
-        await spawnAF2PAEInpFileMaker(jobDir, paeFileName, pae_power, plddt_cutoff)
+        controller.abort() // cancel the timeout if the job completes in time
 
         res.status(200).json({
           message: 'New const.inp file successfully created',
