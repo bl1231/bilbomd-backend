@@ -88,8 +88,12 @@ const getAf2PaeStatus = async (req: Request, res: Response) => {
 
   try {
     const bullJob = await pdb2crdQueue.getJob(uuid)
+    if (!bullJob) {
+      logger.warn(`Job with UUID ${uuid} not found`)
+      return res.status(404).json({ message: 'Job not found' })
+    }
 
-    const bullStatus = bullJob ? await bullJob.getState() : 'not found'
+    const bullStatus = await bullJob.getState()
     return res.status(200).json({
       uuid,
       status: bullStatus
