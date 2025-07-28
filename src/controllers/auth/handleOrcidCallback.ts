@@ -20,8 +20,9 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     logger.info(`Handling ORCID callback with code: ${code}, and state: ${state}`)
 
     const redirect_uri = process.env.ORCID_REDIRECT_URI!
+    const orcidBaseUrl = process.env.ORCID_BASE_URL || 'https://sandbox.orcid.org';
     const tokenRes = await axios.post(
-      'https://sandbox.orcid.org/oauth/token',
+      `${orcidBaseUrl}/oauth/token`,
       new URLSearchParams({
         client_id: process.env.ORCID_CLIENT_ID!,
         client_secret: process.env.ORCID_CLIENT_SECRET!,
