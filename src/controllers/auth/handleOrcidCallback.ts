@@ -20,7 +20,7 @@ export async function handleOrcidCallback(req: Request, res: Response) {
     logger.info(`Handling ORCID callback with code: ${code}, and state: ${state}`)
 
     const redirect_uri = process.env.ORCID_REDIRECT_URI!
-    const orcidBaseUrl = process.env.ORCID_BASE_URL || 'https://sandbox.orcid.org';
+    const orcidBaseUrl = process.env.ORCID_BASE_URL || 'https://sandbox.orcid.org'
     const tokenRes = await axios.post(
       `${orcidBaseUrl}/oauth/token`,
       new URLSearchParams({
@@ -45,18 +45,14 @@ export async function handleOrcidCallback(req: Request, res: Response) {
 
     logger.info(`Received tokenSet: ${JSON.stringify(tokenSet)}`)
 
-    // Public API: https://pub.sandbox.orcid.org/[version]
-    // Member API: https://api.sandbox.orcid.org/[version]
-
-    const userinfoRes = await axios.get(
-      `https://pub.sandbox.orcid.org/v3.0/${tokenSet.orcid}`,
-      {
-        headers: {
-          Authorization: `Bearer ${tokenSet.access_token}`,
-          Accept: 'application/orcid+json'
-        }
+    const orcidPubUrl =
+      process.env.ORCID_PUBLIC_API_URL || 'https://pub.sandbox.orcid.org/v3.0'
+    const userinfoRes = await axios.get(`${orcidPubUrl}/${tokenSet.orcid}`, {
+      headers: {
+        Authorization: `Bearer ${tokenSet.access_token}`,
+        Accept: 'application/orcid+json'
       }
-    )
+    })
 
     const userinfo = userinfoRes.data
     logger.info(`ORCID user info (via axios): ${JSON.stringify(userinfo)}`)
