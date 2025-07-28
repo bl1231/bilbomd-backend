@@ -87,6 +87,7 @@ COPY --chown=bilbo:bilbomd . .
 # Use the ARG to set the environment variable
 ENV BILBOMD_BACKEND_GIT_HASH=${BILBOMD_BACKEND_GIT_HASH}
 ENV BILBOMD_BACKEND_VERSION=${BILBOMD_BACKEND_VERSION}
+ENV NODE_DEBUG=openid-client
 
 EXPOSE 3500
 

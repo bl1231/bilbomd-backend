@@ -58,7 +58,8 @@ const queueJob = async (data: BullMQPdb2Crd): Promise<string> => {
   try {
     const queue = getQueue()
     logger.info(`${data.type} Job ${data.title} about to be added to ${queue.name} queue`)
-    const bullJob = await queue.add(data.title, data)
+    // const bullJob = await queue.add(data.title, data)
+    const bullJob = await queue.add(data.title, data, { jobId: data.uuid })
     logger.info(`${data.type} Job added with Job ID: ${bullJob.id}`)
     if (!bullJob.id) {
       throw new Error('Failed to obtain a job ID from BullMQ')

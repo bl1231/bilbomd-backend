@@ -4,9 +4,8 @@ import fs from 'fs-extra'
 import path from 'path'
 import { Request, Response } from 'express'
 import { v4 as uuid } from 'uuid'
-import { spawn, ChildProcess } from 'node:child_process'
 import { User } from '@bl1231/bilbomd-mongodb-schema'
-import { queueJob, waitForJobCompletion, pdb2crdQueueEvents } from '../queues/pdb2crd.js'
+import { pdb2crdQueue, queueJob } from '../queues/pdb2crd.js'
 
 const uploadFolder: string = process.env.DATA_VOL ?? '/bilbomd/uploads'
 
@@ -23,7 +22,11 @@ const createNewConstFile = async (req: Request, res: Response) => {
         cb(null, jobDir)
       },
       filename: function (req, file, cb) {
-        cb(null, file.originalname.toLowerCase())
+        if (file.fieldname === 'pae_file') {
+          cb(null, 'pae.json') // Force standard filename needed by worker
+        } else {
+          cb(null, file.originalname.toLowerCase())
+        }
       }
     })
 
@@ -52,10 +55,6 @@ const createNewConstFile = async (req: Request, res: Response) => {
           files['pdb_file'] && files['pdb_file'][0]
             ? files['pdb_file'][0].originalname.toLowerCase()
             : 'missing.pdb'
-        const paeFileName =
-          files['pae_file'] && files['pae_file'][0]
-            ? files['pae_file'][0].originalname.toLowerCase()
-            : 'missing.json'
 
         const BullId = await queueJob({
           type: 'Pdb2Crd',
@@ -68,16 +67,8 @@ const createNewConstFile = async (req: Request, res: Response) => {
         logger.info(`Pdb2Crd Job assigned UUID: ${UUID}`)
         logger.info(`Pdb2Crd Job assigned BullMQ ID: ${BullId}`)
 
-        // Need to wait here until the BullMQ job is finished
-        await waitForJobCompletion(BullId, pdb2crdQueueEvents)
-
-        // I should try using the pae_ratios.py on worker instead of backend
-        // so we can have only a single version of teh script.
-
-        await spawnAF2PAEInpFileMaker(jobDir, paeFileName, pae_power, plddt_cutoff)
-
-        res.status(200).json({
-          message: 'New const.inp file successfully created',
+        res.status(202).json({
+          message: 'PAE job accepted and queued',
           uuid: UUID
         })
       } catch (error) {
@@ -88,6 +79,28 @@ const createNewConstFile = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(`Failed to create job directory: ${error}`)
     res.status(500).json({ message: 'Failed to create job directory' })
+  }
+}
+
+const getAf2PaeStatus = async (req: Request, res: Response) => {
+  const { uuid } = req.query
+  if (typeof uuid !== 'string') return res.status(400).json({ message: 'Missing uuid' })
+
+  try {
+    const bullJob = await pdb2crdQueue.getJob(uuid)
+    if (!bullJob) {
+      logger.warn(`Job with UUID ${uuid} not found`)
+      return res.status(404).json({ message: 'Job not found' })
+    }
+
+    const bullStatus = await bullJob.getState()
+    return res.status(200).json({
+      uuid,
+      status: bullStatus
+    })
+  } catch (error) {
+    logger.error(`Error checking AF2PAE job status: ${error}`)
+    return res.status(500).json({ message: 'Error checking job status' })
   }
 }
 
@@ -118,67 +131,4 @@ const downloadConstFile = async (req: Request, res: Response) => {
   }
 }
 
-const spawnAF2PAEInpFileMaker = (
-  af2paeDir: string,
-  paeFile: string,
-  paePower: string,
-  plddtCutoff: string
-) => {
-  logger.info(`spawnAF2PAEInpFileMaker af2paeDir ${af2paeDir}`)
-  const logFile = path.join(af2paeDir, 'af2pae.log')
-  const errorFile = path.join(af2paeDir, 'af2pae_error.log')
-  const logStream = fs.createWriteStream(logFile)
-  const errorStream = fs.createWriteStream(errorFile)
-  const af2pae_script = '/app/scripts/pae_ratios.py'
-  const args = [
-    af2pae_script,
-    paeFile,
-    'bilbomd_pdb2crd.crd',
-    '--pae_power',
-    paePower,
-    '--plddt_cutoff',
-    plddtCutoff
-  ]
-
-  return new Promise((resolve, reject) => {
-    const af2pae: ChildProcess = spawn('python', args, { cwd: af2paeDir })
-    af2pae.stdout?.on('data', (data: Buffer) => {
-      const dataString = data.toString().trim()
-      logger.info(`spawnAF2PAEInpFileMaker stdout ${dataString}`)
-      logStream.write(dataString)
-    })
-    af2pae.stderr?.on('data', (data: Buffer) => {
-      logger.error(`spawnAF2PAEInpFileMaker stderr:  ${data.toString()}`)
-      console.log(data)
-      errorStream.write(data.toString())
-    })
-    af2pae.on('error', (error) => {
-      logger.error(`spawnAF2PAEInpFileMaker error ${error}`)
-      reject(error)
-    })
-    af2pae.on('exit', (code) => {
-      // Close streams explicitly once the process exits
-      const closeStreamsPromises = [
-        new Promise((resolveStream) => logStream.end(resolveStream)),
-        new Promise((resolveStream) => errorStream.end(resolveStream))
-      ]
-      Promise.all(closeStreamsPromises)
-        .then(() => {
-          // Only proceed once all streams are closed
-          if (code === 0) {
-            logger.info(`spawnAF2PAEInpFileMaker success with exit code: ${code}`)
-            resolve(code.toString())
-          } else {
-            logger.error(`spawnAF2PAEInpFileMaker error with exit code: ${code}`)
-            reject(new Error(`spawnAF2PAEInpFileMaker error with exit code: ${code}`))
-          }
-        })
-        .catch((streamError) => {
-          logger.error(`Error closing file streams: ${streamError}`)
-          reject(streamError)
-        })
-    })
-  })
-}
-
-export { createNewConstFile, downloadConstFile }
+export { createNewConstFile, getAf2PaeStatus, downloadConstFile }
