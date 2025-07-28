@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.21.0 (7/28/2025)
+  - Refactor PAE Jiffy with a submit & poll strategy
+  - Added much of the OAuth functionality
 - 1.20.6 (7/10/2025)
   - Add a validation check for SAXS data Rg values for BilboMD AF job submission
 - 1.20.5 (6/16/2025)
