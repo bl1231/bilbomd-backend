@@ -17,7 +17,7 @@ export async function handleOrcidLogin(req: Request, res: Response) {
   res.cookie('orcid_oauth_nonce', nonce, {
     httpOnly: true,
     secure: true,
-    sameSite: 'lax'
+    sameSite: 'none'
   })
 
   const authUrl: URL = buildAuthorizationUrl(discovered, {
