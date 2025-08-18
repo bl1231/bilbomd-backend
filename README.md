@@ -94,6 +94,9 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.21.1 (8/18/2025)
+  - Update nodejs to v22.18.0
+  - Update dependencies
 - 1.21.0 (7/28/2025)
   - Refactor PAE Jiffy with a submit & poll strategy
   - Added much of the OAuth functionality
