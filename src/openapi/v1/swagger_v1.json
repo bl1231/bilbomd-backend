@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "BilboMD API Docs",
-    "version": "1.20.5",
+    "version": "1.21.1",
     "description": "API for external programmatic access to BilboMD job submission and results"
   },
   "servers": [
@@ -442,10 +442,33 @@
               "properties": {
                 "provider": {
                   "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "accessToken": {
+                  "type": "string"
+                },
+                "refreshToken": {
+                  "type": "string"
+                },
+                "tokenType": {
+                  "type": "string"
+                },
+                "scope": {
+                  "type": "string"
+                },
+                "expiresIn": {
+                  "type": "number"
+                },
+                "tokenIssuedAt": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               },
               "required": [
-                "provider"
+                "provider",
+                "name"
               ]
             }
           },
@@ -482,6 +505,14 @@
           },
           "email": {
             "type": "string"
+          },
+          "firstName": {
+            "type": "string",
+            "required": false
+          },
+          "lastName": {
+            "type": "string",
+            "required": false
           },
           "newEmail": {
             "type": "string",
@@ -1223,6 +1254,14 @@
           },
           "const_inp_file": {
             "type": "string"
+          },
+          "md_engine": {
+            "type": "string",
+            "enum": [
+              "CHARMM",
+              "OpenMM"
+            ],
+            "required": false
           },
           "conformational_sampling": {
             "type": "number",

@@ -8,7 +8,8 @@ import {
   JobStatus,
   StepStatus,
   BilboMdPDBJob,
-  BilboMdCRDJob
+  BilboMdCRDJob,
+  IBilboMDSteps
 } from '@bl1231/bilbomd-mongodb-schema'
 import { Request, Response } from 'express'
 import { ValidationError } from 'yup'
@@ -32,6 +33,12 @@ const handleBilboMDClassicPDB = async (
     logger.info(`isResubmission: ${isResubmission}, originalJobId: ${originalJobId}`)
 
     const { bilbomd_mode: bilbomdMode } = req.body
+
+    // Normalize md_engine (default to 'charmm' if not provided/unknown)
+    const mdEngineRaw = (req.body.md_engine ?? '').toString().toLowerCase()
+    const md_engine: 'CHARMM' | 'OpenMM' = mdEngineRaw === 'openmm' ? 'OpenMM' : 'CHARMM'
+    logger.info(`Selected md_engine: ${md_engine}`)
+
     let { rg, rg_min, rg_max } = req.body
 
     let inpFileName = ''
@@ -146,6 +153,30 @@ const handleBilboMDClassicPDB = async (
       }
     }
 
+    // Build default steps, allow minor tweaks based on md_engine
+    const stepsInit: IBilboMDSteps = {
+      pdb2crd: { status: StepStatus.Waiting, message: '' },
+      minimize: { status: StepStatus.Waiting, message: '' },
+      initfoxs: { status: StepStatus.Waiting, message: '' },
+      heat: { status: StepStatus.Waiting, message: '' },
+      md: { status: StepStatus.Waiting, message: '' },
+      dcd2pdb: { status: StepStatus.Waiting, message: '' },
+      pdb_remediate: { status: StepStatus.Waiting, message: '' },
+      foxs: { status: StepStatus.Waiting, message: '' },
+      multifoxs: { status: StepStatus.Waiting, message: '' },
+      results: { status: StepStatus.Waiting, message: '' },
+      email: { status: StepStatus.Waiting, message: '' }
+    } as const
+
+    // If using OpenMM, note that pdb2crd is not needed and will be skipped downstream.
+    const stepsAdjusted = {
+      ...stepsInit,
+      pdb2crd: {
+        ...stepsInit.pdb2crd,
+        message: md_engine === 'OpenMM' ? 'Skipped for OpenMM md_engine' : ''
+      }
+    }
+
     // Initialize BilboMdPDBJob Job Data
     const newJob: IBilboMDPDBJob = new BilboMdPDBJob({
       title: req.body.title,
@@ -162,19 +193,8 @@ const handleBilboMDClassicPDB = async (
       user,
       progress: 0,
       cleanup_in_progress: false,
-      steps: {
-        pdb2crd: { status: StepStatus.Waiting, message: '' },
-        minimize: { status: StepStatus.Waiting, message: '' },
-        initfoxs: { status: StepStatus.Waiting, message: '' },
-        heat: { status: StepStatus.Waiting, message: '' },
-        md: { status: StepStatus.Waiting, message: '' },
-        dcd2pdb: { status: StepStatus.Waiting, message: '' },
-        pdb_remediate: { status: StepStatus.Waiting, message: '' },
-        foxs: { status: StepStatus.Waiting, message: '' },
-        multifoxs: { status: StepStatus.Waiting, message: '' },
-        results: { status: StepStatus.Waiting, message: '' },
-        email: { status: StepStatus.Waiting, message: '' }
-      },
+      steps: stepsAdjusted,
+      md_engine,
       ...(isResubmission && originalJobId ? { resubmitted_from: originalJobId } : {})
     })
 
@@ -190,7 +210,8 @@ const handleBilboMDClassicPDB = async (
       type: bilbomdMode,
       title: newJob.title,
       uuid: newJob.uuid,
-      jobid: newJob.id
+      jobid: newJob.id,
+      md_engine // hint for the worker orchestrator
     }
 
     // Queue the job
@@ -203,7 +224,8 @@ const handleBilboMDClassicPDB = async (
     res.status(200).json({
       message: `New ${bilbomdMode} Job successfully created`,
       jobid: newJob.id,
-      uuid: newJob.uuid
+      uuid: newJob.uuid,
+      md_engine
     })
   } catch (error) {
     const msg =
