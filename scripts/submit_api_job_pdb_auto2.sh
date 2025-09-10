@@ -8,7 +8,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Or put thise variable in a .env file
+# Or put these variable in a .env file
 set -a
 source "$SCRIPT_DIR/.env"
 set +a
