@@ -132,9 +132,28 @@ const getFoxsBilboData = async (job: IJob, res: Response) => {
     }
 
     const datFileBase = job.data_file.split('.')[0]
-    const originalDat = path.join(jobDir, `minimization_output_${datFileBase}.dat`)
+    // Try both possible file names for the original .dat file
+    const possibleDatFiles = [
+      path.join(jobDir, `minimization_output_${datFileBase}.dat`),
+      path.join(jobDir, `minimized_${datFileBase}.dat`)
+    ]
 
-    data.push(await createDataObject(originalDat, jobDir))
+    let foundDatFile = null
+    for (const datFile of possibleDatFiles) {
+      try {
+        await fs.access(datFile)
+        foundDatFile = datFile
+        break
+      } catch {
+        // File not found, try next
+      }
+    }
+
+    if (foundDatFile) {
+      data.push(await createDataObject(foundDatFile, jobDir))
+    } else {
+      logger.warn(`No original .dat file found for base ${datFileBase}`)
+    }
 
     const files = await fs.readdir(resultsDir)
     const filePattern = /^multi_state_model_\d+_1_1\.dat$/

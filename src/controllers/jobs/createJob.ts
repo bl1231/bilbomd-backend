@@ -30,6 +30,7 @@ const createNewJob = async (req: Request, res: Response) => {
 
     upload.fields([
       { name: 'bilbomd_mode', maxCount: 1 },
+      { name: 'md_engine', maxCount: 1 },
       { name: 'psf_file', maxCount: 1 },
       { name: 'pdb_file', maxCount: 1 },
       { name: 'crd_file', maxCount: 1 },
@@ -74,8 +75,9 @@ const createNewJob = async (req: Request, res: Response) => {
         })
 
         // Route to the appropriate handler
-        logger.info(`Starting BilboMDJobClassicPDB: ${bilbomd_mode}`)
+        logger.info(`Starting BilboMDJob mode: ${bilbomd_mode}`)
         if (bilbomd_mode === 'pdb') {
+          logger.info('Starting BilboMDJobClassicPDB')
           await handleBilboMDClassicPDB(req, res, foundUser, UUID)
         } else if (bilbomd_mode === 'crd_psf') {
           logger.info('Starting BilboMDJobClassicCRD')

@@ -8,14 +8,14 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Or put thise variable in a .env file
+# Or put these variable in a .env file
 set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-PDB_FILE="$SCRIPT_DIR/../test/data/pdb/pro_dna.pdb"
-DAT_FILE="$SCRIPT_DIR/../test/data/pdb/saxs-data.dat"
-INP_FILE="$SCRIPT_DIR/../test/data/pdb/const.inp"
+PDB_FILE="$SCRIPT_DIR/../test/data/auto1/auto1.pdb"
+DAT_FILE="$SCRIPT_DIR/../test/data/auto1/saxs-data.dat"
+INP_FILE="$SCRIPT_DIR/../test/data/auto1/const.inp"
 
 TITLE_DATE=$(date +%m%d)
 TITLE_SUFFIX=$(date +%s | tail -c 5)
@@ -26,8 +26,8 @@ HTTP_STATUS=$(curl -# -o "$RESPONSE_FILE" -w "%{http_code}" \
   -H "Authorization: Bearer $BILBOMD_API_TOKEN" \
   -H "Accept: application/json" \
   -F "bilbomd_mode=pdb" \
-  -F "md_engine=CHARMM" \
-  -F "title=${TITLE_DATE}-api-test-pdb-${TITLE_SUFFIX}" \
+  -F "md_engine=OpenMM" \
+  -F "title=${TITLE_DATE}-api-test-pdb-auto1-${TITLE_SUFFIX}" \
   -F "pdb_file=@${PDB_FILE}" \
   -F "dat_file=@${DAT_FILE}" \
   -F "inp_file=@${INP_FILE}" )
