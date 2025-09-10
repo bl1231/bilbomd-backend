@@ -94,6 +94,8 @@ podman-hpc push registry.nersc.gov/m4659/sclassen/bilbomd-spin-backend:latest
 
 ## Version History
 
+- 1.22.0 (9/10/2025)
+  - Add ability to handle new `md_engine` property to switch between `CHARMM` and `OpenMM`
 - 1.21.1 (8/18/2025)
   - Update nodejs to v22.18.0
   - Update dependencies
