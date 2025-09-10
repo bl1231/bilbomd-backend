@@ -1,7 +1,7 @@
 import express from 'express'
 import { Redis, RedisOptions } from 'ioredis'
 import { createBullBoard } from '@bull-board/api'
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js'
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
 import { Queue as QueueMQ } from 'bullmq'
 // import { verifyJWT } from '../middleware/verifyJWT.js'
